@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SariSari · dark/light mode + login</title>
+    <!-- Google Font & Font Awesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        /* theme variables – light mode (default) */
+        :root {
+            --bg-body: #eef3f7;
+            --bg-login: #eef3f7;
+            --login-card-bg: rgba(255,255,255,0.8);
+            --login-text: #153f51;
+            --login-sub: #4a6f85;
+            --input-bg: #ffffffdb;
+            --input-border: #bfdae9;
+            --btn-primary: #1f647f;
+            --btn-primary-hover: #247394;
+            --app-bg: rgba(255, 255, 255, 0.6);
+            --app-border: rgba(255,255,255,0.7);
+            --sidebar-bg: #ffffffc2;
+            --sidebar-border: #d9e6f0;
+            --nav-item: #2a5368;
+            --nav-item-hover-bg: #e3f0f9;
+            --nav-item-active-bg: #ffffff;
+            --nav-item-active-border: #cde0ec;
+            --main-bg: #fbfdffb3;
+            --main-border: #e2eff8;
+            --card-bg: #ffffffdb;
+            --card-border: #d2e4f1;
+            --alert-bg: #f1f9ff;
+            --alert-border: #c3dcee;
+            --info-card-bg: #eff7fd;
+            --info-border: #bcd3e6;
+            --badge-bg: #deecf5;
+            --badge-color: #1d5f7a;
+            --text-primary: #1b2b40;
+            --text-secondary: #4d687b;
+            --toast-bg: #1f4c61;
+            --logout-btn-bg: #f0f6fb;
+            --logout-border: #b8cfdf;
+            --logout-color: #1f4b62;
+        }
+
+        /* dark mode variables */
+        body.dark {
+            --bg-body: #1a2b33;
+            --bg-login: #1a2b33;
+            --login-card-bg: #253b45e0;
+            --login-text: #cbdbe6;
+            --login-sub: #9fb8cc;
+            --input-bg: #2e4755db;
+            --input-border: #456b7c;
+            --btn-primary: #37738f;
+            --btn-primary-hover: #4287a6;
+            --app-bg: #253b45b3;
+            --app-border: #3b5a6b;
+            --sidebar-bg: #2b4452c2;
+            --sidebar-border: #3a6072;
+            --nav-item: #bdd2e0;
+            --nav-item-hover-bg: #345a6d;
+            --nav-item-active-bg: #2b4d5e;
+            --nav-item-active-border: #538197;
+            --main-bg: #253f4db3;
+            --main-border: #406d83;
+            --card-bg: #2a4858db;
+            --card-border: #3d667b;
+            --alert-bg: #284b5d;
+            --alert-border: #3d6b82;
+            --info-card-bg: #2a4a5c;
+            --info-border: #3f657b;
+            --badge-bg: #336277;
+            --badge-color: #e1f0fa;
+            --text-primary: #e3ecf2;
+            --text-secondary: #b6cfdf;
+            --toast-bg: #194c61;
+            --logout-btn-bg: #2f5569;
+            --logout-border: #497f99;
+            --logout-color: #d1e5f2;
+        }
+
+        body {
+            background: var(--bg-body);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background 0.2s, color 0.2s;
+            color: var(--text-primary);
+        }
+
+        /* LOGIN OVERLAY */
+        .login-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-login);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease, visibility 0.3s, background 0.2s;
+            backdrop-filter: blur(8px);
+        }
+
+        .login-card {
+            background: var(--login-card-bg);
+            backdrop-filter: blur(14px);
+            border-radius: 60px;
+            padding: 48px 56px;
+            max-width: 440px;
+            width: 90%;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 35px 68px -24px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+
+        .login-card .store-icon {
+            font-size: 3.6rem;
+            color: var(--btn-primary);
+            background: var(--badge-bg);
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 22px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .login-card h2 {
+            font-weight: 500;
+            font-size: 2.2rem;
+            color: var(--login-text);
+        }
+
+        .login-card .sub {
+            color: var(--login-sub);
+            margin-bottom: 32px;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 18px 24px;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 60px;
+            font-size: 1rem;
+            margin-bottom: 18px;
+            outline: none;
+            color: var(--text-primary);
+        }
+        .login-input:focus {
+            border-color: var(--btn-primary);
+            box-shadow: 0 0 0 4px var(--badge-bg);
+        }
+
+        .login-btn {
+            background: var(--btn-primary);
+            color: white;
+            border: none;
+            padding: 18px 28px;
+            border-radius: 60px;
+            width: 100%;
+            font-weight: 600;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: 0.15s;
+            box-shadow: 0 12px 28px -16px #0b3a4c;
+            margin-top: 12px;
+        }
+        .login-btn:hover { background: var(--btn-primary-hover); }
+        .login-btn:active { transform: scale(0.98); }
+
+        .login-error { color: #cf7878; margin-top: 18px; min-height: 24px; }
+        .demo-hint { background: var(--badge-bg); border-radius: 50px; padding: 12px 18px; color: var(--badge-color); margin-top: 28px; border: 1px dashed var(--input-border); }
+
+        /* DASHBOARD wrapper */
+        .dashboard-wrapper {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            width: 100%;
+        }
+        .dashboard-wrapper.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* main app container */
+        .app {
+            width: 100%;
+            max-width: 1500px;
+            background: var(--app-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 56px;
+            padding: 28px 28px 28px 24px;
+            box-shadow: 0 30px 60px -20px rgba(0,0,0,0.3);
+            border: 1px solid var(--app-border);
+            display: flex;
+            gap: 28px;
+            margin: 0 auto;
+        }
+
+        /* sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(4px);
+            border-radius: 44px;
+            padding: 32px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: 1px solid var(--sidebar-border);
+        }
+        .store-logo { display: flex; align-items: center; gap: 12px; padding: 8px 16px 28px 16px; border-bottom: 2px dashed var(--sidebar-border); margin-bottom: 10px; }
+        .store-logo i { font-size: 2.2rem; color: var(--btn-primary); }
+        .store-logo span { font-weight: 500; font-size: 1.2rem; color: var(--login-text); }
+
+        .nav-item {
+            display: flex; align-items: center; gap: 14px; padding: 16px 22px; border-radius: 40px;
+            font-weight: 500; color: var(--nav-item); transition: 0.18s; cursor: pointer;
+            border: 1px solid transparent; margin: 2px 0;
+        }
+        .nav-item i { font-size: 1.3rem; width: 28px; color: var(--nav-item); }
+        .nav-item.active {
+            background: var(--nav-item-active-bg); border-color: var(--nav-item-active-border);
+            box-shadow: 0 10px 20px -10px #00000020; color: var(--login-text);
+        }
+        .nav-item.active i { color: var(--btn-primary); }
+        .nav-item:not(.active):hover { background: var(--nav-item-hover-bg); border-color: var(--sidebar-border); transform: scale(1.01); }
+
+        /* main panel */
+        .main {
+            flex: 1; background: var(--main-bg); backdrop-filter: blur(4px); border-radius: 48px;
+            padding: 32px 36px; border: 1px solid var(--main-border);
+        }
+
+        /* headers & cards */
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+        .section-header h2 { font-weight: 500; font-size: 2rem; color: var(--login-text); display: flex; gap: 12px; }
+        .time-badge {
+            background: var(--badge-bg); border-radius: 40px; padding: 8px 22px; font-size: 0.9rem;
+            color: var(--badge-color); border: 1px solid var(--input-border); cursor: pointer;
+        }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; margin: 28px 0 36px; }
+        .stat-card {
+            background: var(--card-bg); border-radius: 30px; padding: 24px 22px;
+            border: 1px solid var(--card-border); color: var(--text-primary);
+        }
+        .stat-number { font-size: 2.4rem; font-weight: 500; color: var(--login-text); margin: 12px 0 4px; }
+        .chip-low { background: #fee9d8; border-radius: 30px; padding: 4px 12px; font-size: 0.8rem; color: #aa5f2b; }
+
+        .action-btn {
+            background: var(--badge-bg); border: 1px solid var(--input-border); border-radius: 36px;
+            padding: 8px 18px; font-size: 0.8rem; color: var(--badge-color); display: inline-flex;
+            align-items: center; gap: 8px; cursor: pointer; margin-top: 12px;
+        }
+        .action-btn:hover { filter: brightness(0.96); }
+        .bars { display: flex; align-items: flex-end; gap: 8px; height: 150px; margin:20px 0; }
+        .bar-item { flex:1; display: flex; flex-direction: column; align-items: center; }
+        .bar { width:100%; background: linear-gradient(180deg, #8ec7dd, #4797b5); border-radius: 20px 20px 8px 8px; height:40px; }
+        .product-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; }
+        .product-bar { width:100px; height:8px; background: var(--card-border); border-radius:18px; }
+
+        .triplet { display: grid; grid-template-columns: repeat(3, 1fr); gap:22px; margin-top:20px; }
+        .alert-box { background: var(--alert-bg); border-radius:26px; padding:22px; border:1px solid var(--alert-border); color: var(--text-primary); }
+        .movement-item { display:flex; align-items:center; gap:14px; padding:10px 0; border-bottom:1px dashed var(--alert-border); }
+
+        .section-panel { display: none; }
+        .section-panel.active-panel { display: block; }
+        .mini-grid { display: grid; grid-template-columns: repeat(3,1fr); gap:20px; margin:20px 0; }
+        .info-card { background: var(--info-card-bg); border-radius:28px; padding:22px; border:1px solid var(--info-border); }
+        .simple-list li { display:flex; align-items:center; gap:14px; padding:12px 0; border-bottom:1px solid var(--alert-border); list-style:none; }
+        .badge { background: var(--badge-bg); padding:6px 14px; border-radius:40px; font-size:0.8rem; color: var(--badge-color); }
+        .pos-grid { display:grid; grid-template-columns:2fr 1fr; gap:22px; }
+
+        .toast-message {
+            position: fixed; bottom: 30px; right: 30px; background: var(--toast-bg); color: white;
+            padding: 12px 24px; border-radius: 50px; font-size: 0.95rem; box-shadow: 0 12px 28px rgba(0,0,0,0.3);
+            opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 9999;
+        }
+        .toast-message.show { opacity: 1; }
+
+        .logout-area { display: flex; justify-content: flex-end; margin-bottom: 16px; gap: 16px; }
+        .logout-btn, .theme-toggle {
+            background: var(--logout-btn-bg); border: 1px solid var(--logout-border); border-radius: 40px;
+            padding: 12px 28px; font-size: 0.9rem; font-weight: 500; color: var(--logout-color);
+            cursor: pointer; transition: 0.15s; display: inline-flex; align-items: center; gap: 10px;
+        }
+        .logout-btn:hover, .theme-toggle:hover { background: var(--badge-bg); }
+    </style>
+</head>
+<body class="light">
+    <div class="toast-message" id="toastMsg">✨</div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginOverlay" class="login-container">
+        <div class="login-card">
+            <div class="store-icon"><i class="fas fa-store-alt"></i></div>
+            <h2>Sari-Sari</h2>
+            <div class="sub">management system · log in</div>
+            <input type="text" class="login-input" id="usernameInput" placeholder="username" value="admin">
+            <input type="password" class="login-input" id="passwordInput" placeholder="password" value="password">
+            <button class="login-btn" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Enter dashboard</button>
+            <div id="loginError" class="login-error"></div>
+            <div class="demo-hint"><i class="fas fa-lightbulb"></i> demo: any username / password</div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboardWrapper" class="dashboard-wrapper">
+        <div class="logout-area">
+            <div class="theme-toggle" id="themeToggle"><i class="fas fa-moon"></i> Dark mode</div>
+            <div class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> log out</div>
+        </div>
+
+        <div class="app">
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="store-logo"><i class="fas fa-store"></i><span>Sari-Sari</span></div>
+                <div class="nav-item active" data-section="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+                <div class="nav-item" data-section="pos"><i class="fas fa-cash-register"></i> POS</div>
+                <div class="nav-item" data-section="inventory"><i class="fas fa-boxes"></i> Inventory</div>
+                <div class="nav-item" data-section="stock"><i class="fas fa-truck"></i> Stock</div>
+                <div class="nav-item" data-section="users"><i class="fas fa-users"></i> Users</div>
+                <div class="nav-item" data-section="reports"><i class="fas fa-file-alt"></i> Reports</div>
+            </div>
+
+            <!-- MAIN PANELS (all interactive, shortened for readability but full) -->
+            <div class="main">
+                <!-- DASHBOARD PANEL -->
+                <div id="dashboardPanel" class="section-panel active-panel">
+                    <div class="section-header"><h2><i class="fas fa-chart-pie"></i> Dashboard</h2><div class="time-badge" onclick="toast('🔄 dashboard refreshed')"><i class="fas fa-sync-alt"></i> refresh</div></div>
+                    <div class="stat-grid">
+                        <div class="stat-card"><div>Today's Sales <i class="fas fa-sun"></i></div><div class="stat-number">$646.00</div><div>Cash & Credit · +12%</div><div class="action-btn" onclick="toast('💰 viewing today\'s details')">view breakdown <i class="fas fa-arrow-right"></i></div></div>
+                        <div class="stat-card"><div>Total Revenue <i class="fas fa-coins"></i></div><div class="stat-number">$646.00</div><div>All-time sales</div><div class="action-btn" onclick="toast('📈 historical revenue chart')">show chart</div></div>
+                        <div class="stat-card"><div>Total Products <i class="fas fa-cubes"></i></div><div class="stat-number">10</div><div><span class="chip-low">0 low stock</span> ⚪ all good</div><div class="action-btn" onclick="toast('📦 open product catalog')">manage</div></div>
+                        <div class="stat-card"><div>Customer Credits <i class="fas fa-hand-holding-heart"></i></div><div class="stat-number">$0.00</div><div>3 customers · 0 outstanding</div><div class="action-btn" onclick="toast('🤝 show credit accounts')">view customers</div></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:22px;">
+                        <div class="alert-box"><h4>📈 Sales trend (last 7 days)</h4><div class="bars"><div class="bar-item"><div class="bar" style="height:50px;"></div>Feb19</div><div class="bar-item"><div class="bar" style="height:72px;"></div>Feb20</div><div class="bar-item"><div class="bar" style="height:44px;"></div>Feb21</div><div class="bar-item"><div class="bar" style="height:86px;"></div>Feb22</div><div class="bar-item"><div class="bar" style="height:110px;"></div>Feb23</div><div class="bar-item"><div class="bar" style="height:68px;"></div>Feb24</div><div class="bar-item"><div class="bar" style="height:92px;"></div>Feb25</div></div><div class="action-btn" onclick="toast('📊 download 7-day report')">export <i class="fas fa-download"></i></div></div>
+                        <div class="alert-box"><h4>🏆 Top selling</h4><div class="product-row"><span>Liboog</span><div class="product-bar"><div style="width:80%; height:8px; background:#4797b5;"></div></div><span>$480</span></div><div class="product-row"><span>Pale Pilsen</span><div class="product-bar"><div style="width:62%; height:8px; background:#4797b5;"></div></div><span>$372</span></div><div class="product-row"><span>Century Tuna</span><div class="product-bar"><div style="width:45%; height:8px; background:#4797b5;"></div></div><span>$270</span></div><div class="action-btn" onclick="toast('⭐ show full product ranking')">view all products</div></div>
+                    </div>
+                    <div class="triplet">
+                        <div class="alert-box"><i class="fas fa-exclamation-triangle"></i> <strong>Low stock</strong><div>✅ 0 items</div><div class="action-btn" onclick="toast('⚠️ no low stock')">check</div></div>
+                        <div class="alert-box"><i class="fas fa-clipboard-list"></i> <strong>Pending POs</strong><div>📦 none</div><div class="action-btn" onclick="toast('📬 create new PO')">+ order</div></div>
+                        <div class="alert-box"><i class="fas fa-arrows-spin"></i> <strong>Recent stock</strong><div class="movement-item"><i class="fas fa-box-open"></i> Liboog +24</div><div class="movement-item"><i class="fas fa-boxes"></i> Pale Pilsen 8 cases</div><div class="action-btn" onclick="toast('📋 full stock movement log')">view all</div></div>
+                    </div>
+                </div>
+                <!-- OTHER PANELS (minimal for brevity, but all interactive) -->
+                <div id="posPanel" class="section-panel"><div class="section-header"><h2><i class="fas fa-cash-register"></i> POS</h2><div class="time-badge" onclick="toast('new transaction')">➕ new sale</div></div><div class="pos-grid"><div class="info-card"><h3>🛒 cart</h3><div class="simple-list"><li>Liboog x2 $160 <i class="fas fa-trash" onclick="toast('item removed')"></i></li><li>total $492</li></div><div class="action-btn" onclick="toast('checkout')">checkout</div></div><div class="info-card"><h3>actions</h3><div class="action-btn" onclick="toast('scan')"><i class="fas fa-barcode"></i> scan</div></div></div></div>
+                <div id="inventoryPanel" class="section-panel"><div class="section-header"><h2><i class="fas fa-boxes"></i> Inventory</h2><div class="time-badge" onclick="toast('sync')">sync</div></div><div class="mini-grid"><div class="info-card"><span class="badge">SKUs</span><div class="stat-number">10</div><div class="action-btn" onclick="toast('add')">add</div></div></div></div>
+                <div id="stockPanel" class="section-panel"><div class="section-header"><h2><i class="fas fa-truck"></i> Stock</h2><div class="time-badge" onclick="toast('new PO')">➕ create PO</div></div><div class="simple-list"><li><i class="fas fa-dolly"></i> PO#2312 <span class="badge">open</span> <i class="fas fa-check-circle" onclick="toast('mark received')"></i></li></div></div>
+                <div id="usersPanel" class="section-panel"><div class="section-header"><h2><i class="fas fa-users"></i> Users</h2><div class="time-badge" onclick="toast('invite')">➕ invite</div></div><div class="simple-list"><li><i class="fas fa-user-circle"></i> Aling Nena · manager <i class="fas fa-cog" onclick="toast('edit')"></i></li></div></div>
+                <div id="reportsPanel" class="section-panel"><div class="section-header"><h2><i class="fas fa-file-alt"></i> Reports</h2><div class="time-badge" onclick="toast('generate')">generate</div></div><div class="mini-grid"><div class="info-card"><span class="badge">weekly sales</span><div class="stat-number">$3,270</div><div class="action-btn" onclick="toast('PDF')">PDF</div></div></div></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // toast function
+        function toast(msg) {
+            const t = document.getElementById('toastMsg');
+            t.textContent = '✨ ' + msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1300);
+        }
+
+        // login functionality
+        const loginOverlay = document.getElementById('loginOverlay');
+        const dashboardWrap = document.getElementById('dashboardWrapper');
+        const loginBtn = document.getElementById('loginBtn');
+        const username = document.getElementById('usernameInput');
+        const password = document.getElementById('passwordInput');
+        const loginError = document.getElementById('loginError');
+
+        function login() {
+            if (username.value.trim() !== '' && password.value.trim() !== '') {
+                loginOverlay.style.opacity = '0';
+                loginOverlay.style.visibility = 'hidden';
+                dashboardWrap.classList.add('visible');
+                loginError.innerText = '';
+                toast('logged in successfully');
+            } else {
+                loginError.innerText = 'please enter any username/password (demo)';
+            }
+        }
+        loginBtn.addEventListener('click', login);
+        [username, password].forEach(field => field.addEventListener('keypress', (e) => { if(e.key==='Enter') login(); }));
+
+        // logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            loginOverlay.style.opacity = '1';
+            loginOverlay.style.visibility = 'visible';
+            dashboardWrap.classList.remove('visible');
+            username.value = 'admin';
+            password.value = 'password';
+            toast('logged out');
+        });
+
+        // dark/light theme toggle
+        const themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            themeToggle.innerHTML = isDark ? '<i class="fas fa-sun"></i> Light mode' : '<i class="fas fa-moon"></i> Dark mode';
+            toast(isDark ? 'dark mode enabled' : 'light mode enabled');
+        });
+
+        // sidebar navigation
+        (function() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const panels = {
+                dashboard: document.getElementById('dashboardPanel'),
+                pos: document.getElementById('posPanel'),
+                inventory: document.getElementById('inventoryPanel'),
+                stock: document.getElementById('stockPanel'),
+                users: document.getElementById('usersPanel'),
+                reports: document.getElementById('reportsPanel')
+            };
+            function setActive(section) {
+                navItems.forEach(n => n.classList.remove('active'));
+                Object.values(panels).forEach(p => p?.classList.remove('active-panel'));
+                const activeNav = Array.from(navItems).find(n => n.dataset.section === section);
+                if(activeNav) activeNav.classList.add('active');
+                if(panels[section]) panels[section].classList.add('active-panel');
+            }
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const s = item.dataset.section;
+                    if(s) { setActive(s); toast(`switched to ${s}`); }
+                });
+            });
+            setActive('dashboard');
+        })();
+    </script>
+</body>
+</html>
