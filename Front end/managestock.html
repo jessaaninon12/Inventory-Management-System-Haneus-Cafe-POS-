@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Manage Stock - Haneus Cafe Admin</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      --primary: #c47b42;
+      --primary-dark: #a35f2e;
+      --espresso: #4a2f21;
+      --mocha: #6e4f3e;
+      --latte: #e1c8b2;
+      --cream: #f5ede3;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--espresso);
+      min-height: 100vh;
+    }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    aside {
+      width: 240px;
+      background: white;
+      border-right: 1px solid var(--latte);
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-inner { padding: 1.5rem; }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--espresso);
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-active {
+      background: var(--cream);
+      color: var(--primary);
+      border-left: 4px solid var(--primary);
+      font-weight: 500;
+    }
+
+    .nav-group { margin-bottom: 1.5rem; }
+
+    .nav-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--mocha);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding-left: 0.75rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: 0.15s;
+    }
+
+    .nav-link:hover { background: rgba(225,200,178,0.25); }
+
+    .nav-link.active {
+      background: var(--cream);
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .nav-link svg { width: 20px; height: 20px; margin-right: 0.75rem; }
+
+    main { flex: 1; padding: 1.5rem; }
+
+    header {
+      background: white;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--latte);
+      margin-bottom: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+
+    .subtitle { color: var(--mocha); font-size: 0.95rem; }
+
+    .controls {
+      background: white;
+      padding: 1rem 1.25rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      min-width: 220px;
+      padding: 0.65rem 1rem;
+      border: 1px solid var(--latte);
+      border-radius: 0.5rem;
+      background: var(--cream);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(196,123,66,0.12);
+    }
+
+    .btn {
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary   { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); }
+
+    .btn-outline   { background: white; border: 1px solid var(--latte); color: var(--espresso); }
+    .btn-outline:hover { background: var(--latte); }
+
+    .table-container {
+      background: white;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--latte);
+    }
+
+    th {
+      background: var(--cream);
+      font-weight: 600;
+      color: var(--espresso);
+    }
+
+    tr:hover { background: rgba(225,200,178,0.08); }
+
+    .stock-input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .stock-input-group input {
+      width: 90px;
+      padding: 0.5rem;
+      border: 1px solid var(--latte);
+      border-radius: 0.375rem;
+      text-align: center;
+    }
+
+    .stock-input-group button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--latte);
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.15s;
+    }
+
+    .stock-input-group button:hover {
+      background: #d4b69b;
+    }
+
+    .stock-positive { color: var(--success); font-weight: 600; }
+    .stock-negative { color: var(--danger); font-weight: 600; }
+
+    .history-badge {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      background: rgba(196,123,66,0.1);
+      color: var(--primary);
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      aside { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--latte); }
+      .controls { flex-direction: column; align-items: stretch; }
+      .stock-input-group { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar – Manage Stock is active -->
+  <aside>
+    <div class="sidebar-inner">
+      <div class="logo">Haneus Cafe</div>
+
+      <div class="nav-group">
+        <div class="nav-title">Main</div>
+        <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Inventory</div>
+        <a href="products.html"       class="nav-link"><i data-lucide="box"></i> Products</a>
+        <a href="createproduct.html" class="nav-link"><i data-lucide="plus-square"></i> Create Product</a>
+        <a href="lowstock.html"     class="nav-link"><i data-lucide="alert-triangle"></i> Low Stocks</a>
+        <a href="managestock.html"   class="nav-link sidebar-active"><i data-lucide="package"></i> Manage Stock</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Sales</div>
+        <a href="sales.html" class="nav-link"><i data-lucide="dollar-sign"></i> Sales</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Settings</div>
+        <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+
+    <header>
+      <h1>Manage Stock</h1>
+      <div class="subtitle">Adjust inventory quantities, record incoming stock, or correct counts</div>
+    </header>
+
+    <div class="controls">
+      <input type="text" class="search-input" placeholder="Search by product name or ID..." />
+      <button class="btn btn-primary">Receive New Stock</button>
+      <button class="btn btn-outline">Export CSV</button>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>ID</th>
+            <th>Current Stock</th>
+            <th>Adjust</th>
+            <th>Last Updated</th>
+            <th>History</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Espresso Beans (1kg)</td>
+            <td>#1005</td>
+            <td>68 kg</td>
+            <td>
+              <div class="stock-input-group">
+                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <input type="number" value="0" min="0" />
+                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+              </div>
+            </td>
+            <td>Today, 14:22</td>
+            <td><span class="history-badge">View log</span></td>
+          </tr>
+          <tr>
+            <td>Almond Milk (1L)</td>
+            <td>#1004</td>
+            <td class="stock-negative">8 L</td>
+            <td>
+              <div class="stock-input-group">
+                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <input type="number" value="0" min="0" />
+                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+              </div>
+            </td>
+            <td>Yesterday, 09:15</td>
+            <td><span class="history-badge">View log</span></td>
+          </tr>
+          <tr>
+            <td>Caramel Latte (ready-to-serve)</td>
+            <td>#1002</td>
+            <td class="stock-positive">142</td>
+            <td>
+              <div class="stock-input-group">
+                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <input type="number" value="0" min="0" />
+                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+              </div>
+            </td>
+            <td>2 hours ago</td>
+            <td><span class="history-badge">View log</span></td>
+          </tr>
+          <tr>
+            <td>Whipped Cream Can (400g)</td>
+            <td>#1018</td>
+            <td class="stock-negative">6 cans</td>
+            <td>
+              <div class="stock-input-group">
+                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <input type="number" value="0" min="0" />
+                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+              </div>
+            </td>
+            <td>3 days ago</td>
+            <td><span class="history-badge">View log</span></td>
+          </tr>
+          <!-- Add more rows as needed -->
+        </tbody>
+      </table>
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  lucide.createIcons();
+
+  // Demo: Apply button alert
+  document.querySelectorAll('.btn-primary[style*="Apply"]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = btn.parentElement.querySelector('input');
+      const qty = parseInt(input.value);
+      if (qty !== 0) {
+        alert(`Stock adjustment of ${qty > 0 ? '+' : ''}${qty} applied (demo)`);
+        input.value = 0;
+      }
+    });
+  });
+
+  // Demo: History click
+  document.querySelectorAll('.history-badge').forEach(el => {
+    el.addEventListener('click', () => {
+      alert('Stock movement history (demo): Received 50 → Sold 12 → Adjusted -5 → etc.');
+    });
+  });
+</script>
+</body>
+</html>
