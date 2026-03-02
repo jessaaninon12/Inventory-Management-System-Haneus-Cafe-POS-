@@ -287,7 +287,7 @@ All endpoints are prefixed with `/api/`.
 ## What Was Updated
 
 1. **TypeScript conversion verified** — all frontend files use `.tsx` / `.ts` with proper type annotations.
-2. **Removed all AI service references** — Google Gemini API key, AI Studio HMR config, and related dependencies have been fully removed.
+2. **Removed all 
 3. **Frontend port fixed to 3005** — `vite.config.ts` sets `server.port: 3005` with `strictPort: true`; both `npm run dev` and `npm run preview` use port 3005.
 4. **Django backend created** — Full Python/Django REST Framework backend with CRUD for Products, Sales, and User authentication.
 5. **Flexible database configuration** — `BACKEND/pos_core/settings.py` reads `DB_ENGINE` env var to switch between MySQL (XAMPP) and SQL Server (SSMS).
