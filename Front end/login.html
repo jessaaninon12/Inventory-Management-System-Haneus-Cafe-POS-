@@ -246,7 +246,7 @@
       <form id="loginForm">
         <div class="input-group">
           <i data-lucide="user"></i>
-          <input type="text" placeholder="Username" required autocomplete="username">
+          <input type="text" id="username" placeholder="Username or Email" required autocomplete="username">
         </div>
 
         <div class="input-group password-wrapper">
@@ -295,10 +295,52 @@
     lucide.createIcons();
   });
 
-  // Form submit demo
+  // Auto-redirect if already logged in
+  try {
+    if (localStorage.getItem('haneus_logged_in') === 'true') {
+      window.location.href = 'dashboard.html';
+    }
+  } catch (_) {}
+
+  // Basic login using localStorage
   document.getElementById('loginForm').addEventListener('submit', e => {
     e.preventDefault();
-    alert('Login attempt... (demo)');
+    const usernameInput = document.getElementById('username');
+    const passwordVal = passwordInput.value;
+    const rememberCheckbox = document.querySelector('.remember input[type="checkbox"]');
+
+    let stored = null;
+    try {
+      stored = JSON.parse(localStorage.getItem('haneus_user'));
+    } catch (_) {}
+
+    if (!stored) {
+      alert('No account found. Please register first.');
+      window.location.href = 'register.html';
+      return;
+    }
+
+    const identifier = usernameInput.value.trim().toLowerCase();
+    const matchesIdentity =
+      identifier === stored.email?.toLowerCase() ||
+      identifier === (stored.name || '').toLowerCase();
+    const matchesPassword = passwordVal === stored.password;
+
+    if (!matchesIdentity || !matchesPassword) {
+      alert('Invalid credentials.');
+      return;
+    }
+
+    try {
+      localStorage.setItem('haneus_logged_in', 'true');
+      if (rememberCheckbox && rememberCheckbox.checked) {
+        localStorage.setItem('haneus_remember', 'true');
+      } else {
+        localStorage.removeItem('haneus_remember');
+      }
+    } catch (_) {}
+
+    window.location.href = 'dashboard.html';
   });
 </script>
 
