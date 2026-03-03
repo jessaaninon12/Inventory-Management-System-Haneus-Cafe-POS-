@@ -8,7 +8,7 @@ A comprehensive coffee shop point-of-sale and management system with inventory t
 
 ```
 POS/
-├── src/                          # React + TypeScript frontend
+├── BACKEND/                          # React + TypeScript frontend
 │   ├── components/
 │   │   └── Layout.tsx            # Main layout with sidebar and header
 │   ├── pages/
@@ -93,6 +93,9 @@ POS/
 ### 1. Frontend Setup
 
 ```bash
+# Navigate to the frontend folder
+cd FRONTEND
+
 # Install Node.js dependencies
 npm install
 
