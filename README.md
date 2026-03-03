@@ -8,7 +8,7 @@ A comprehensive coffee shop point-of-sale and management system with inventory t
 
 ```
 POS/
-├── BACKEND/                          # React + TypeScript frontend
+├── FRONTEND/                         # React + TypeScript frontend
 │   ├── components/
 │   │   └── Layout.tsx            # Main layout with sidebar and header
 │   ├── pages/
@@ -92,10 +92,9 @@ POS/
 
 ### 1. Frontend Setup
 
-```bash
-# Navigate to the frontend folder
-cd FRONTEND
+Run these from the **project root** (where `package.json` is):
 
+```bash
 # Install Node.js dependencies
 npm install
 
@@ -297,7 +296,7 @@ All endpoints are prefixed with `/api/`.
 6. **Backend folder structure** — Separated into `pos_core/` (Django config), `api/` (REST API), and `python/` (utility scripts).
 7. **API proxy configured** — Vite proxies `/api` requests to Django on `localhost:8000` during development.
 8. **Express backend removed** — `server.ts` and related Node.js dependencies (`express`, `tsx`, `dotenv`) removed.
-9. **Axios added** — `axios` added to `package.json` (required by `src/services/api.ts`).
+9. **Axios added** — `axios` added to `package.json` (required by `FRONTEND/services/api.ts`).
 10. **.gitignore updated** — Covers Node.js (`node_modules/`, `dist/`), Python (`__pycache__/`, `venv/`, `*.pyc`), Django (`staticfiles/`), and OS/IDE files.
 11. **README fully rewritten** — Project structure, setup instructions, database config guide, and API documentation.
 
