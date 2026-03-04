@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Haneo's Cafe • Admin Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root {
+      --bg-main: #4a2c1f;
+      --card-bg: #5d3a2b;
+      --accent: #c97b4a;
+      --accent-dark: #a85f38;
+      --text: #f5e9d4;
+      --text-light: #d4b89e;
+      --green: #6b9e78;
+      --red: #c76e70;
+      --purple: #a678c2;
+      --radius: 16px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg-main);
+      color: var(--text);
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+    }
+
+    aside {
+      background: #3a2218;
+      padding: 1.5rem 0;
+      height: 100vh;
+      position: sticky;
+      top: 0;
+      overflow-y: auto;
+    }
+
+    .logo {
+      padding: 0 1.8rem 2rem;
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent);
+      border-bottom: 1px solid #5d3a2b;
+    }
+
+    nav ul {
+      list-style: none;
+      margin-top: 1.5rem;
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0.95rem 1.8rem;
+      color: var(--text-light);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    nav a:hover,
+    nav a.active {
+      background: var(--card-bg);
+      color: white;
+    }
+
+    nav i {
+      width: 20px;
+      text-align: center;
+    }
+
+    main {
+      padding: 1.5rem 2.5rem;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 700;
+    }
+
+    .btn-add {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 0.7rem 1.4rem;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-add:hover {
+      background: var(--accent-dark);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .card-stat {
+      background: var(--card-bg);
+      padding: 1.4rem 1.6rem;
+      border-radius: var(--radius);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.35);
+    }
+
+    .card-stat h3 {
+      font-size: 0.95rem;
+      color: var(--text-light);
+      margin-bottom: 0.6rem;
+      font-weight: 500;
+    }
+
+    .card-stat .value {
+      font-size: 1.85rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .trend {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .trend.up { color: var(--green); }
+    .trend.down { color: var(--red); }
+
+    .big-cards {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    @media (max-width: 1100px) {
+      .big-cards { grid-template-columns: 1fr; }
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .chart-header h3 {
+      font-size: 1.15rem;
+    }
+
+    .period-tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .period-tabs button {
+      background: transparent;
+      border: none;
+      color: var(--text-light);
+      padding: 0.4rem 0.9rem;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .period-tabs button.active {
+      background: rgba(255,255,255,0.12);
+      color: white;
+    }
+
+    .placeholder-chart {
+      height: 260px;
+      background: linear-gradient(90deg, #6b4e3d 0%, #8b6a52 50%, #6b4e3d 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d4b89e;
+      font-style: italic;
+    }
+
+    .info-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .small-info {
+      background: var(--card-bg);
+      padding: 1.3rem;
+      border-radius: var(--radius);
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+    }
+
+    .small-info .icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.6rem;
+      color: var(--accent);
+    }
+
+    .small-info .number {
+      font-size: 1.9rem;
+      font-weight: 700;
+    }
+
+    .small-info .label {
+      color: var(--text-light);
+      font-size: 0.95rem;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .list-card {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      padding: 1.4rem;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+    }
+
+    .list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+    }
+
+    .list-header h3 {
+      font-size: 1.1rem;
+    }
+
+    .top-product {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 0;
+      border-top: 1px solid #6b4e3d;
+    }
+
+    .top-product .img-placeholder {
+      width: 60px;
+      height: 60px;
+      background: #8b6a52;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+    }
+
+    .low-stock-item {
+      padding: 1rem 0;
+      border-top: 1px solid #6b4e3d;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .low-stock-item span:first-child {
+      font-weight: 600;
+    }
+
+    .low-stock-item span:last-child {
+      color: var(--red);
+      font-weight: 600;
+    }
+
+    @media (max-width: 992px) {
+      body { grid-template-columns: 1fr; }
+      aside { 
+        height: auto; 
+        position: relative; 
+      }
+      main { padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<aside>
+  <div class="logo">Haneo's Cafe</div>
+  <nav>
+    <ul>
+      <li><a href="#" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="#"><i class="fas fa-box"></i> Inventory</a></li>
+      <li><a href="#"><i class="fas fa-coffee"></i> Products</a></li>
+      <li><a href="#"><i class="fas fa-plus-circle"></i> Create Product</a></li>
+      <li><a href="#"><i class="fas fa-exclamation-triangle"></i> Low Stocks</a></li>
+      <li><a href="#"><i class="fas fa-warehouse"></i> Manage Stock</a></li>
+      <li><a href="#"><i class="fas fa-truck"></i> Supplier</a></li>
+      <li><a href="#"><i class="fas fa-chart-line"></i> Sales</a></li>
+      <li><a href="#"><i class="fas fa-file-alt"></i> Pages</a></li>
+      <li><a href="#"><i class="fas fa-user"></i> Profile</a></li>
+      <li><a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </nav>
+</aside>
+
+<main>
+
+  <header>
+    <div>
+      <h1>Welcome, Admin</h1>
+      <p>You have <strong>200</strong> Orders Today</p>
+    </div>
+    <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+      <span>01 Jan - 07 Jan 2024</span>
+      <button class="btn-add"><i class="fas fa-plus"></i> Add New</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="card-stat">
+      <h3>Total Sales, Today</h3>
+      <div class="value">₱48,988,078</div>
+      <div class="trend up">+35% vs Last Month</div>
+    </div>
+    <div class="card-stat">
+      <h3>Total Sales Return</h3>
+      <div class="value">₱16,478,145</div>
+      <div class="trend down">-19% vs Last Month</div>
+    </div>
+    <div class="card-stat">
+      <h3>Total Products</h3>
+      <div class="value">₱24,789</div>
+      <div class="trend up">+41% vs Last Month</div>
+    </div>
+  </div>
+
+  <div class="big-cards">
+    <div class="chart-card">
+      <div class="chart-header">
+        <h3>Sales & Purchase</h3>
+        <div class="period-tabs">
+          <button>1D</button>
+          <button>1W</button>
+          <button class="active">1M</button>
+          <button>3M</button>
+          <button>6M</button>
+          <button>1Y</button>
+        </div>
+      </div>
+      <div class="placeholder-chart">Bar + Line Chart Area (Sales vs Purchase)</div>
+    </div>
+
+    <div class="chart-card">
+      <h3>Overall Information</h3>
+      <div style="margin:1.5rem 0; display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; text-align:center;">
+        <div>
+          <div style="font-size:2.6rem; color:var(--purple);">4,896</div>
+          <div>Customers</div>
+        </div>
+        <div>
+          <div style="font-size:2.6rem; color:var(--accent);">487</div>
+          <div>Orders</div>
+        </div>
+      </div>
+      <div style="text-align:center; margin-top:1rem;">
+        <strong>Top Product:</strong> Dark Coffee
+      </div>
+    </div>
+  </div>
+
+  <div class="info-cards">
+    <div class="small-info">
+      <div class="icon"><i class="fas fa-coffee"></i></div>
+      <div class="number">38K</div>
+      <div class="label">Total Sales</div>
+    </div>
+    <div class="small-info">
+      <div class="icon"><i class="fas fa-peso-sign"></i></div>
+      <div class="number">₱8,458,798</div>
+      <div class="label">Profit</div>
+    </div>
+    <div class="small-info">
+      <div class="icon"><i class="fas fa-file-invoice-dollar"></i></div>
+      <div class="number">₱48,988</div>
+      <div class="label">Invoice Due</div>
+    </div>
+    <div class="small-info">
+      <div class="icon"><i class="fas fa-money-bill-wave"></i></div>
+      <div class="number">₱48,980,97</div>
+      <div class="label">Total Expenses</div>
+    </div>
+  </div>
+
+  <div class="bottom-grid">
+    <div class="list-card">
+      <div class="list-header">
+        <h3>Top Selling Products</h3>
+        <select style="background:#6b4e3d; color:white; border:none; padding:0.5rem; border-radius:8px;">
+          <option>Today</option>
+          <option>This Week</option>
+        </select>
+      </div>
+      <div class="top-product">
+        <div class="img-placeholder">☕</div>
+        <div>
+          <strong>Dark Coffee</strong><br>
+          <small>1,892 sold</small>
+        </div>
+      </div>
+      <!-- You can add more items here -->
+    </div>
+
+    <div class="list-card">
+      <div class="list-header">
+        <h3>Low Stock Products</h3>
+        <a href="#" style="color:var(--accent); text-decoration:none;">View All</a>
+      </div>
+      <div class="low-stock-item">
+        <span>Espresso Beans (500g)</span>
+        <span>8 left</span>
+      </div>
+      <div class="low-stock-item">
+        <span>Almond Milk (1L)</span>
+        <span>12 left</span>
+      </div>
+      <!-- more items -->
+    </div>
+
+    <div class="list-card">
+      <div class="list-header">
+        <h3>Recent Sales</h3>
+        <select style="background:#6b4e3d; color:white; border:none; padding:0.5rem; border-radius:8px;">
+          <option>Today</option>
+          <option>Yesterday</option>
+        </select>
+      </div>
+      <div style="padding:1rem 0; border-top:1px solid #6b4e3d;">
+        Order #1423 • ₱485 • Dark Coffee Latte • 8 min ago
+      </div>
+      <!-- more sales -->
+    </div>
+  </div>
+
+</main>
+
+<script>
+  // Optional: simple tab interaction
+  document.querySelectorAll('.period-tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.period-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+</script>
+
+</body>
+</html>

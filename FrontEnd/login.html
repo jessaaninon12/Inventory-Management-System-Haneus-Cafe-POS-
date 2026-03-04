@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>User Login</title>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Poppins', sans-serif;
+}
+
+html,body{
+  height:100%;
+}
+
+body{
+  display:flex;
+  background:#8c4f22;
+  overflow:hidden;
+}
+
+/* MAIN CONTAINER */
+.container{
+  width:100%;
+  height:100vh;
+  display:flex;
+}
+
+/* LEFT SIDE IMAGE */
+.left{
+  flex:1;
+  background:#4a4a0f;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:left;
+  overflow:hidden;
+}
+
+.left img{
+  height:100%;
+  object-fit:cover;
+  animation:zoom 20s infinite alternate ease-in-out;
+}
+
+@keyframes zoom{
+  from{transform:scale(1);}
+  to{transform:scale(1.1);}
+}
+
+.left h1{
+  position:absolute;
+  left:-120px;
+  transform:rotate(-90deg);
+  font-size:140px;
+  font-weight:800;
+  letter-spacing:12px;
+  color:#f4f0e8;
+  pointer-events:none;
+}
+
+/* RIGHT SIDE FORM */
+.right{
+  flex:1;
+  background:#8c4f22;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:100px;
+  color:white;
+}
+
+.right h2{
+  font-size:42px;
+  margin-bottom:50px;
+  letter-spacing:2px;
+}
+
+/* INPUT STYLE */
+.input-group{
+  background:#f1f1f1;
+  display:flex;
+  align-items:center;
+  padding:16px 20px;
+  border-radius:12px;
+  margin-bottom:25px;
+  box-shadow:0 6px 12px rgba(0,0,0,0.3);
+  transition:0.3s;
+}
+
+.input-group:focus-within{
+  transform:translateY(-3px);
+  box-shadow:0 10px 20px rgba(0,0,0,0.4);
+}
+
+.input-group i{
+  color:#333;
+  font-size:18px;
+  margin-right:12px;
+}
+
+.input-group input{
+  flex:1;
+  border:none;
+  outline:none;
+  font-size:17px;
+  background:transparent;
+}
+
+/* OPTIONS */
+.options{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:14px;
+  margin-bottom:35px;
+}
+
+.options a{
+  color:#ffd9a8;
+  text-decoration:none;
+}
+
+.options a:hover{
+  text-decoration:underline;
+}
+
+/* BUTTON */
+.login-btn{
+  width:100%;
+  padding:16px;
+  background:#a6a345;
+  border:none;
+  border-radius:12px;
+  font-size:20px;
+  font-weight:600;
+  color:white;
+  cursor:pointer;
+  box-shadow:0 6px 12px rgba(0,0,0,0.4);
+  transition:0.3s;
+}
+
+.login-btn:hover{
+  background:#8e8c3c;
+  transform:translateY(-3px);
+}
+
+/* REGISTER LINK */
+.register{
+  text-align:center;
+  margin-top:30px;
+  font-size:15px;
+}
+
+.register a{
+  color:#ffd9a8;
+  text-decoration:none;
+  font-weight:600;
+}
+
+/* RESPONSIVE */
+@media(max-width:1000px){
+  .container{
+    flex-direction:column;
+  }
+
+  .left{
+    height:300px;
+  }
+
+  .left h1{
+    transform:none;
+    left:20px;
+    bottom:20px;
+    font-size:60px;
+  }
+
+  .right{
+    padding:50px 30px;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- LEFT SIDE -->
+  <div class="left">
+    <img src="c.png" alt="Coffee">
+    <h1></h1>
+  </div>
+
+  <!-- RIGHT SIDE -->
+  <div class="right">
+    <h2>USER LOGIN</h2>
+
+    <div class="input-group">
+      <i class="fa-regular fa-user"></i>
+      <input type="text" placeholder="Username">
+    </div>
+
+    <div class="input-group">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="password" placeholder="Password">
+      <i class="fa-regular fa-eye" onclick="togglePassword()" style="cursor:pointer;"></i>
+    </div>
+
+    <div class="options">
+      <label><input type="checkbox"> Remember me</label>
+      <a href="#">Forgot password?</a>
+    </div>
+
+    <button class="login-btn">Login</button>
+
+    <div class="register">
+      Don’t have an account? <a href="#">Register</a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function togglePassword(){
+  const password = document.getElementById("password");
+  password.type = password.type === "password" ? "text" : "password";
+}
+</script>
+
+</body>
+</html>
