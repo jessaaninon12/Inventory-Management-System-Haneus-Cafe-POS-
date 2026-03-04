@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Low Stocks - Haneus Cafe Admin</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    :root {
+      --primary: #c47b42;
+      --primary-dark: #a35f2e;
+      --espresso: #4a2f21;
+      --mocha: #6e4f3e;
+      --latte: #e1c8b2;
+      --cream: #f5ede3;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --success: #16a34a;
+    }
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--cream);
+      color: var(--espresso);
+      min-height: 100vh;
+    }
+
+    .layout { display: flex; min-height: 100vh; }
+
+    aside {
+      width: 240px;
+      background: white;
+      border-right: 1px solid var(--latte);
+      flex-shrink: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-inner { padding: 1.5rem; }
+
+    .logo {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--espresso);
+      margin-bottom: 2rem;
+    }
+
+    .sidebar-active {
+      background: var(--cream);
+      color: var(--primary);
+      border-left: 4px solid var(--primary);
+      font-weight: 500;
+    }
+
+    .nav-group { margin-bottom: 1.5rem; }
+
+    .nav-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--mocha);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.5rem;
+      padding-left: 0.75rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 0.75rem;
+      text-decoration: none;
+      border-radius: 0.5rem;
+      transition: 0.15s;
+    }
+
+    .nav-link:hover { background: rgba(225,200,178,0.25); }
+
+    .nav-link.active {
+      background: var(--cream);
+      color: var(--primary);
+      font-weight: 500;
+    }
+
+    .nav-link svg { width: 20px; height: 20px; margin-right: 0.75rem; }
+
+    main { flex: 1; padding: 1.5rem; }
+
+    header {
+      background: white;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--latte);
+      margin-bottom: 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+
+    .subtitle { color: var(--mocha); font-size: 0.95rem; }
+
+    .alert-box {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #991b1b;
+      padding: 1rem 1.25rem;
+      border-radius: 0.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .alert-box strong { color: #b91c1c; }
+
+    .table-container {
+      background: white;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--latte);
+    }
+
+    th {
+      background: var(--cream);
+      font-weight: 600;
+      color: var(--espresso);
+    }
+
+    tr:hover { background: rgba(225,200,178,0.08); }
+
+    .status-critical { color: var(--danger); font-weight: 600; }
+    .status-low     { color: var(--warning); font-weight: 600; }
+
+    .progress-bar {
+      height: 8px;
+      background: #fee2e2;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 0.4rem;
+      width: 100px;
+    }
+
+    .progress-fill-critical { height: 100%; background: var(--danger); }
+    .progress-fill-low     { height: 100%; background: var(--warning); }
+
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      padding: 0.45rem 0.9rem;
+      border-radius: 0.375rem;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: none;
+      transition: 0.15s;
+    }
+
+    .btn-restock   { background: var(--primary); color: white; }
+    .btn-restock:hover { background: var(--primary-dark); }
+
+    .btn-view   { background: #3b82f6; color: white; }
+    .btn-view:hover { background: #2563eb; }
+
+    .btn-edit   { background: #eab308; color: white; }
+    .btn-edit:hover { background: #ca8a04; }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--mocha);
+    }
+
+    .empty-state svg { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.6; }
+
+    @media (max-width: 768px) {
+      .layout { flex-direction: column; }
+      aside { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--latte); }
+      .actions { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar – Low Stocks is active -->
+  <aside>
+    <div class="sidebar-inner">
+      <div class="logo">Haneus Cafe</div>
+
+      <div class="nav-group">
+        <div class="nav-title">Main</div>
+        <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Inventory</div>
+        <a href="products.html"       class="nav-link"><i data-lucide="box"></i> Products</a>
+        <a href="createproduct.html" class="nav-link"><i data-lucide="plus-square"></i> Create Product</a>
+        <a href="lowstock.html"     class="nav-link sidebar-active"><i data-lucide="alert-triangle"></i> Low Stocks</a>
+        <a href="managestock.html"   class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Sales</div>
+        <a href="sales.html" class="nav-link"><i data-lucide="dollar-sign"></i> Sales</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Settings</div>
+        <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main>
+
+    <header>
+      <h1>Low Stock Alerts</h1>
+      <div class="subtitle">Products that need attention — reorder soon to avoid stockouts</div>
+    </header>
+
+    <div class="alert-box">
+      <i data-lucide="alert-triangle" style="width:24px;height:24px;color:#b91c1c;"></i>
+      <div>
+        <strong>8 products</strong> are below their reorder point. Critical items are marked in red.
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>ID</th>
+            <th>Category</th>
+            <th>Current Stock</th>
+            <th>Reorder Level</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Almond Milk (1L)</td>
+            <td>#1004</td>
+            <td>Ingredients</td>
+            <td>8</td>
+            <td>15</td>
+            <td>
+              <span class="status-critical">Critical</span>
+              <div class="progress-bar"><div class="progress-fill-critical" style="width: 53%;"></div></div>
+            </td>
+            <td class="actions">
+              <button class="btn btn-restock">Restock</button>
+              <button class="btn btn-view">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>Caramel Syrup (500ml)</td>
+            <td>#1012</td>
+            <td>Ingredients</td>
+            <td>11</td>
+            <td>20</td>
+            <td>
+              <span class="status-low">Low</span>
+              <div class="progress-bar"><div class="progress-fill-low" style="width: 55%;"></div></div>
+            </td>
+            <td class="actions">
+              <button class="btn btn-restock">Restock</button>
+              <button class="btn btn-view">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>Blueberry Cheesecake Slice</td>
+            <td>#1003</td>
+            <td>Desserts</td>
+            <td>19</td>
+            <td>25</td>
+            <td>
+              <span class="status-low">Low</span>
+              <div class="progress-bar"><div class="progress-fill-low" style="width: 76%;"></div></div>
+            </td>
+            <td class="actions">
+              <button class="btn btn-restock">Restock</button>
+              <button class="btn btn-view">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>Whipped Cream Can (400g)</td>
+            <td>#1018</td>
+            <td>Ingredients</td>
+            <td>6</td>
+            <td>12</td>
+            <td>
+              <span class="status-critical">Critical</span>
+              <div class="progress-bar"><div class="progress-fill-critical" style="width: 50%;"></div></div>
+            </td>
+            <td class="actions">
+              <button class="btn btn-restock">Restock</button>
+              <button class="btn btn-view">View</button>
+            </td>
+          </tr>
+          <tr>
+            <td>Dark Chocolate Powder</td>
+            <td>#1021</td>
+            <td>Ingredients</td>
+            <td>14</td>
+            <td>20</td>
+            <td>
+              <span class="status-low">Low</span>
+              <div class="progress-bar"><div class="progress-fill-low" style="width: 70%;"></div></div>
+            </td>
+            <td class="actions">
+              <button class="btn btn-restock">Restock</button>
+              <button class="btn btn-view">View</button>
+            </td>
+          </tr>
+          <!-- You can add more rows here -->
+        </tbody>
+      </table>
+
+      <!-- If no low stock items (alternative state) -->
+      <!--
+      <div class="empty-state">
+        <i data-lucide="check-circle"></i>
+        <h3>All stocks are healthy</h3>
+        <p>No products are currently below reorder levels. Great job!</p>
+      </div>
+      -->
+
+    </div>
+
+  </main>
+
+</div>
+
+<script>
+  lucide.createIcons();
+
+  // Optional: simple alert click simulation
+  document.querySelectorAll('.btn-restock').forEach(btn => {
+    btn.addEventListener('click', () => {
+      alert('Restock request initiated for this product (demo)');
+    });
+  });
+</script>
+</body>
+</html>
