@@ -77,6 +77,7 @@ WSGI_APPLICATION = "pos_core.wsgi.application"
 # ---------------------------------------------------------------------------
 # Database — flexible selection via DB_ENGINE env var
 # ---------------------------------------------------------------------------
+
 DB_ENGINE = os.environ.get("DB_ENGINE", "mysql").lower()
 
 if DB_ENGINE == "mssql":
@@ -97,9 +98,9 @@ if DB_ENGINE == "mssql":
             },
         }
     }
+
 else:
-    # MySQL via XAMPP (default)
-    # Requires: pip install mysqlclient
+    # MySQL / MariaDB (XAMPP)
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
@@ -108,6 +109,10 @@ else:
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
             "PORT": os.environ.get("DB_PORT", "3306"),
+            "OPTIONS": {
+                "init_command": "SET sql_mode='STRICT_TRANS_TABLES', default_storage_engine='INNODB'",
+                "charset": "utf8mb4",
+            },
         }
     }
 
@@ -154,8 +159,5 @@ REST_FRAMEWORK = {
 # ---------------------------------------------------------------------------
 # CORS — allow the frontend during development
 # ---------------------------------------------------------------------------
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3005",
-    "http://127.0.0.1:3005",
-]
+CORS_ALLOW_ALL_ORIGINS = True  # Allow all origins during development
 CORS_ALLOW_CREDENTIALS = True
