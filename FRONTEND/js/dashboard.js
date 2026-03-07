@@ -1,0 +1,2 @@
+// Dashboard initialization
+lucide.createIcons();
