@@ -1,0 +1,110 @@
+// MY SAMPLE DATA FOR CREATING OR ADDING A PRODUCT 
+
+// TABLE FOR CATEGORIES OF THE PRODUCT 
+CREATE TABLE categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+// TABLE FOR UNIT 
+CREATE TABLE units (
+    unit_id INT AUTO_INCREMENT PRIMARY KEY,
+    unit_name VARCHAR(50) NOT NULL,
+    unit_symbol VARCHAR(10)
+);
+
+// TABLE FOR CREATING A PRODUCT 
+CREATE TABLE products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    product_name VARCHAR(150) NOT NULL,
+
+    category_id INT NOT NULL,
+
+    selling_price DECIMAL(10,2) NOT NULL,
+
+    cost_price DECIMAL(10,2),
+
+    stock_quantity INT NOT NULL DEFAULT 0,
+
+    unit_id INT,
+
+    description TEXT,
+
+    low_stock_threshold INT DEFAULT 10,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (category_id) REFERENCES categories(category_id),
+
+    FOREIGN KEY (unit_id) REFERENCES units(unit_id)
+);
+
+// TABLE FOR THE PRODUCT'S IMAGE'S 
+// Because images should not be stored 
+   directly in the database.
+// Instead we store image file path.
+CREATE TABLE product_images (
+    image_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    product_id INT NOT NULL,
+
+    image_path VARCHAR(255) NOT NULL,
+
+    uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (product_id) REFERENCES products(product_id) ON DELETE CASCADE
+);
+
+// TABLE FOR STOCKS MOVEMENTS 
+CREATE TABLE stock_movements (
+    movement_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    product_id INT NOT NULL,
+
+    movement_type ENUM('IN','OUT','ADJUSTMENT') NOT NULL,
+
+    quantity INT NOT NULL,
+
+    reference_note VARCHAR(255),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (product_id) REFERENCES products(product_id)
+);
+
+// ADDITIONAL SAMPLE TABOR FOR USER'S AND SUPPLIERS 
+// TABLE FOR THE POSSIBLE USERS 
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    full_name VARCHAR(150) NOT NULL,
+
+    email VARCHAR(150) UNIQUE,
+
+    password_hash VARCHAR(255) NOT NULL,
+
+    role ENUM('admin','staff') DEFAULT 'staff',
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+// TABLE FOR THE SUPPLIERS
+CREATE TABLE suppliers (
+    supplier_id INT AUTO_INCREMENT PRIMARY KEY,
+
+    supplier_name VARCHAR(150) NOT NULL,
+
+    contact_person VARCHAR(150),
+
+    phone VARCHAR(50),
+
+    email VARCHAR(150),
+
+    address TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
