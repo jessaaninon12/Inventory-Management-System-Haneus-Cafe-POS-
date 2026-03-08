@@ -1,10 +1,12 @@
 :root {
-  --bg-left:    #f8f1e9;      /* warm cream/beige */
-  --text-dark:  #3c2f2f;      /* deep coffee brown */
-  --accent:     #c47b42;      /* caramel */
-  --accent-dark:#a35f2e;
-  --input-bg:   #fffaf5;
-  --shadow:     0 8px 24px rgba(60,47,47,0.08);
+  --bg-form:    #9B5C37;      /* warm brown */
+  --bg-visual:  #5D3A1F;      /* darker brown */
+  --text-light: #FFFFFF;      /* white text */
+  --input-bg:   #FFFFFF;      /* white inputs */
+  --text-dark:  #3c2f2f;      /* deep coffee brown for input text */
+  --accent:     #C4A57B;      /* golden accent */
+  --accent-dark:#B8956A;
+  --shadow:     0 8px 24px rgba(0,0,0,0.15);
 }
 
 * {
@@ -16,14 +18,15 @@
 body {
   font-family: 'Inter', system-ui, sans-serif;
   min-height: 100vh;
-  background: var(--bg-left);
-  color: var(--text-dark);
+  background: var(--bg-form);
+  color: var(--text-light);
   overflow: hidden;
 }
 
 .split-screen {
   display: flex;
   height: 100vh;
+  flex-direction: row-reverse;
 }
 
 .auth-side {
@@ -32,7 +35,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: var(--bg-left);
+  background: var(--bg-form);
 }
 
 .form-container {
@@ -46,7 +49,7 @@ h1 {
   letter-spacing: -0.02em;
   margin-bottom: 2.5rem;
   text-align: center;
-  color: var(--text-dark);
+  color: var(--text-light);
 }
 
 .input-group {
@@ -64,6 +67,10 @@ h1 {
   color: var(--text-dark);
   box-shadow: var(--shadow);
   transition: all 0.2s ease;
+}
+
+.input-group input::placeholder {
+  color: rgba(60, 47, 47, 0.5);
 }
 
 .input-group input:focus {
@@ -85,18 +92,6 @@ h1 {
   position: relative;
 }
 
-.toggle-password {
-  position: absolute;
-  right: 1.1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-dark);
-  opacity: 0.6;
-}
-
 .options {
   display: flex;
   justify-content: space-between;
@@ -109,7 +104,7 @@ h1 {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: var(--text-dark);
+  color: var(--text-light);
 }
 
 .remember input[type="checkbox"] {
@@ -119,7 +114,7 @@ h1 {
 }
 
 .forgot {
-  color: var(--accent);
+  color: #FFD4A3;
   text-decoration: none;
   font-weight: 500;
 }
@@ -153,7 +148,7 @@ h1 {
   display: flex;
   align-items: center;
   margin: 1.6rem 0 1rem;
-  color: #aaa;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.9rem;
 }
 
@@ -162,7 +157,7 @@ h1 {
   content: '';
   flex: 1;
   height: 1px;
-  background: #ddd;
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .divider span {
@@ -172,12 +167,12 @@ h1 {
 .signup-link {
   text-align: center;
   font-size: 0.95rem;
-  color: #666;
+  color: var(--text-light);
   margin-top: 0.8rem;
 }
 
 .signup-link a {
-  color: var(--accent);
+  color: #FFD4A3;
   font-weight: 500;
   text-decoration: none;
 }
@@ -189,17 +184,24 @@ h1 {
 /* Right: Visual */
 .visual-side {
   flex: 1;
-  background: linear-gradient(90deg, #3c2f2f 0%, #1f1717 100%);
+  background: linear-gradient(135deg, #5D3A1F 0%, #8B5A34 50%, #9B5C37 100%);
   position: relative;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .visual-side::before {
-  content: '';
+  content: 'COFFEE';
   position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 30% 70%, rgba(196,123,66,0.08) 0%, transparent 60%);
-  opacity: 0.7;
+  font-size: 12rem;
+  font-weight: 900;
+  color: rgba(255, 255, 255, 0.08);
+  letter-spacing: -0.02em;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 1;
 }
 
 @media (max-width: 1023px) {

@@ -44,12 +44,12 @@
       <div class="nav-group">
         <div class="nav-title">Settings</div>
         <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content -->
+  
   <main>
 
     <header>
@@ -75,51 +75,68 @@
             <th>History</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
+        <tbody id="stockTableBody">
+          <tr data-product-id="1005" data-product-name="Espresso Beans (1kg)" data-current-stock="68">
             <td>Espresso Beans (1kg)</td>
             <td>#1005</td>
             <td>68 kg</td>
             <td>
               <div class="stock-input-group">
-                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <button onclick="decrementStock(this)">-</button>
                 <input type="number" value="0" min="0" />
-                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
-                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+                <button onclick="incrementStock(this)">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;" onclick="applyStockChange('1005', 'Espresso Beans (1kg)', '68 kg')">Apply</button>
               </div>
             </td>
             <td>Today, 14:22</td>
-            <td><span class="history-badge">View log</span></td>
+            <td><span class="history-badge" onclick="openHistoryModal('1005', 'Espresso Beans (1kg)')">View log</span></td>
           </tr>
-          <tr>
+          <tr data-product-id="1004" data-product-name="Almond Milk (1L)" data-current-stock="8">
             <td>Almond Milk (1L)</td>
             <td>#1004</td>
             <td class="stock-negative">8 L</td>
             <td>
               <div class="stock-input-group">
-                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <button onclick="decrementStock(this)">-</button>
                 <input type="number" value="0" min="0" />
-                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
-                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+                <button onclick="incrementStock(this)">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;" onclick="applyStockChange('1004', 'Almond Milk (1L)', '8 L')">Apply</button>
               </div>
             </td>
             <td>Yesterday, 09:15</td>
-            <td><span class="history-badge">View log</span></td>
+            <td><span class="history-badge" onclick="openHistoryModal('1004', 'Almond Milk (1L)')">View log</span></td>
           </tr>
-          <tr>
+          <tr data-product-id="1002" data-product-name="Caramel Latte (ready-to-serve)" data-current-stock="142">
             <td>Caramel Latte (ready-to-serve)</td>
             <td>#1002</td>
             <td class="stock-positive">142</td>
             <td>
               <div class="stock-input-group">
-                <button onclick="this.nextElementSibling.value = parseInt(this.nextElementSibling.value) - 1 || 0">-</button>
+                <button onclick="decrementStock(this)">-</button>
                 <input type="number" value="0" min="0" />
-                <button onclick="this.previousElementSibling.value = parseInt(this.previousElementSibling.value) + 1">+</button>
-                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;">Apply</button>
+                <button onclick="incrementStock(this)">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;" onclick="applyStockChange('1002', 'Caramel Latte (ready-to-serve)', '142')">Apply</button>
               </div>
             </td>
             <td>2 hours ago</td>
-            <td><span class="history-badge">View log</span></td>
+            <td><span class="history-badge" onclick="openHistoryModal('1002', 'Caramel Latte (ready-to-serve)')">View log</span></td>
+          </tr>
+          <tr data-product-id="1018" data-product-name="Whipped Cream Can (400g)" data-current-stock="6">
+            <td>Whipped Cream Can (400g)</td>
+            <td>#1018</td>
+            <td class="stock-negative">6 cans</td>
+            <td>
+              <div class="stock-input-group">
+                <button onclick="decrementStock(this)">-</button>
+                <input type="number" value="0" min="0" />
+                <button onclick="incrementStock(this)">+</button>
+                <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;" onclick="applyStockChange('1018', 'Whipped Cream Can (400g)', '6 cans')">Apply</button>
+              </div>
+            </td>
+            <td>3 days ago</td>
+            <td><span class="history-badge" onclick="openHistoryModal('1018', 'Whipped Cream Can (400g)')">View log</span></td>
+          </tr>
+        </tbody>
           </tr>
           <tr>
             <td>Whipped Cream Can (400g)</td>
@@ -145,6 +162,38 @@
 
 </div>
 
-<script src="js/managestock.js"></script>
-</body>
+<!-- stock change confirm modal para sa button -->
+<div id="stockConfirmModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:500px;">
+    <h2>Confirm Stock Adjustment</h2>
+    <div id="stockConfirmDetails" style="margin:1.5rem 0;"></div>
+    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeStockConfirmModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmStockChange()">Confirm Adjustment</button>
+    </div>
+  </div>
+</div>
+
+<!-- history modal sa stock -->
+<div id="historyModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:600px; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+      <h2 id="historyProductName"></h2>
+      <button onclick="closeHistoryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
+    </div>
+    <div id="historyContent"></div>
+    <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem;">
+      <button class="btn btn-secondary" onclick="closeHistoryModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+  <script src="js/managestock.js"></script>  <script>
+    function confirmLogout(event) {
+      event.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'login.html';
+      }
+    }
+  </script></body>
 </html>

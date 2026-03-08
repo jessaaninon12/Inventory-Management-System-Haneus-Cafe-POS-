@@ -5,12 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Haneus Café — Sign Up</title>
   
-  <!-- Google Fonts: Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Lucide Icons CDN -->
+  <!-- LucideIconsCDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="css/register.css">
 </head>
@@ -18,42 +17,53 @@
 
 <div class="split-screen">
 
-  <!-- Left: Sign Up Form -->
+  <!-- Left:Sign Up Form -->
   <div class="auth-side">
     <div class="form-container">
-      <h1>CREATE ACCOUNT</h1>
+      <h1>REGISTER</h1>
+      <p class="form-subtitle">Create New Account</p>
 
       <form id="signupForm">
-        <div class="input-group">
-          <i data-lucide="user"></i>
-          <input type="text" name="name" placeholder="Name" required autocomplete="name">
+        <div class="input-row">
+          <div class="input-group">
+            <i data-lucide="user"></i>
+            <input type="text" name="firstName" placeholder="First Name" required autocomplete="given-name">
+          </div>
+          <div class="input-group">
+            <i data-lucide="user"></i>
+            <input type="text" name="lastName" placeholder="Last Name" required autocomplete="family-name">
+          </div>
         </div>
 
-        <div class="input-group">
-          <i data-lucide="mail"></i>
-          <input type="email" name="email" placeholder="Email Address" required autocomplete="email">
+        <div class="input-row">
+          <div class="input-group">
+            <i data-lucide="user"></i>
+            <input type="text" name="username" placeholder="User Name" required autocomplete="username">
+          </div>
+          <div class="input-group">
+            <i data-lucide="mail"></i>
+            <input type="email" name="email" placeholder="Email Address" required autocomplete="email">
+          </div>
         </div>
 
-        <div class="input-group password-wrapper">
-          <i data-lucide="lock"></i>
-          <input type="password" id="password" name="password" placeholder="Password" required autocomplete="new-password">
-          <button type="button" class="toggle-password" id="togglePassword">
-            <i data-lucide="eye" id="eyeIcon"></i>
-          </button>
+        <div class="input-row">
+          <div class="input-group password-wrapper">
+            <i data-lucide="lock"></i>
+            <input type="password" id="password" name="password" placeholder="Password" required autocomplete="new-password">
+          </div>
+          <div class="input-group password-wrapper">
+            <i data-lucide="lock"></i>
+            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" required autocomplete="new-password">
+          </div>
         </div>
 
-        <div class="input-group password-wrapper">
-          <i data-lucide="lock"></i>
-          <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" required autocomplete="new-password">
-          <button type="button" class="toggle-password" id="toggleConfirmPassword">
-            <i data-lucide="eye" id="eyeIconConfirm"></i>
-          </button>
+        <div class="terms-agreement">
+          <input type="checkbox" id="agreeTerms" required />
+          <label for="agreeTerms">I agree to the <a href="#" class="terms-link">Terms & Privacy</a></label>
         </div>
 
         <button type="submit" class="btn-signup">Sign Up</button>
       </form>
-
-      <div class="divider"><span>OR</span></div>
 
       <div class="login-link">
         Already have an account? <a href="login.html">Login here.</a>
@@ -61,7 +71,7 @@
     </div>
   </div>
 
-  <!-- Right: Aesthetic Panel (same as login) -->
+  <!-- Right: Aesthetic Panel (same sa login) -->
   <div class="visual-side"></div>
 
 </div>

@@ -1,29 +1,5 @@
-// Register page functionality
+// Register page function
 lucide.createIcons();
-
-// Password visibility toggle - main password
-const togglePassword = document.getElementById('togglePassword');
-const passwordInput = document.getElementById('password');
-const eyeIcon = document.getElementById('eyeIcon');
-
-togglePassword.addEventListener('click', () => {
-  const type = passwordInput.type === 'password' ? 'text' : 'password';
-  passwordInput.type = type;
-  eyeIcon.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
-  lucide.createIcons();
-});
-
-// Password visibility toggle - confirm password
-const toggleConfirm = document.getElementById('toggleConfirmPassword');
-const confirmInput = document.getElementById('confirmPassword');
-const eyeIconConfirm = document.getElementById('eyeIconConfirm');
-
-toggleConfirm.addEventListener('click', () => {
-  const type = confirmInput.type === 'password' ? 'text' : 'password';
-  confirmInput.type = type;
-  eyeIconConfirm.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
-  lucide.createIcons();
-});
 
 // Form submit — POST to Django backend
 const API_BASE = 'http://localhost:8000';

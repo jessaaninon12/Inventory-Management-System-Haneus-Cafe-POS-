@@ -13,7 +13,6 @@
 
 <div class="layout">
 
-  <!-- Sidebar -->
   <aside>
     <div class="sidebar-inner">
       <div class="logo">Haneus Cafe</div>
@@ -44,12 +43,11 @@
       <div class="nav-group">
         <div class="nav-title">Settings</div>
         <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main>
 
     <header>
@@ -70,8 +68,8 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
+        <tbody id="productTableBody">
+          <tr data-product-id="1001">
             <td>#1001</td>
             <td>Espresso</td>
             <td>Beverages</td>
@@ -79,11 +77,11 @@
             <td>142</td>
             <td><span class="status-ok">In Stock</span></td>
             <td class="actions">
-              <button class="btn btn-edit">Edit</button>
-              <button class="btn btn-delete">Delete</button>
+              <button class="btn btn-edit" onclick="openEditModal('1001', 'Espresso', 'Beverages', 85.00, 142)">Edit</button>
+              <button class="btn btn-delete" onclick="openDeleteModal('1001', 'Espresso')">Delete</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1002">
             <td>#1002</td>
             <td>Caramel Latte</td>
             <td>Beverages</td>
@@ -91,11 +89,11 @@
             <td>38</td>
             <td><span class="status-low">Low Stock</span></td>
             <td class="actions">
-              <button class="btn btn-edit">Edit</button>
-              <button class="btn btn-delete">Delete</button>
+              <button class="btn btn-edit" onclick="openEditModal('1002', 'Caramel Latte', 'Beverages', 145.00, 38)">Edit</button>
+              <button class="btn btn-delete" onclick="openDeleteModal('1002', 'Caramel Latte')">Delete</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1003">
             <td>#1003</td>
             <td>Blueberry Cheesecake</td>
             <td>Desserts</td>
@@ -103,11 +101,11 @@
             <td>19</td>
             <td><span class="status-low">Low Stock</span></td>
             <td class="actions">
-              <button class="btn btn-edit">Edit</button>
-              <button class="btn btn-delete">Delete</button>
+              <button class="btn btn-edit" onclick="openEditModal('1003', 'Blueberry Cheesecake', 'Desserts', 180.00, 19)">Edit</button>
+              <button class="btn btn-delete" onclick="openDeleteModal('1003', 'Blueberry Cheesecake')">Delete</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1004">
             <td>#1004</td>
             <td>Almond Milk (1L)</td>
             <td>Ingredients</td>
@@ -115,11 +113,10 @@
             <td>8</td>
             <td><span class="status-low">Critical</span></td>
             <td class="actions">
-              <button class="btn btn-edit">Edit</button>
-              <button class="btn btn-delete">Delete</button>
+              <button class="btn btn-edit" onclick="openEditModal('1004', 'Almond Milk (1L)', 'Ingredients', 220.00, 8)">Edit</button>
+              <button class="btn btn-delete" onclick="openDeleteModal('1004', 'Almond Milk (1L)')">Delete</button>
             </td>
           </tr>
-          <!-- You can add 10–20 more rows for realism -->
         </tbody>
       </table>
     </div>
@@ -127,6 +124,61 @@
   </main>
 
 </div>
+
+<!-- edit product modal niya-->
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:500px;">
+    <h2>Edit Product</h2>
+    <form id="editForm">
+      <div style="margin-bottom:1rem;">
+        <label>Product Name</label>
+        <input type="text" id="editName" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label>Category</label>
+        <select id="editCategory" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+          <option value="beverages">Beverages</option>
+          <option value="desserts">Desserts</option>
+          <option value="ingredients">Ingredients</option>
+          <option value="pastries">Pastries</option>
+        </select>
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label>Price (₱)</label>
+        <input type="number" id="editPrice" step="0.01" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label>Stock</label>
+        <input type="number" id="editStock" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- delete confirmation modal sa products -->
+<div id="deleteModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:400px;">
+    <h2>Delete Product</h2>
+    <p id="deleteMessage" style="margin:1rem 0;"></p>
+    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-delete" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
   <script src="js/products.js"></script>
+  <script>
+    function confirmLogout(event) {
+      event.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
 </body>
 </html>

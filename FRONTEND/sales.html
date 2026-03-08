@@ -44,12 +44,11 @@
       <div class="nav-group">
         <div class="nav-title">Settings</div>
         <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content -->
   <main>
 
     <header>
@@ -106,8 +105,8 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
+        <tbody id="ordersTableBody">
+          <tr data-order-id="ORD-20260301-047" data-customer="Juan Dela Cruz" data-status="completed">
             <td>#ORD-20260301-047</td>
             <td>Juan Dela Cruz</td>
             <td>Mar 01, 2026 • 19:45</td>
@@ -115,10 +114,10 @@
             <td class="amount">₱385.00</td>
             <td><span class="status status-completed">Completed</span></td>
             <td class="actions">
-              <button class="btn btn-small btn-view">View</button>
+              <button class="btn btn-small btn-view" onclick="openOrderModal('ORD-20260301-047', 'Juan Dela Cruz', '385.00', 'completed', ['Espresso x2', 'Caramel Latte x1'])">View</button>
             </td>
           </tr>
-          <tr>
+          <tr data-order-id="ORD-20260301-046" data-customer="Maria Santos" data-status="pending">
             <td>#ORD-20260301-046</td>
             <td>Maria Santos</td>
             <td>Mar 01, 2026 • 18:12</td>
@@ -126,11 +125,11 @@
             <td class="amount">₱720.00</td>
             <td><span class="status status-pending">Pending</span></td>
             <td class="actions">
-              <button class="btn btn-small btn-view">View</button>
-              <button class="btn btn-small btn-refund">Refund</button>
+              <button class="btn btn-small btn-view" onclick="openOrderModal('ORD-20260301-046', 'Maria Santos', '720.00', 'pending', ['Cappuccino x2', 'Blueberry Cheesecake x2', 'Croissant x1'])">View</button>
+              <button class="btn btn-small btn-refund" onclick="openRefundModal('ORD-20260301-046', 'Maria Santos', '720.00')">Refund</button>
             </td>
           </tr>
-          <tr>
+          <tr data-order-id="ORD-20260301-045" data-customer="Pedro Reyes" data-status="completed">
             <td>#ORD-20260301-045</td>
             <td>Pedro Reyes</td>
             <td>Mar 01, 2026 • 17:30</td>
@@ -138,10 +137,10 @@
             <td class="amount">₱190.00</td>
             <td><span class="status status-completed">Completed</span></td>
             <td class="actions">
-              <button class="btn btn-small btn-view">View</button>
+              <button class="btn btn-small btn-view" onclick="openOrderModal('ORD-20260301-045', 'Pedro Reyes', '190.00', 'completed', ['Iced Latte x1', 'Chocolate Cake x1'])">View</button>
             </td>
           </tr>
-          <tr>
+          <tr data-order-id="ORD-20260301-044" data-customer="Anna Lim" data-status="cancelled">
             <td>#ORD-20260301-044</td>
             <td>Anna Lim</td>
             <td>Mar 01, 2026 • 15:55</td>
@@ -149,10 +148,9 @@
             <td class="amount">₱520.00</td>
             <td><span class="status status-cancelled">Cancelled</span></td>
             <td class="actions">
-              <button class="btn btn-small btn-view">View</button>
+              <button class="btn btn-small btn-view" onclick="openOrderModal('ORD-20260301-044', 'Anna Lim', '520.00', 'cancelled', ['Latte x2', 'Pastry x2'])">View</button>
             </td>
           </tr>
-          <!-- Add more rows as needed -->
         </tbody>
       </table>
     </div>
@@ -161,6 +159,57 @@
 
 </div>
 
+<!-- ag order modal -->
+<div id="orderModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:600px; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+      <h2 id="orderTitle"></h2>
+      <button onclick="closeOrderModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
+    </div>
+    <div id="orderDetails"></div>
+    <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem;">
+      <button class="btn btn-secondary" onclick="closeOrderModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Refund Confirmation Modal -->
+<div id="refundModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:500px;">
+    <h2>Process Refund</h2>
+    <div id="refundDetails" style="margin:1.5rem 0;"></div>
+    <form id="refundForm">
+      <div style="margin-bottom:1rem;">
+        <label>Refund Reason</label>
+        <select id="refundReason" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+          <option value="">Select a reason</option>
+          <option value="customer_request">Customer Request</option>
+          <option value="defective">Defective Product</option>
+          <option value="wrong_order">Wrong Order Received</option>
+          <option value="duplicate">Duplicate Order</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label>Additional Notes</label>
+        <textarea id="refundNotes" rows="3" placeholder="Any additional notes..." style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;"></textarea>
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeRefundModal()">Cancel</button>
+        <button type="submit" class="btn btn-delete">Process Refund</button>
+      </div>
+    </form>
+  </div>
+</div>
+
   <script src="js/sales.js"></script>
+  <script>
+    function confirmLogout(event) {
+      event.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
 </body>
 </html>

@@ -13,7 +13,7 @@
 
 <div class="layout">
 
-  <!-- Sidebar (same as previous page, Create Product is active) -->
+  <!-- Sidebar -->
   <aside>
     <div class="sidebar-inner">
       <div class="logo">Haneus Cafe</div>
@@ -43,12 +43,12 @@
       <div class="nav-group">
         <div class="nav-title">Settings</div>
         <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content -->
+
   <main>
 
     <header>
@@ -143,6 +143,12 @@
 
 </div>
 
-<script src="js/createproduct.js"></script>
-</body>
+<script src="js/createproduct.js"></script>  <script>
+    function confirmLogout(event) {
+      event.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'login.html';
+      }
+    }
+  </script></body>
 </html>

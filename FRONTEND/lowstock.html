@@ -44,12 +44,12 @@
       <div class="nav-group">
         <div class="nav-title">Settings</div>
         <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
       </div>
     </div>
   </aside>
 
-  <!-- Main Content -->
+
   <main>
 
     <header>
@@ -77,8 +77,8 @@
             <th>Actions</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
+        <tbody id="lowStockTableBody">
+          <tr data-product-id="1004" data-stock="8" data-reorder="15">
             <td>Almond Milk (1L)</td>
             <td>#1004</td>
             <td>Ingredients</td>
@@ -89,11 +89,11 @@
               <div class="progress-bar"><div class="progress-fill-critical" style="width: 53%;"></div></div>
             </td>
             <td class="actions">
-              <button class="btn btn-restock">Restock</button>
-              <button class="btn btn-view">View</button>
+              <button class="btn btn-restock" onclick="openRestockModal('1004', 'Almond Milk (1L)', 8)">Restock</button>
+              <button class="btn btn-view" onclick="openViewModal('1004', 'Almond Milk (1L)', 'Ingredients', 8, 15)">View</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1012" data-stock="11" data-reorder="20">
             <td>Caramel Syrup (500ml)</td>
             <td>#1012</td>
             <td>Ingredients</td>
@@ -104,11 +104,11 @@
               <div class="progress-bar"><div class="progress-fill-low" style="width: 55%;"></div></div>
             </td>
             <td class="actions">
-              <button class="btn btn-restock">Restock</button>
-              <button class="btn btn-view">View</button>
+              <button class="btn btn-restock" onclick="openRestockModal('1012', 'Caramel Syrup (500ml)', 11)">Restock</button>
+              <button class="btn btn-view" onclick="openViewModal('1012', 'Caramel Syrup (500ml)', 'Ingredients', 11, 20)">View</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1003" data-stock="19" data-reorder="25">
             <td>Blueberry Cheesecake Slice</td>
             <td>#1003</td>
             <td>Desserts</td>
@@ -119,11 +119,11 @@
               <div class="progress-bar"><div class="progress-fill-low" style="width: 76%;"></div></div>
             </td>
             <td class="actions">
-              <button class="btn btn-restock">Restock</button>
-              <button class="btn btn-view">View</button>
+              <button class="btn btn-restock" onclick="openRestockModal('1003', 'Blueberry Cheesecake Slice', 19)">Restock</button>
+              <button class="btn btn-view" onclick="openViewModal('1003', 'Blueberry Cheesecake Slice', 'Desserts', 19, 25)">View</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1018" data-stock="6" data-reorder="12">
             <td>Whipped Cream Can (400g)</td>
             <td>#1018</td>
             <td>Ingredients</td>
@@ -134,11 +134,11 @@
               <div class="progress-bar"><div class="progress-fill-critical" style="width: 50%;"></div></div>
             </td>
             <td class="actions">
-              <button class="btn btn-restock">Restock</button>
-              <button class="btn btn-view">View</button>
+              <button class="btn btn-restock" onclick="openRestockModal('1018', 'Whipped Cream Can (400g)', 6)">Restock</button>
+              <button class="btn btn-view" onclick="openViewModal('1018', 'Whipped Cream Can (400g)', 'Ingredients', 6, 12)">View</button>
             </td>
           </tr>
-          <tr>
+          <tr data-product-id="1021" data-stock="14" data-reorder="20">
             <td>Dark Chocolate Powder</td>
             <td>#1021</td>
             <td>Ingredients</td>
@@ -149,22 +149,12 @@
               <div class="progress-bar"><div class="progress-fill-low" style="width: 70%;"></div></div>
             </td>
             <td class="actions">
-              <button class="btn btn-restock">Restock</button>
-              <button class="btn btn-view">View</button>
+              <button class="btn btn-restock" onclick="openRestockModal('1021', 'Dark Chocolate Powder', 14)">Restock</button>
+              <button class="btn btn-view" onclick="openViewModal('1021', 'Dark Chocolate Powder', 'Ingredients', 14, 20)">View</button>
             </td>
           </tr>
-          <!-- You can add more rows here -->
         </tbody>
       </table>
-
-      <!-- If no low stock items (alternative state) -->
-      <!--
-      <div class="empty-state">
-        <i data-lucide="check-circle"></i>
-        <h3>All stocks are healthy</h3>
-        <p>No products are currently below reorder levels. Great job!</p>
-      </div>
-      -->
 
     </div>
 
@@ -172,6 +162,54 @@
 
 </div>
 
+<!-- restock modal -->
+<div id="restockModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:500px;">
+    <h2>Restock Product</h2>
+    <p id="restockProductName" style="margin:1rem 0; font-weight:500;"></p>
+    <form id="restockForm">
+      <div style="margin-bottom:1rem;">
+        <label>Quantity to Add</label>
+        <input type="number" id="restockQuantity" min="1" value="10" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label>Supplier (optional)</label>
+        <input type="text" id="restockSupplier" placeholder="e.g. ABC Supplies" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+      </div>
+      <div style="margin-bottom:1rem;">
+        <label>Notes (optional)</label>
+        <textarea id="restockNotes" rows="3" placeholder="Any additional notes..." style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;"></textarea>
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" onclick="closeRestockModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Confirm Restock</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- view ang product modall -->
+<div id="viewModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
+  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:600px; max-height:80vh; overflow-y:auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+      <h2 id="viewProductName"></h2>
+      <button onclick="closeViewModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
+    </div>
+    <div id="viewProductDetails"></div>
+    <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem;">
+      <button class="btn btn-secondary" onclick="closeViewModal()">Close</button>
+    </div>
+  </div>
+</div>
+
   <script src="js/lowstock.js"></script>
+  <script>
+    function confirmLogout(event) {
+      event.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        window.location.href = 'login.html';
+      }
+    }
+  </script>
 </body>
 </html>

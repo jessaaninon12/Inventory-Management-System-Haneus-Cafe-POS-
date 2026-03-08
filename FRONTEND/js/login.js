@@ -1,18 +1,6 @@
 // Login page functionality
 lucide.createIcons();
 
-// Password visibility toggle
-const togglePassword = document.getElementById('togglePassword');
-const passwordInput = document.getElementById('password');
-const eyeIcon = document.getElementById('eyeIcon');
-
-togglePassword.addEventListener('click', () => {
-  const type = passwordInput.type === 'password' ? 'text' : 'password';
-  passwordInput.type = type;
-  eyeIcon.setAttribute('data-lucide', type === 'password' ? 'eye' : 'eye-off');
-  lucide.createIcons();
-});
-
 // Form submit — POST to Django backend
 const API_BASE = 'http://localhost:8000';
 const errorMsg = document.getElementById('errorMsg');
