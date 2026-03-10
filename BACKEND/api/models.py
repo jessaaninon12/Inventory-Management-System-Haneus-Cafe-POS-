@@ -5,6 +5,10 @@ from django.db import models
 class User(AbstractUser):
     """Custom user model for admin accounts — stored in the 'users' table."""
 
+    phone = models.CharField(max_length=30, blank=True, default="")
+    bio = models.TextField(blank=True, default="")
+    avatar_url = models.CharField(max_length=500, blank=True, default="")
+
     class Meta:
         db_table = "users"
 

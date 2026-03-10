@@ -66,6 +66,21 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id", "username", "email", "first_name", "last_name",
+            "phone", "bio", "avatar_url", "date_joined",
+        ]
+        read_only_fields = ["id", "username", "date_joined"]
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField()
+    new_password = serializers.CharField(min_length=6)
+
+
 class SaleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Sale

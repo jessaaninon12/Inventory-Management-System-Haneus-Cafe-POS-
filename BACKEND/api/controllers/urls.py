@@ -22,11 +22,16 @@ from api.controllers.inventory_controller import (
     ProductHistoryController,
     StockAdjustController,
 )
-from api.controllers.dashboard_controller import DashboardController
+from api.controllers.dashboard_controller import (
+    DashboardChartController,
+    DashboardController,
+)
+from api.controllers.sales_analytics_controller import SalesAnalyticsController
 
 urlpatterns = [
-    # ── Dashboard ─────────────────────────────────────────────────────
+    # ── Dashboard ─────────────────────────────────────────────────────────
     path("dashboard/", DashboardController.as_view(), name="dashboard"),
+    path("dashboard/chart/", DashboardChartController.as_view(), name="dashboard-chart"),
 
     # ── Products ──────────────────────────────────────────────────────
     path("products/", ProductListCreateController.as_view(), name="product-list-v2"),
@@ -39,7 +44,10 @@ urlpatterns = [
     path("orders/<int:pk>/cancel/", OrderCancelController.as_view(), name="order-cancel"),
     path("orders/<int:pk>/complete/", OrderCompleteController.as_view(), name="order-complete"),
 
-    # ── Inventory ─────────────────────────────────────────────────────
+    # ── Sales Analytics ───────────────────────────────────────────────────
+    path("sales/analytics/", SalesAnalyticsController.as_view(), name="sales-analytics"),
+
+    # ── Inventory ─────────────────────────────────────────────────────────
     path("inventory/", InventorySummaryController.as_view(), name="inventory-summary"),
     path("inventory/low-stock/", LowStockInventoryController.as_view(), name="inventory-low-stock"),
     path("inventory/adjust/", StockAdjustController.as_view(), name="inventory-adjust"),

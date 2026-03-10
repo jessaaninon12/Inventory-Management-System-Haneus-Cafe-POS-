@@ -508,6 +508,21 @@ All endpoints prefixed with `/api/`.
 - `POST /api/inventory/adjust/` — Record a stock adjustment
 - `GET /api/inventory/<product_id>/history/` — Transaction history
 
+### Profile
+- `GET /api/profile/<id>/` — Get user profile (first name, last name, email, phone, bio, avatar, joined date)
+- `PUT /api/profile/<id>/` — Update profile fields
+- `PUT /api/profile/<id>/password/` — Change password (requires current password)
+
+### Dashboard Analytics
+- `GET /api/dashboard/` — Aggregated stats: total sales, returns, products, profit, expenses, orders today, monthly sales (12-month array), top selling products, low stock alerts, recent sales, week-over-week % changes for profit/expenses/returns
+- `GET /api/dashboard/chart/?period=1Y` — Period-based chart data. Returns `{labels: [...], values: [...]}`. Supported periods: `1D` (24 hourly), `1W` (7 daily), `1M` (daily for month), `3M` (12 weekly), `6M` (6 monthly), `1Y` (12 monthly)
+
+### Sales Analytics
+- `GET /api/sales/analytics/` — Returns today's sales total, this week's sales, pending orders count, and average order value
+
+### Uploads
+- `POST /api/upload/` — Upload an image file (multipart/form-data, field name: `file`). Returns `{ "url": "/media/uploads/<uuid>.<ext>" }`.
+
 ### API Documentation (Scalar)
 - `http://localhost:8000/api/docs/` — **Scalar v1** interactive API reference (recommended)
 - `http://localhost:8000/api/redoc/` — ReDoc alternative view
@@ -546,6 +561,8 @@ The left sidebar groups all endpoints by tag:
 - **Products** — Product CRUD
 - **Orders** — Order lifecycle
 - **Inventory** — Stock management
+- **Profile** — User profile read/update + password change
+- **Uploads** — Image upload for products and avatars
 
 Click any endpoint name to expand it. You'll see:
 - The HTTP method and URL
@@ -786,3 +803,24 @@ python manage.py migrate
 11. **Merged configuration** — Unified `manage.py`, `requirements.txt`, `.env.example` for both legacy and clean architecture.
 12. **CORS support** — `django-cors-headers` configured for frontend-backend communication during development.
 13. **Dashboard backend** — Aggregated statistics endpoint (`GET /api/dashboard/`) with total sales, returns, profit, expenses, monthly sales chart data, top selling products, low stock alerts, and recent sales — all computed from real database data.
+
+### Sprint 1 — Inventory CRUD, Image Upload & Profile
+
+14. **Image upload endpoint** — `POST /api/upload/` accepts `multipart/form-data`, validates image types (jpg, jpeg, png, gif, webp), saves with UUID filename to `MEDIA_ROOT/uploads/`, returns the served URL.
+15. **Profile API** — `GET /PUT /api/profile/<id>/` for reading/updating user details (first name, last name, email, phone, bio, avatar URL). `PUT /api/profile/<id>/password/` for password change with current-password verification.
+16. **User model extended** — Added `phone`, `bio`, `avatar_url` fields to the custom User model.
+17. **Products page** (`products.html`) — Dynamically fetches `GET /api/products/`, renders table, supports inline edit via `PUT` and delete via `DELETE`.
+18. **Create Product page** (`createproduct.html`) — Uploads product image via `/api/upload/` first, then creates product via `POST /api/products/` with the returned `image_url`.
+19. **Low Stock page** (`lowstock.html`) — Fetches `GET /api/products/low-stock/`, displays critical/low status with progress bars. Restock button calls `POST /api/inventory/adjust/` with `transaction_type: restock`.
+20. **Manage Stock page** (`managestock.html`) — Lists all products from `GET /api/products/`, +/- stock adjustment calls `POST /api/inventory/adjust/`, "View log" loads real transaction history from `GET /api/inventory/<id>/history/`.
+21. **Profile page** (`profile.html`) — Loads user data from `GET /api/profile/<id>/`, saves changes via `PUT`, uploads avatar through `/api/upload/`, and changes password via `PUT /api/profile/<id>/password/`. User ID is read from `localStorage` (set during login).
+22. **Frontend category alignment** — All `<select>` options match backend category values: Beverages, Desserts, Pastries, Ingredients, Merchandise.
+23. **Media file serving** — Django serves uploaded images in development via `MEDIA_URL = /media/` and `MEDIA_ROOT` configured in `settings.py`.
+
+### Sprint 1 (continued) — Dashboard Analytics, Sales Backend & Bar Chart
+
+24. **Dashboard weekly comparison** — `GET /api/dashboard/` now returns `profit_change_pct`, `expenses_change_pct`, `returns_change_pct` calculated as week-over-week percentage changes using period-based revenue/expense/returns queries.
+25. **Period-based bar chart** — `GET /api/dashboard/chart/?period=1Y` endpoint returns `{labels, values}` for 6 period modes (1D hourly, 1W daily, 1M daily, 3M weekly, 6M monthly, 1Y monthly). Frontend period buttons dynamically rebuild bars and labels.
+26. **Sales Analytics endpoint** — `GET /api/sales/analytics/` computes today's completed sales, this week's sales, pending order count, and average completed order value — all from real database aggregation queries.
+27. **Sales page** (`sales.html`) — Full API rewrite: summary cards from `/api/sales/analytics/`, orders table from `GET /api/orders/`, client-side search/status/date filters, View modal fetches order detail with line items, Refund calls `POST /api/orders/<pk>/cancel/`.
+28. **Dashboard data algorithms** — Top Selling uses `GROUP BY product_name ORDER BY SUM(qty*price) DESC`; Low Stock uses `WHERE stock <= threshold ORDER BY stock ASC`; Recent Sales uses latest 5 orders with prefetched items; Monthly chart uses `ExtractMonth` aggregation; Profit = revenue - COGS.

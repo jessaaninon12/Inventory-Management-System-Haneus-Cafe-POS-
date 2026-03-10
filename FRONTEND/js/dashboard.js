@@ -45,6 +45,14 @@ function setDateRange() {
 // Render functions
 // ---------------------------------------------------------------------------
 
+function renderPctChange(id, pct) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const sign = pct >= 0 ? "+" : "";
+  el.textContent = `${sign}${pct}%`;
+  el.style.color = pct >= 0 ? "#15803d" : "#b91c1c";
+}
+
 function renderSummaryCards(data) {
   setText("total-sales", formatCurrency(data.total_sales));
   setText("total-sales-returns", formatCurrency(data.total_sales_returns));
@@ -53,6 +61,11 @@ function renderSummaryCards(data) {
   setText("total-expenses", formatCurrency(data.total_expenses));
   setText("total-payment-returns", formatCurrency(data.total_payment_returns));
   setText("orders-today", `You have ${data.orders_today} Orders, Today`);
+
+  // Weekly % changes
+  renderPctChange("profit-change", data.profit_change_pct);
+  renderPctChange("expenses-change", data.expenses_change_pct);
+  renderPctChange("returns-change", data.returns_change_pct);
 }
 
 function renderBarChart(monthlySales) {
@@ -68,6 +81,45 @@ function renderBarChart(monthlySales) {
     bar.title = formatCurrency(values[i]);
   });
 }
+
+// Dynamically rebuild bars + labels for any dataset
+function renderChartData(data) {
+  const chartEl = document.getElementById("bar-chart");
+  const labelsEl = document.querySelector(".month-labels");
+  if (!chartEl || !labelsEl) return;
+
+  const values = data.values.map((v) => parseFloat(v) || 0);
+  const max = Math.max(...values, 1);
+
+  chartEl.innerHTML = values
+    .map((v) => {
+      const pct = Math.max((v / max) * 100, 2);
+      return `<div class="bar" style="height:${pct}%;" title="${formatCurrency(v)}"></div>`;
+    })
+    .join("");
+
+  labelsEl.innerHTML = data.labels.map((l) => `<span>${l}</span>`).join("");
+}
+
+async function loadChart(period) {
+  try {
+    const res = await fetch(`${API_BASE}/dashboard/chart/?period=${period}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    renderChartData(data);
+  } catch (err) {
+    console.error("Failed to load chart:", err);
+  }
+}
+
+// Wire period buttons
+document.querySelectorAll(".period-btn").forEach((btn) => {
+  btn.addEventListener("click", function () {
+    document.querySelectorAll(".period-btn").forEach((b) => b.classList.remove("active"));
+    this.classList.add("active");
+    loadChart(this.textContent.trim());
+  });
+});
 
 function renderTopSelling(items) {
   const container = document.getElementById("top-selling-list");

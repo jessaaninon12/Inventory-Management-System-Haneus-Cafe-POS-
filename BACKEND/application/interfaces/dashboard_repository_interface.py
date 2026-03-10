@@ -56,3 +56,23 @@ class DashboardRepositoryInterface(ABC):
     def get_total_orders_today(self):
         """Return the count of orders created today."""
         pass
+
+    @abstractmethod
+    def get_sales_for_period(self, start, end):
+        """Return total sales (completed) between start and end dates."""
+        pass
+
+    @abstractmethod
+    def get_expenses_for_period(self, start, end):
+        """Return total expenses (cost of completed items) between dates."""
+        pass
+
+    @abstractmethod
+    def get_returns_for_period(self, start, end):
+        """Return total cancelled order value between dates."""
+        pass
+
+    @abstractmethod
+    def get_chart_data(self, period):
+        """Return {labels: [...], values: [...]} for the given period code."""
+        pass

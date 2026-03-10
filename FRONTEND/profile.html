@@ -53,6 +53,7 @@
     <header>
       <h1>My Profile</h1>
       <div class="subtitle">Manage your account details, avatar, and security settings</div>
+      <div id="profileAlert" style="display:none;padding:0.75rem 1rem;border-radius:0.5rem;margin-top:1rem;font-size:0.875rem;"></div>
     </header>
 
     <div class="profile-container">
@@ -65,9 +66,9 @@
         </div>
 
         <div class="profile-info">
-          <h2>J</h2>
+          <h2 id="profileDisplayName">Loading...</h2>
           <p>Admin • Haneus Cafe Owner</p>
-          <p style="margin-top:0.5rem;">Joined: January 2024</p>
+          <p id="profileJoined" style="margin-top:0.5rem;"></p>
         </div>
       </div>
 
@@ -78,22 +79,27 @@
 
           <div class="form-group">
             <label for="fullName">Full Name</label>
-            <input type="text" id="fullName" value="J" required>
+            <input type="text" id="firstName" value="" placeholder="First name" required>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input type="text" id="lastName" value="" placeholder="Last name" required>
           </div>
 
           <div class="form-group">
             <label for="email">Email Address</label>
-            <input type="email" id="email" value="J@example.com" required>
+            <input type="email" id="email" value="" required>
           </div>
 
           <div class="form-group">
             <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" value="+63 917 123 4567">
+            <input type="tel" id="phone" value="" placeholder="+63 917 123 4567">
           </div>
 
           <div class="form-group full-width">
             <label for="bio">Short Bio / Role Description</label>
-            <textarea id="bio" rows="3">Managing daily operations, menu planning, and staff at Haneus Cafe in Roxas.</textarea>
+            <textarea id="bio" rows="3" placeholder="Short bio or role description..."></textarea>
           </div>
 
         </div>

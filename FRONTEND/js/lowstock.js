@@ -1,161 +1,177 @@
-// Low stock page functionality
+// Low stock page — API-driven
 lucide.createIcons();
 
-let currentRestockingProductId = null;
-let currentViewingProductId = null;
+const API = 'http://127.0.0.1:8000/api';
+let currentRestockingProduct = null;
+let currentViewingProduct = null;
 
-// Load and display low stock products from localStorage on page load
-document.addEventListener('DOMContentLoaded', function() {
-  loadLowStockFromStorage();
-});
+// ---------- Load low-stock products from backend ----------
+async function loadLowStock() {
+  const tbody = document.getElementById('lowStockTableBody');
+  try {
+    const res = await fetch(`${API}/products/low-stock/`);
+    const products = await res.json();
 
-function loadLowStockFromStorage() {
-  const storedProducts = JSON.parse(localStorage.getItem('cafe_products')) || [];
-  const tableBody = document.getElementById('lowStockTableBody');
-  
-  // Add custom products that are low stock
-  storedProducts.forEach(product => {
-    if (product.stock <= product.lowStockThreshold) {
-      const exists = tableBody.querySelector(`[data-product-id="${product.id}"]`);
-      if (!exists) {
-        const percentage = ((product.stock / product.lowStockThreshold) * 100).toFixed(0);
-        const isCritical = product.stock <= product.lowStockThreshold / 2;
-        const statusClass = isCritical ? 'status-critical' : 'status-low';
-        const fillClass = isCritical ? 'progress-fill-critical' : 'progress-fill-low';
-        const statusText = isCritical ? 'Critical' : 'Low';
-        
-        const row = document.createElement('tr');
-        row.setAttribute('data-product-id', product.id);
-        row.setAttribute('data-stock', product.stock);
-        row.setAttribute('data-reorder', product.lowStockThreshold);
-        row.innerHTML = `
-          <td>${product.name}</td>
-          <td>${product.id}</td>
-          <td>${product.category}</td>
-          <td>${product.stock}</td>
-          <td>${product.lowStockThreshold}</td>
+    document.getElementById('lowStockCount').textContent = products.length;
+
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No low-stock products \u2014 all stocked up!</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = products.map(p => {
+      const pct = p.low_stock_threshold > 0
+        ? Math.round((p.stock / p.low_stock_threshold) * 100)
+        : 0;
+      const isCritical = p.stock <= p.low_stock_threshold / 2;
+      const statusClass = isCritical ? 'status-critical' : 'status-low';
+      const fillClass   = isCritical ? 'progress-fill-critical' : 'progress-fill-low';
+      const statusText  = isCritical ? 'Critical' : 'Low';
+
+      return `
+        <tr data-product-id="${p.id}">
+          <td>${p.name}</td>
+          <td>#${p.id}</td>
+          <td>${p.category}</td>
+          <td>${p.stock}</td>
+          <td>${p.low_stock_threshold}</td>
           <td>
             <span class="${statusClass}">${statusText}</span>
-            <div class="progress-bar"><div class="${fillClass}" style="width: ${percentage}%;"></div></div>
+            <div class="progress-bar"><div class="${fillClass}" style="width:${pct}%;"></div></div>
           </td>
           <td class="actions">
-            <button class="btn btn-restock" onclick="openRestockModal('${product.id}', '${product.name}', ${product.stock})">Restock</button>
-            <button class="btn btn-view" onclick="openViewModal('${product.id}', '${product.name}', '${product.category}', ${product.stock}, ${product.lowStockThreshold})">View</button>
+            <button class="btn btn-restock" onclick="openRestockModal(${p.id})">Restock</button>
+            <button class="btn btn-view" onclick="openViewModal(${p.id})">View</button>
           </td>
-        `;
-        tableBody.appendChild(row);
-      }
-    }
-  });
-  
-  lucide.createIcons();
+        </tr>`;
+    }).join('');
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Failed to load low-stock products.</td></tr>';
+  }
 }
 
-// Open Restock Modal
-function openRestockModal(id, name, currentStock) {
-  currentRestockingProductId = id;
-  document.getElementById('restockProductName').textContent = `${name} (Current Stock: ${currentStock})`;
-  document.getElementById('restockModal').style.display = 'flex';
-  document.getElementById('restockQuantity').value = 10;
+// ---------- Restock Modal ----------
+function openRestockModal(productId) {
+  // Fetch product detail so we have current data
+  fetch(`${API}/products/${productId}/`)
+    .then(r => r.json())
+    .then(p => {
+      currentRestockingProduct = p;
+      document.getElementById('restockProductName').textContent =
+        `${p.name} (Current Stock: ${p.stock} ${p.unit})`;
+      document.getElementById('restockQuantity').value = p.low_stock_threshold - p.stock > 0
+        ? p.low_stock_threshold - p.stock : 10;
+      document.getElementById('restockModal').style.display = 'flex';
+    })
+    .catch(() => alert('Could not load product details.'));
 }
 
-// Close Restock Modal
 function closeRestockModal() {
   document.getElementById('restockModal').style.display = 'none';
-  currentRestockingProductId = null;
+  currentRestockingProduct = null;
 }
 
-// Handle Restock Form Submission
-document.getElementById('restockForm').addEventListener('submit', function(e) {
+// Handle Restock Form Submission → POST /api/inventory/adjust/
+document.getElementById('restockForm').addEventListener('submit', async function(e) {
   e.preventDefault();
-  
+  if (!currentRestockingProduct) return;
+
   const quantity = parseInt(document.getElementById('restockQuantity').value);
-  
-  const restockData = {
-    productId: currentRestockingProductId,
-    quantity: quantity,
-    supplier: document.getElementById('restockSupplier').value || 'Not specified',
-    notes: document.getElementById('restockNotes').value || 'None',
-    timestamp: new Date().toISOString()
-  };
-  
-  // Update stock in localStorage
-  let products = JSON.parse(localStorage.getItem('cafe_products')) || [];
-  const productIndex = products.findIndex(p => p.id === currentRestockingProductId);
-  if (productIndex !== -1) {
-    products[productIndex].stock += quantity;
-    localStorage.setItem('cafe_products', JSON.stringify(products));
+  const supplier = document.getElementById('restockSupplier').value || '';
+  const notes    = document.getElementById('restockNotes').value || '';
+
+  try {
+    const res = await fetch(`${API}/inventory/adjust/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: currentRestockingProduct.id,
+        quantity_change: quantity,
+        transaction_type: 'restock',
+        reference: supplier ? `Supplier: ${supplier}` : '',
+        notes: notes,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Restock failed: ' + JSON.stringify(err.errors || err));
+      return;
+    }
+
+    alert(`Restocked ${quantity} units of ${currentRestockingProduct.name} successfully!`);
+    closeRestockModal();
+    loadLowStock();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to restock. Is the backend running?');
   }
-  
-  console.log('Restock request:', restockData);
-  
-  alert(`Restock confirmed!\n\nQuantity: ${restockData.quantity}\nSupplier: ${restockData.supplier}\n\nReady to send to backend.`);
-  
-  
-  closeRestockModal();
 });
 
-// Open View Modal
-function openViewModal(id, name, category, currentStock, reorderLevel) {
-  currentViewingProductId = id;
-  document.getElementById('viewProductName').textContent = name;
-  
-  const percentage = ((currentStock / reorderLevel) * 100).toFixed(0);
-  const status = currentStock <= reorderLevel / 2 ? 'Critical' : 'Low';
-  
-  document.getElementById('viewProductDetails').innerHTML = `
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
-      <div>
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Product ID</p>
-        <p style="font-weight:500; font-size:1.125rem;">#${id}</p>
-      </div>
-      <div>
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Category</p>
-        <p style="font-weight:500; font-size:1.125rem;">${category}</p>
-      </div>
-      <div>
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Current Stock</p>
-        <p style="font-weight:500; font-size:1.125rem;">${currentStock} units</p>
-      </div>
-      <div>
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Reorder Level</p>
-        <p style="font-weight:500; font-size:1.125rem;">${reorderLevel} units</p>
-      </div>
-      <div>
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Status</p>
-        <p style="font-weight:500; font-size:1.125rem; color:${status === 'Critical' ? '#b91c1c' : '#ea580c'};">${status}</p>
-      </div>
-      <div>
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Stock Level</p>
-        <p style="font-weight:500; font-size:1.125rem;">${percentage}% of reorder point</p>
-      </div>
-    </div>
-    <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid #eee;">
-      <p style="color:#999; font-size:0.875rem; margin-bottom:0.5rem;">Recommendation</p>
-      <p style="font-size:0.95rem; color:#333;">
-        Reorder at least <strong>${reorderLevel - currentStock}</strong> units to reach the reorder level.
-      </p>
-    </div>
-  `;
-  
-  document.getElementById('viewModal').style.display = 'flex';
+// ---------- View Modal ----------
+function openViewModal(productId) {
+  fetch(`${API}/products/${productId}/`)
+    .then(r => r.json())
+    .then(p => {
+      currentViewingProduct = p;
+      document.getElementById('viewProductName').textContent = p.name;
+
+      const pct = p.low_stock_threshold > 0
+        ? Math.round((p.stock / p.low_stock_threshold) * 100) : 0;
+      const status = p.stock <= p.low_stock_threshold / 2 ? 'Critical' : 'Low';
+      const deficit = p.low_stock_threshold - p.stock;
+
+      document.getElementById('viewProductDetails').innerHTML = `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+          <div>
+            <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Product ID</p>
+            <p style="font-weight:500; font-size:1.125rem;">#${p.id}</p>
+          </div>
+          <div>
+            <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Category</p>
+            <p style="font-weight:500; font-size:1.125rem;">${p.category}</p>
+          </div>
+          <div>
+            <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Current Stock</p>
+            <p style="font-weight:500; font-size:1.125rem;">${p.stock} ${p.unit}</p>
+          </div>
+          <div>
+            <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Reorder Level</p>
+            <p style="font-weight:500; font-size:1.125rem;">${p.low_stock_threshold} ${p.unit}</p>
+          </div>
+          <div>
+            <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Status</p>
+            <p style="font-weight:500; font-size:1.125rem; color:${status === 'Critical' ? '#b91c1c' : '#ea580c'};">${status}</p>
+          </div>
+          <div>
+            <p style="color:#999; font-size:0.875rem; margin-bottom:0.25rem;">Stock Level</p>
+            <p style="font-weight:500; font-size:1.125rem;">${pct}% of reorder point</p>
+          </div>
+        </div>
+        <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid #eee;">
+          <p style="color:#999; font-size:0.875rem; margin-bottom:0.5rem;">Recommendation</p>
+          <p style="font-size:0.95rem; color:#333;">
+            Reorder at least <strong>${deficit > 0 ? deficit : 0}</strong> units to reach the reorder level.
+          </p>
+        </div>
+      `;
+
+      document.getElementById('viewModal').style.display = 'flex';
+    })
+    .catch(() => alert('Could not load product details.'));
 }
 
-// Close View Modal
 function closeViewModal() {
   document.getElementById('viewModal').style.display = 'none';
-  currentViewingProductId = null;
+  currentViewingProduct = null;
 }
 
-// Close modals when clicking outside
+// ---------- Close modals on outside click ----------
 window.addEventListener('click', function(event) {
-  const restockModal = document.getElementById('restockModal');
-  const viewModal = document.getElementById('viewModal');
-  
-  if (event.target === restockModal) {
-    closeRestockModal();
-  }
-  if (event.target === viewModal) {
-    closeViewModal();
-  }
+  if (event.target === document.getElementById('restockModal')) closeRestockModal();
+  if (event.target === document.getElementById('viewModal'))    closeViewModal();
 });
+
+// ---------- Init ----------
+loadLowStock();

@@ -1,52 +1,46 @@
-// Manage stock page functionality
+// Manage stock page — API-driven
 lucide.createIcons();
 
-let pendingStockChange = {
-  productId: null,
-  productName: null,
-  quantity: null
-};
+const API = 'http://127.0.0.1:8000/api';
+let pendingStockChange = null;
 
-// Load and display products from localStorage on page load
-document.addEventListener('DOMContentLoaded', function() {
-  loadProductsToManage();
-});
+// ---------- Load all products ----------
+async function loadProducts() {
+  const tbody = document.getElementById('stockTableBody');
+  try {
+    const res = await fetch(`${API}/products/`);
+    const data = await res.json();
+    const products = data.results || data;
 
-function loadProductsToManage() {
-  const storedProducts = JSON.parse(localStorage.getItem('cafe_products')) || [];
-  const tableBody = document.getElementById('stockTableBody');
-  
-  // Add custom products to manage stock table
-  storedProducts.forEach(product => {
-    const exists = tableBody.querySelector(`[data-product-id="${product.id}"]`);
-    if (!exists) {
-      const row = document.createElement('tr');
-      row.setAttribute('data-product-id', product.id);
-      row.setAttribute('data-product-name', product.name);
-      row.setAttribute('data-current-stock', product.stock);
-      row.innerHTML = `
-        <td>${product.name}</td>
-        <td>${product.id}</td>
-        <td>${product.stock} ${product.unit}</td>
+    if (!products.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No products found.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = products.map(p => `
+      <tr data-product-id="${p.id}">
+        <td>${p.name}</td>
+        <td>#${p.id}</td>
+        <td>${p.stock} ${p.unit}</td>
         <td>
           <div class="stock-input-group">
-            <button onclick="decrementStock(this)">-</button>
-            <input type="number" value="0" min="0" />
+            <button onclick="decrementStock(this)">\u2212</button>
+            <input type="number" value="0" />
             <button onclick="incrementStock(this)">+</button>
-            <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;" onclick="applyStockChange('${product.id}', '${product.name}', '${product.stock} ${product.unit}')">Apply</button>
+            <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;"
+              onclick="applyStockChange(${p.id}, '${p.name.replace(/'/g,"\\'")}'  , '${p.stock} ${p.unit}')">Apply</button>
           </div>
         </td>
-        <td>Just now</td>
-        <td><span class="history-badge" onclick="openHistoryModal('${product.id}', '${product.name}')">View log</span></td>
-      `;
-      tableBody.appendChild(row);
-    }
-  });
-  
-  lucide.createIcons();
+        <td>${p.updated_at ? new Date(p.updated_at).toLocaleString() : '\u2014'}</td>
+        <td><span class="history-badge" onclick="openHistoryModal(${p.id}, '${p.name.replace(/'/g,"\\'")}')">View log</span></td>
+      </tr>`).join('');
+  } catch (e) {
+    console.error(e);
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Failed to load products.</td></tr>';
+  }
 }
 
-// Helper functions for stock adjustment buttons
+// ---------- +/- helpers ----------
 function incrementStock(btn) {
   const input = btn.previousElementSibling;
   input.value = parseInt(input.value || 0) + 1;
@@ -54,31 +48,21 @@ function incrementStock(btn) {
 
 function decrementStock(btn) {
   const input = btn.nextElementSibling;
-  const currentValue = parseInt(input.value || 0);
-  if (currentValue > 0) {
-    input.value = currentValue - 1;
-  }
+  const v = parseInt(input.value || 0);
+  if (v > 0) input.value = v - 1;
 }
 
-// Apply Stock Change
+// ---------- Apply / Confirm ----------
 function applyStockChange(productId, productName, currentStock) {
   const row = document.querySelector(`[data-product-id="${productId}"]`);
   const input = row.querySelector('.stock-input-group input');
-  const quantityChange = parseInt(input.value || 0);
-  
-  if (quantityChange === 0) {
-    alert('Please enter a quantity to adjust');
-    return;
-  }
-  
-  pendingStockChange = {
-    productId: productId,
-    productName: productName,
-    quantity: quantityChange,
-    currentStock: currentStock
-  };
-  
-  const operation = quantityChange > 0 ? 'Add' : 'Remove';
+  const qty = parseInt(input.value || 0);
+
+  if (qty === 0) { alert('Please enter a quantity to adjust.'); return; }
+
+  pendingStockChange = { productId, productName, quantity: qty, currentStock };
+
+  const op = qty > 0 ? 'Add' : 'Remove';
   document.getElementById('stockConfirmDetails').innerHTML = `
     <div style="display:grid; gap:1rem;">
       <div>
@@ -91,139 +75,119 @@ function applyStockChange(productId, productName, currentStock) {
       </div>
       <div style="padding:1rem; background:#f5f5f5; border-radius:4px;">
         <p style="color:#999; font-size:0.875rem; margin-bottom:0.5rem;">Adjustment</p>
-        <p style="font-size:1.5rem; font-weight:600;">${quantityChange > 0 ? '+' : ''}${quantityChange} units</p>
-        <p style="color:#999; font-size:0.875rem; margin-top:0.5rem;">${operation}</p>
+        <p style="font-size:1.5rem; font-weight:600;">${qty > 0 ? '+' : ''}${qty} units</p>
+        <p style="color:#999; font-size:0.875rem; margin-top:0.5rem;">${op}</p>
       </div>
     </div>
   `;
-  
   document.getElementById('stockConfirmModal').style.display = 'flex';
 }
 
-// Close Stock Confirm Modal
 function closeStockConfirmModal() {
   document.getElementById('stockConfirmModal').style.display = 'none';
-  pendingStockChange = {
-    productId: null,
-    productName: null,
-    quantity: null
-  };
+  pendingStockChange = null;
 }
 
-// Confirm Stock Change
-function confirmStockChange() {
-  const adjustmentData = {
-    productId: pendingStockChange.productId,
-    quantity: pendingStockChange.quantity,
-    timestamp: new Date().toISOString(),
-    type: pendingStockChange.quantity > 0 ? 'in' : 'out'
-  };
-  
-  // Update stock in localStorage
-  let products = JSON.parse(localStorage.getItem('cafe_products')) || [];
-  const productIndex = products.findIndex(p => p.id === pendingStockChange.productId);
-  if (productIndex !== -1) {
-    products[productIndex].stock += pendingStockChange.quantity;
-    localStorage.setItem('cafe_products', JSON.stringify(products));
-  }
-  
-  console.log('Stock adjustment:', adjustmentData);
-  
-  alert(`Stock adjustment confirmed!\n\nProduct ID: ${adjustmentData.productId}\nQuantity: ${adjustmentData.quantity > 0 ? '+' : ''}${adjustmentData.quantity}\n\nReady to send to backend.`);
-  
+async function confirmStockChange() {
+  if (!pendingStockChange) return;
 
-  
-  // Reset the input field
-  const row = document.querySelector(`[data-product-id="${pendingStockChange.productId}"]`);
-  const input = row.querySelector('.stock-input-group input');
-  input.value = 0;
-  
-  closeStockConfirmModal();
-}
+  try {
+    const res = await fetch(`${API}/inventory/adjust/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        product_id: pendingStockChange.productId,
+        quantity_change: pendingStockChange.quantity,
+        transaction_type: 'adjustment',
+        reference: '',
+        notes: `Manual adjustment from Manage Stock page`,
+      }),
+    });
 
-// Open History Modal
-function openHistoryModal(productId, productName) {
-  document.getElementById('historyProductName').textContent = productName;
-  
-  // Sample history data
-  const sampleHistory = [
-    {
-      date: 'March 5, 2026',
-      time: '14:30',
-      action: 'Stock Received',
-      quantity: '+50',
-      reference: 'PO-2026-0145',
-      notes: 'Delivery from ABC Supplies'
-    },
-    {
-      date: 'March 3, 2026',
-      time: '10:15',
-      action: 'Manual Adjustment',
-      quantity: '-5',
-      reference: 'ADJ-0089',
-      notes: 'Damaged units removed'
-    },
-    {
-      date: 'March 1, 2026',
-      time: '09:00',
-      action: 'Stock Received',
-      quantity: '+30',
-      reference: 'PO-2026-0128',
-      notes: 'Delivery from ABC Supplies'
-    },
-    {
-      date: 'Feb 28, 2026',
-      time: '16:45',
-      action: 'Stock Received',
-      quantity: '+25',
-      reference: 'PO-2026-0115',
-      notes: 'Delivery from ABC Supplies'
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Adjustment failed: ' + JSON.stringify(err.errors || err));
+      return;
     }
-  ];
-  
-  let historyHTML = '<table style="width:100%; border-collapse:collapse;">';
-  historyHTML += '<tr style="border-bottom:2px solid #eee;"><th style="text-align:left; padding:1rem 0; font-weight:600;">Date</th><th style="text-align:left; padding:1rem 0; font-weight:600;">Action</th><th style="text-align:left; padding:1rem 0; font-weight:600;">Quantity</th><th style="text-align:left; padding:1rem 0; font-weight:600;">Reference</th></tr>';
-  
-  sampleHistory.forEach(item => {
-    historyHTML += `
-      <tr style="border-bottom:1px solid #eee;">
-        <td style="padding:1rem 0; color:#666;">
-          <div>${item.date}</div>
-          <div style="font-size:0.875rem; color:#999;">${item.time}</div>
-        </td>
-        <td style="padding:1rem 0;">
-          <div style="font-weight:500;">${item.action}</div>
-          <div style="font-size:0.875rem; color:#999;">${item.notes}</div>
-        </td>
-        <td style="padding:1rem 0;">
-          <span style="font-weight:600; color:${item.quantity.startsWith('+') ? '#15803d' : '#b91c1c'};">${item.quantity}</span>
-        </td>
-        <td style="padding:1rem 0; color:#999;">${item.reference}</td>
-      </tr>
-    `;
-  });
-  
-  historyHTML += '</table>';
-  
-  document.getElementById('historyContent').innerHTML = historyHTML;
-  document.getElementById('historyModal').style.display = 'flex';
+
+    alert(`Stock adjusted by ${pendingStockChange.quantity > 0 ? '+' : ''}${pendingStockChange.quantity} for ${pendingStockChange.productName}!`);
+    closeStockConfirmModal();
+    loadProducts();
+  } catch (err) {
+    console.error(err);
+    alert('Failed to adjust stock. Is the backend running?');
+  }
 }
 
-// Close History Modal
+// ---------- History Modal (real API) ----------
+async function openHistoryModal(productId, productName) {
+  document.getElementById('historyProductName').textContent = `${productName} — Stock History`;
+  document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:#999;">Loading history...</p>';
+  document.getElementById('historyModal').style.display = 'flex';
+
+  try {
+    const res = await fetch(`${API}/inventory/${productId}/history/`);
+    const history = await res.json();
+
+    if (!history.length) {
+      document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:#999;">No stock history recorded yet.</p>';
+      return;
+    }
+
+    let html = '<table style="width:100%; border-collapse:collapse;">';
+    html += '<tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:1rem 0;font-weight:600;">Date</th><th style="text-align:left;padding:1rem 0;font-weight:600;">Action</th><th style="text-align:left;padding:1rem 0;font-weight:600;">Quantity</th><th style="text-align:left;padding:1rem 0;font-weight:600;">Reference</th></tr>';
+
+    history.forEach(t => {
+      const d = t.timestamp ? new Date(t.timestamp) : null;
+      const dateStr = d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '\u2014';
+      const timeStr = d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
+      const qtyStr = t.quantity_change > 0 ? `+${t.quantity_change}` : `${t.quantity_change}`;
+      const qtyColor = t.quantity_change > 0 ? '#15803d' : '#b91c1c';
+
+      html += `
+        <tr style="border-bottom:1px solid #eee;">
+          <td style="padding:1rem 0;color:#666;">
+            <div>${dateStr}</div>
+            <div style="font-size:0.875rem;color:#999;">${timeStr}</div>
+          </td>
+          <td style="padding:1rem 0;">
+            <div style="font-weight:500;">${t.transaction_type}</div>
+            <div style="font-size:0.875rem;color:#999;">${t.notes || ''}</div>
+          </td>
+          <td style="padding:1rem 0;">
+            <span style="font-weight:600;color:${qtyColor};">${qtyStr}</span>
+          </td>
+          <td style="padding:1rem 0;color:#999;">${t.reference || '\u2014'}</td>
+        </tr>`;
+    });
+
+    html += '</table>';
+    document.getElementById('historyContent').innerHTML = html;
+  } catch (e) {
+    console.error(e);
+    document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:red;">Failed to load history.</p>';
+  }
+}
+
 function closeHistoryModal() {
   document.getElementById('historyModal').style.display = 'none';
 }
 
-// Close modals when clicking outside
-window.addEventListener('click', function(event) {
-  const confirmModal = document.getElementById('stockConfirmModal');
-  const historyModal = document.getElementById('historyModal');
-  
-  if (event.target === confirmModal) {
-    closeStockConfirmModal();
-  }
-  if (event.target === historyModal) {
-    closeHistoryModal();
-  }
+// ---------- Search filter ----------
+document.querySelector('.search-input')?.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#stockTableBody tr').forEach(row => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = text.includes(q) ? '' : 'none';
+  });
 });
+
+// ---------- Close modals on outside click ----------
+window.addEventListener('click', function(event) {
+  if (event.target === document.getElementById('stockConfirmModal')) closeStockConfirmModal();
+  if (event.target === document.getElementById('historyModal'))     closeHistoryModal();
+});
+
+// ---------- Init ----------
+loadProducts();
 

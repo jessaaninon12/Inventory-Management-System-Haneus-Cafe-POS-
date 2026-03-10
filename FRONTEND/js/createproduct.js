@@ -1,13 +1,15 @@
-// Create product page functionality
+// Create product page — API-driven with image upload
 lucide.createIcons();
 
-// Simple image preview
+const API = 'http://127.0.0.1:8000/api';
 const fileInput = document.getElementById('image');
 const preview = document.getElementById('preview');
+let selectedFile = null;
 
 fileInput.addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (file) {
+    selectedFile = file;
     const reader = new FileReader();
     reader.onload = function(event) {
       preview.innerHTML = `<img src="${event.target.result}" alt="Preview">`;
@@ -15,71 +17,74 @@ fileInput.addEventListener('change', function(e) {
     };
     reader.readAsDataURL(file);
   } else {
+    selectedFile = null;
     preview.innerHTML = 'No image selected';
     preview.classList.add('empty');
   }
 });
 
-// Form validation and submission
-document.getElementById('createProductForm').addEventListener('submit', function(e) {
+async function uploadImage(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch(`${API}/upload/`, { method: 'POST', body: fd });
+  if (!res.ok) throw new Error('Image upload failed');
+  const data = await res.json();
+  // Return absolute URL so it works from the frontend
+  return `http://127.0.0.1:8000${data.url}`;
+}
+
+document.getElementById('createProductForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   let valid = true;
 
-  // Get all form values
-  const productData = {
-    id: 'PROD-' + Date.now(),
-    name: document.getElementById('productName').value.trim(),
-    category: document.getElementById('category').value,
-    price: parseFloat(document.getElementById('price').value),
-    cost: parseFloat(document.getElementById('cost').value) || 0,
-    stock: parseInt(document.getElementById('stock').value),
-    unit: document.getElementById('unit').value,
-    description: document.getElementById('description').value.trim(),
-    lowStockThreshold: parseInt(document.getElementById('lowStockThreshold').value),
-    image: preview.innerHTML !== 'No image selected' ? preview.querySelector('img')?.src : null,
-    createdAt: new Date().toISOString()
-  };
+  const name = document.getElementById('productName').value.trim();
+  const category = document.getElementById('category').value;
+  const price = parseFloat(document.getElementById('price').value);
+  const cost = parseFloat(document.getElementById('cost').value) || 0;
+  const stock = parseInt(document.getElementById('stock').value);
+  const unit = document.getElementById('unit').value;
+  const description = document.getElementById('description').value.trim();
+  const lowStockThreshold = parseInt(document.getElementById('lowStockThreshold').value);
 
-  // Validation
   const nameError = document.getElementById('nameError');
-  if (!productData.name) {
-    nameError.style.display = 'block';
-    valid = false;
-  } else {
-    nameError.style.display = 'none';
-  }
+  if (!name) { nameError.style.display = 'block'; valid = false; } else { nameError.style.display = 'none'; }
+  if (!category) { alert('Please select a category'); valid = false; }
+  if (isNaN(price) || price <= 0) { alert('Please enter a valid price'); valid = false; }
+  if (isNaN(stock) || stock < 0) { alert('Please enter a valid stock quantity'); valid = false; }
 
-  if (!productData.category) {
-    alert('Please select a category');
-    valid = false;
-  }
+  if (!valid) return;
 
-  if (isNaN(productData.price) || productData.price <= 0) {
-    alert('Please enter a valid price');
-    valid = false;
-  }
+  try {
+    // Upload image first (if selected)
+    let image_url = null;
+    if (selectedFile) {
+      image_url = await uploadImage(selectedFile);
+    }
 
-  if (isNaN(productData.stock) || productData.stock < 0) {
-    alert('Please enter a valid stock quantity');
-    valid = false;
-  }
+    const body = { name, category, price, cost, stock, unit, description, low_stock_threshold: lowStockThreshold };
+    if (image_url) body.image_url = image_url;
 
-  if (valid) {
-    // Save to localStorage
-    let products = JSON.parse(localStorage.getItem('cafe_products')) || [];
-    products.push(productData);
-    localStorage.setItem('cafe_products', JSON.stringify(products));
-    
-    console.log('Product created:', productData);
-    alert(`Product "${productData.name}" created successfully!\n\nProduct ID: ${productData.id}`);
-    
+    const res = await fetch(`${API}/products/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
 
-    // Navigate to products page
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Error: ' + JSON.stringify(err.errors || err));
+      return;
+    }
+
+    const product = await res.json();
+    alert(`Product "${product.name}" created successfully!\nID: ${product.id}`);
     window.location.href = 'products.html';
+  } catch (err) {
+    console.error(err);
+    alert('Failed to create product. Is the backend running?');
   }
 });
 
-// Cancel button
 document.querySelector('button[type="button"].btn-secondary').addEventListener('click', function(e) {
   e.preventDefault();
   if (confirm('Are you sure you want to cancel? Any unsaved data will be lost.')) {

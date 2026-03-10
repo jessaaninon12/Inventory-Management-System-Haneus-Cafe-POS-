@@ -69,54 +69,7 @@
           </tr>
         </thead>
         <tbody id="productTableBody">
-          <tr data-product-id="1001">
-            <td>#1001</td>
-            <td>Espresso</td>
-            <td>Beverages</td>
-            <td>₱85.00</td>
-            <td>142</td>
-            <td><span class="status-ok">In Stock</span></td>
-            <td class="actions">
-              <button class="btn btn-edit" onclick="openEditModal('1001', 'Espresso', 'Beverages', 85.00, 142)">Edit</button>
-              <button class="btn btn-delete" onclick="openDeleteModal('1001', 'Espresso')">Delete</button>
-            </td>
-          </tr>
-          <tr data-product-id="1002">
-            <td>#1002</td>
-            <td>Caramel Latte</td>
-            <td>Beverages</td>
-            <td>₱145.00</td>
-            <td>38</td>
-            <td><span class="status-low">Low Stock</span></td>
-            <td class="actions">
-              <button class="btn btn-edit" onclick="openEditModal('1002', 'Caramel Latte', 'Beverages', 145.00, 38)">Edit</button>
-              <button class="btn btn-delete" onclick="openDeleteModal('1002', 'Caramel Latte')">Delete</button>
-            </td>
-          </tr>
-          <tr data-product-id="1003">
-            <td>#1003</td>
-            <td>Blueberry Cheesecake</td>
-            <td>Desserts</td>
-            <td>₱180.00</td>
-            <td>19</td>
-            <td><span class="status-low">Low Stock</span></td>
-            <td class="actions">
-              <button class="btn btn-edit" onclick="openEditModal('1003', 'Blueberry Cheesecake', 'Desserts', 180.00, 19)">Edit</button>
-              <button class="btn btn-delete" onclick="openDeleteModal('1003', 'Blueberry Cheesecake')">Delete</button>
-            </td>
-          </tr>
-          <tr data-product-id="1004">
-            <td>#1004</td>
-            <td>Almond Milk (1L)</td>
-            <td>Ingredients</td>
-            <td>₱220.00</td>
-            <td>8</td>
-            <td><span class="status-low">Critical</span></td>
-            <td class="actions">
-              <button class="btn btn-edit" onclick="openEditModal('1004', 'Almond Milk (1L)', 'Ingredients', 220.00, 8)">Edit</button>
-              <button class="btn btn-delete" onclick="openDeleteModal('1004', 'Almond Milk (1L)')">Delete</button>
-            </td>
-          </tr>
+          <tr><td colspan="7" style="text-align:center;color:var(--mocha);">Loading products...</td></tr>
         </tbody>
       </table>
     </div>
@@ -137,10 +90,11 @@
       <div style="margin-bottom:1rem;">
         <label>Category</label>
         <select id="editCategory" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
-          <option value="beverages">Beverages</option>
-          <option value="desserts">Desserts</option>
-          <option value="ingredients">Ingredients</option>
-          <option value="pastries">Pastries</option>
+          <option value="Beverages">Beverages</option>
+          <option value="Desserts">Desserts</option>
+          <option value="Pastries">Pastries</option>
+          <option value="Ingredients">Ingredients</option>
+          <option value="Merchandise">Merchandise</option>
         </select>
       </div>
       <div style="margin-bottom:1rem;">

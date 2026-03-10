@@ -165,6 +165,22 @@ class DashboardResponseSchema(serializers.Serializer):
     recent_sales = RecentSaleSchema(many=True)
 
 
+# ── Chart ─────────────────────────────────────────────────────────────
+
+class ChartResponseSchema(serializers.Serializer):
+    labels = serializers.ListField(child=serializers.CharField())
+    values = serializers.ListField(child=serializers.FloatField())
+
+
+# ── Sales Analytics ─────────────────────────────────────────────────────
+
+class SalesAnalyticsResponseSchema(serializers.Serializer):
+    todays_sales = serializers.CharField()
+    this_week_sales = serializers.CharField()
+    pending_orders = serializers.IntegerField()
+    average_order = serializers.CharField()
+
+
 # ── Inventory ─────────────────────────────────────────────────────────
 
 class InventoryItemResponseSchema(serializers.Serializer):

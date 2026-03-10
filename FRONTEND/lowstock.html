@@ -60,7 +60,7 @@
     <div class="alert-box">
       <i data-lucide="alert-triangle" style="width:24px;height:24px;color:#b91c1c;"></i>
       <div>
-        <strong>8 products</strong> are below their reorder point. Critical items are marked in red.
+      <strong id="lowStockCount">0</strong> products are below their reorder point. Critical items are marked in red.
       </div>
     </div>
 
@@ -78,81 +78,7 @@
           </tr>
         </thead>
         <tbody id="lowStockTableBody">
-          <tr data-product-id="1004" data-stock="8" data-reorder="15">
-            <td>Almond Milk (1L)</td>
-            <td>#1004</td>
-            <td>Ingredients</td>
-            <td>8</td>
-            <td>15</td>
-            <td>
-              <span class="status-critical">Critical</span>
-              <div class="progress-bar"><div class="progress-fill-critical" style="width: 53%;"></div></div>
-            </td>
-            <td class="actions">
-              <button class="btn btn-restock" onclick="openRestockModal('1004', 'Almond Milk (1L)', 8)">Restock</button>
-              <button class="btn btn-view" onclick="openViewModal('1004', 'Almond Milk (1L)', 'Ingredients', 8, 15)">View</button>
-            </td>
-          </tr>
-          <tr data-product-id="1012" data-stock="11" data-reorder="20">
-            <td>Caramel Syrup (500ml)</td>
-            <td>#1012</td>
-            <td>Ingredients</td>
-            <td>11</td>
-            <td>20</td>
-            <td>
-              <span class="status-low">Low</span>
-              <div class="progress-bar"><div class="progress-fill-low" style="width: 55%;"></div></div>
-            </td>
-            <td class="actions">
-              <button class="btn btn-restock" onclick="openRestockModal('1012', 'Caramel Syrup (500ml)', 11)">Restock</button>
-              <button class="btn btn-view" onclick="openViewModal('1012', 'Caramel Syrup (500ml)', 'Ingredients', 11, 20)">View</button>
-            </td>
-          </tr>
-          <tr data-product-id="1003" data-stock="19" data-reorder="25">
-            <td>Blueberry Cheesecake Slice</td>
-            <td>#1003</td>
-            <td>Desserts</td>
-            <td>19</td>
-            <td>25</td>
-            <td>
-              <span class="status-low">Low</span>
-              <div class="progress-bar"><div class="progress-fill-low" style="width: 76%;"></div></div>
-            </td>
-            <td class="actions">
-              <button class="btn btn-restock" onclick="openRestockModal('1003', 'Blueberry Cheesecake Slice', 19)">Restock</button>
-              <button class="btn btn-view" onclick="openViewModal('1003', 'Blueberry Cheesecake Slice', 'Desserts', 19, 25)">View</button>
-            </td>
-          </tr>
-          <tr data-product-id="1018" data-stock="6" data-reorder="12">
-            <td>Whipped Cream Can (400g)</td>
-            <td>#1018</td>
-            <td>Ingredients</td>
-            <td>6</td>
-            <td>12</td>
-            <td>
-              <span class="status-critical">Critical</span>
-              <div class="progress-bar"><div class="progress-fill-critical" style="width: 50%;"></div></div>
-            </td>
-            <td class="actions">
-              <button class="btn btn-restock" onclick="openRestockModal('1018', 'Whipped Cream Can (400g)', 6)">Restock</button>
-              <button class="btn btn-view" onclick="openViewModal('1018', 'Whipped Cream Can (400g)', 'Ingredients', 6, 12)">View</button>
-            </td>
-          </tr>
-          <tr data-product-id="1021" data-stock="14" data-reorder="20">
-            <td>Dark Chocolate Powder</td>
-            <td>#1021</td>
-            <td>Ingredients</td>
-            <td>14</td>
-            <td>20</td>
-            <td>
-              <span class="status-low">Low</span>
-              <div class="progress-bar"><div class="progress-fill-low" style="width: 70%;"></div></div>
-            </td>
-            <td class="actions">
-              <button class="btn btn-restock" onclick="openRestockModal('1021', 'Dark Chocolate Powder', 14)">Restock</button>
-              <button class="btn btn-view" onclick="openViewModal('1021', 'Dark Chocolate Powder', 'Ingredients', 14, 20)">View</button>
-            </td>
-          </tr>
+          <tr><td colspan="7" style="text-align:center;color:var(--mocha);">Loading low stock products...</td></tr>
         </tbody>
       </table>
 

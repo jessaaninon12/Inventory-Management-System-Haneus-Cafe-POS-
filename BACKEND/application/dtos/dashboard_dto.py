@@ -19,6 +19,9 @@ class DashboardDTO:
         top_selling=None,
         low_stock_products=None,
         recent_sales=None,
+        profit_change_pct=0.0,
+        expenses_change_pct=0.0,
+        returns_change_pct=0.0,
     ):
         self.total_sales = total_sales
         self.total_sales_returns = total_sales_returns
@@ -31,6 +34,9 @@ class DashboardDTO:
         self.top_selling = top_selling or []
         self.low_stock_products = low_stock_products or []
         self.recent_sales = recent_sales or []
+        self.profit_change_pct = profit_change_pct
+        self.expenses_change_pct = expenses_change_pct
+        self.returns_change_pct = returns_change_pct
 
     def to_dict(self):
         return {
@@ -45,4 +51,7 @@ class DashboardDTO:
             "top_selling": self.top_selling,
             "low_stock_products": self.low_stock_products,
             "recent_sales": self.recent_sales,
+            "profit_change_pct": round(self.profit_change_pct, 1),
+            "expenses_change_pct": round(self.expenses_change_pct, 1),
+            "returns_change_pct": round(self.returns_change_pct, 1),
         }

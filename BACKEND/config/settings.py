@@ -149,6 +149,12 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # ------------------------------------------------------------------
+# Media files (uploaded images)
+# ------------------------------------------------------------------
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# ------------------------------------------------------------------
 # Default PK type
 # ------------------------------------------------------------------
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -180,9 +186,11 @@ SPECTACULAR_SETTINGS = {
     "TAGS": [
         {"name": "Auth", "description": "User registration and login"},
         {"name": "Dashboard", "description": "Aggregated dashboard statistics"},
+        {"name": "Profile", "description": "User profile management"},
         {"name": "Products", "description": "Product catalog CRUD"},
         {"name": "Orders", "description": "Order lifecycle management"},
         {"name": "Inventory", "description": "Stock tracking and adjustments"},
+        {"name": "Uploads", "description": "File/image uploads"},
         {"name": "Sales", "description": "Legacy sales records"},
     ],
 }
