@@ -28,22 +28,26 @@ Inventory-Management-System-Haneus-Cafe-POS/
 │   │
 │   ├── domain/                          # DOMAIN LAYER (pure business logic)
 │   │   └── entities/
+│   │       ├── user.py                  # User entity + validation
 │   │       ├── product.py               # Product entity + validation
 │   │       ├── order.py                 # Order + OrderItem entities
 │   │       └── inventory.py             # InventoryTransaction + InventoryItem
 │   │
 │   ├── application/                     # APPLICATION LAYER (orchestration)
 │   │   ├── services/
+│   │   │   ├── user_service.py          # User register / login / profile
 │   │   │   ├── product_service.py       # Product business operations
 │   │   │   ├── order_service.py         # Order lifecycle management
 │   │   │   ├── inventory_service.py     # Stock adjustment logic
 │   │   │   └── dashboard_service.py     # Dashboard aggregation logic
 │   │   ├── dtos/
+│   │   │   ├── user_dto.py              # UserDTO, CreateUserDTO, UpdateUserDTO, LoginDTO, ChangePasswordDTO
 │   │   │   ├── product_dto.py           # Product DTOs (Create, Update, Read)
 │   │   │   ├── order_dto.py             # Order DTOs
 │   │   │   ├── inventory_dto.py         # Inventory DTOs
 │   │   │   └── dashboard_dto.py         # Dashboard DTO
 │   │   └── interfaces/
+│   │       ├── user_repository_interface.py
 │   │       ├── product_repository_interface.py
 │   │       ├── order_repository_interface.py
 │   │       ├── inventory_repository_interface.py
@@ -54,6 +58,7 @@ Inventory-Management-System-Haneus-Cafe-POS/
 │   │   │   ├── models.py                # Django ORM models (ProductModel, OrderModel, etc.)
 │   │   │   └── db_context.py            # DB utilities (transactions, health check)
 │   │   ├── repositories/
+│   │   │   ├── user_repository.py       # Concrete UserRepository (auth, profile)
 │   │   │   ├── product_repository.py    # Concrete ProductRepository
 │   │   │   ├── order_repository.py      # Concrete OrderRepository
 │   │   │   ├── inventory_repository.py  # Concrete InventoryRepository
@@ -64,15 +69,19 @@ Inventory-Management-System-Haneus-Cafe-POS/
 │   │
 │   ├── api/                             # API LAYER (HTTP controllers)
 │   │   ├── controllers/
+│   │   │   ├── user_controller.py       # Register, Login, Profile, ChangePassword
 │   │   │   ├── product_controller.py    # Product CRUD endpoints
 │   │   │   ├── order_controller.py      # Order CRUD + cancel/complete
 │   │   │   ├── inventory_controller.py  # Inventory summary + stock adjust
 │   │   │   ├── dashboard_controller.py  # Dashboard aggregated stats
+│   │   │   ├── sales_analytics_controller.py  # Sales analytics endpoint
 │   │   │   └── urls.py                  # Clean Architecture API routes
 │   │   ├── models.py                    # User, Product, Sale (legacy models)
-│   │   ├── serializers.py               # DRF serializers (auth, CRUD)
-│   │   ├── views.py                     # Auth + legacy CRUD views
-│   │   └── urls.py                      # Auth API routes
+│   │   ├── user_serializers.py          # DRF serializers: Register, Login, Profile
+│   │   ├── product_serializers.py       # DRF serializers: Product, Sale
+│   │   ├── schema_serializers.py        # OpenAPI schema-only serializers (drf-spectacular)
+│   │   ├── views.py                     # Legacy CRUD views (Product, Sale, ImageUpload)
+│   │   └── urls.py                      # Legacy API routes
 │   │
 │   ├── config/                          # DJANGO PROJECT CONFIG
 │   │   ├── settings.py                  # Main settings (DB, apps, CORS)
@@ -135,6 +144,41 @@ Inventory-Management-System-Haneus-Cafe-POS/
 **Database:** MySQL via XAMPP (default) **or** SQL Server via SSMS 19
 
 **API Docs:** Scalar v1 (OpenAPI 3.0)
+
+---
+
+## Running the Development Server
+
+```bash
+cd BACKEND
+venv\Scripts\activate          # Windows
+# source venv/bin/activate    # macOS / Linux
+
+python manage.py runserver
+```
+
+Expected output:
+
+```
+Watching for file changes with StatReloader
+Performing system checks...
+
+System check identified no issues (0 silenced).
+Django version 4.2.x, using settings 'config.settings'
+Starting development server at http://127.0.0.1:8000/
+Quit the server with CTRL-BREAK.
+```
+
+### Available URLs
+
+| URL | Description |
+|-----|-------------|
+| http://localhost:8000/api/docs/ | **Scalar** interactive API reference (recommended) |
+| http://localhost:8000/api/redoc/ | ReDoc alternative API view |
+| http://localhost:8000/api/schema/ | Raw OpenAPI 3.0 JSON schema |
+| http://localhost:8000/admin/ | Django admin panel |
+
+> Open **http://localhost:8000/api/docs/** to browse and test every endpoint directly in the browser — no Postman needed.
 
 ---
 
