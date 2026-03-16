@@ -39,6 +39,35 @@ class ErrorSchema(serializers.Serializer):
     error = serializers.CharField()
 
 
+class ProfileResponseSchema(serializers.Serializer):
+    """Full user profile — returned by GET/PUT /api/profile/<pk>/."""
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField()
+    last_name = serializers.CharField()
+    phone = serializers.CharField(allow_blank=True)
+    bio = serializers.CharField(allow_blank=True)
+    avatar_url = serializers.CharField(allow_blank=True)
+    date_joined = serializers.CharField(allow_null=True)
+
+
+class UpdateProfileRequestSchema(serializers.Serializer):
+    """Request body for PUT /api/profile/<pk>/ — all fields optional."""
+    first_name = serializers.CharField(required=False)
+    last_name = serializers.CharField(required=False)
+    email = serializers.EmailField(required=False)
+    phone = serializers.CharField(required=False, allow_blank=True)
+    bio = serializers.CharField(required=False, allow_blank=True)
+    avatar_url = serializers.CharField(required=False, allow_blank=True)
+
+
+class ChangePasswordRequestSchema(serializers.Serializer):
+    """Request body for PUT /api/profile/<pk>/password/."""
+    current_password = serializers.CharField()
+    new_password = serializers.CharField(min_length=6)
+
+
 # ── Products ──────────────────────────────────────────────────────────
 
 class ProductResponseSchema(serializers.Serializer):

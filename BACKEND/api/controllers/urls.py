@@ -4,6 +4,12 @@ All endpoints are prefixed with /api/ by the root config/urls.py.
 """
 
 from django.urls import path
+from api.controllers.user_controller import (
+    ChangePasswordController,
+    LoginController,
+    ProfileDetailController,
+    RegisterController,
+)
 
 from api.controllers.product_controller import (
     LowStockController,
@@ -29,6 +35,13 @@ from api.controllers.dashboard_controller import (
 from api.controllers.sales_analytics_controller import SalesAnalyticsController
 
 urlpatterns = [
+    # ── Auth ──────────────────────────────────────────────────────────────
+    path("auth/register/", RegisterController.as_view(), name="register"),
+    path("auth/login/", LoginController.as_view(), name="login"),
+
+    # ── Profile ───────────────────────────────────────────────────────────
+    path("profile/<int:pk>/", ProfileDetailController.as_view(), name="profile-detail"),
+    path("profile/<int:pk>/password/", ChangePasswordController.as_view(), name="profile-password"),
     # ── Dashboard ─────────────────────────────────────────────────────────
     path("dashboard/", DashboardController.as_view(), name="dashboard"),
     path("dashboard/chart/", DashboardChartController.as_view(), name="dashboard-chart"),
