@@ -150,9 +150,11 @@ Inventory-Management-System-Haneus-Cafe-POS/
 ## Running the Development Server
 
 ```bash
-cd BACKEND
-venv\Scripts\activate          # Windows
-# source venv/bin/activate    # macOS / Linux
+python -m venv venv
+
+After that, activate it with:
+
+.\venv\Scripts\Activate.ps1
 
 python manage.py runserver
 ```
