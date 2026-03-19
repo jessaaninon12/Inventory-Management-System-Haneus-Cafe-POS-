@@ -1,19 +1,18 @@
 :root {
-  --bg-form:    #9B5C37;      /* warm brown */
-  --bg-visual:  #5D3A1F;      /* darker brown */
-  --text-light: #FFFFFF;      /* white text */
-  --input-bg:   #FFFFFF;      /* white inputs */
-  --text-dark:  #3c2f2f;      /* deep coffee brown for input text */
-  --accent:     #C4A57B;      /* golden accent */
-  --accent-dark:#B8956A;
-  --shadow:     0 8px 24px rgba(0,0,0,0.15);
+  --bg-form:     #9B5C37;
+  --bg-visual:   #5D3A1F;
+  --text-light:  #FFFFFF;
+  --input-bg:    #FFFFFF;
+  --text-dark:   #3c2f2f;
+  --accent:      #C4A57B;
+  --accent-dark: #A07550;
+  --accent-hover:#8e6640;
+  --shadow:      0 8px 24px rgba(0,0,0,0.18);
+  --radius:      12px;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
+/* ── Reset ────────────────────────────────────────────────────── */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
   font-family: 'Inter', system-ui, sans-serif;
@@ -23,10 +22,8 @@ body {
   overflow: hidden;
 }
 
-.split-screen {
-  display: flex;
-  height: 100vh;
-}
+/* ── Layout ────────────────────────────────────────────────── */
+.split-screen { display: flex; height: 100vh; }
 
 .auth-side {
   flex: 1;
@@ -35,155 +32,480 @@ body {
   justify-content: center;
   padding: 2rem;
   background: var(--bg-form);
+  overflow-y: auto;
 }
 
 .form-container {
   width: 100%;
-  max-width: 480px;
+  max-width: 440px;
 }
 
 h1 {
-  font-size: 2.1rem;
+  font-size: 2rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   text-align: center;
   color: var(--text-light);
 }
 
 .form-subtitle {
-  font-size: 0.95rem;
-  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.75);
   text-align: center;
-  margin-bottom: 2rem;
-  font-weight: 400;
+  margin-bottom: 1.2rem;
 }
 
-.input-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  position: relative;
+/* ── Step Indicators ─────────────────────────────────────── */
+.step-indicators {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
   margin-bottom: 1.4rem;
 }
 
-.input-group input {
-  width: 100%;
-  padding: 1rem 1rem 1rem 3.2rem;
-  border: none;
-  border-radius: 12px;
+.step-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  transition: background 0.35s, transform 0.35s;
+}
+
+.step-dot.active {
+  background: var(--accent);
+  transform: scale(1.25);
+}
+
+.step-line {
+  width: 60px;
+  height: 2px;
+  background: rgba(255,255,255,0.2);
+  margin: 0 8px;
+}
+
+/* ── Input Group + Floating Label ──────────────────────────── */
+.input-group {
+  position: relative;
   background: var(--input-bg);
-  font-size: 1rem;
-  color: var(--text-dark);
+  border-radius: var(--radius);
   box-shadow: var(--shadow);
-  transition: all 0.2s ease;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+  transition: box-shadow 0.2s, transform 0.2s;
 }
 
-.input-group input:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(196,123,66,0.18), var(--shadow);
+.input-group:focus-within {
+  box-shadow: 0 0 0 2.5px rgba(196,165,123,0.45), var(--shadow);
 }
 
-.input-group svg {
+/* Float-group adds top padding for the floating label */
+.float-group {
+  padding: 20px 14px 8px 46px;
+}
+
+/* Icon (left-anchored) */
+.field-icon {
   position: absolute;
-  left: 1.1rem;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  font-size: 15px;
   color: var(--accent);
+  pointer-events: none;
 }
 
-.password-wrapper {
-  position: relative;
+/* Floating label */
+.float-group label {
+  position: absolute;
+  left: 46px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.95rem;
+  color: #999;
+  pointer-events: none;
+  transition: top 0.22s ease, font-size 0.22s ease, color 0.22s ease, transform 0.22s ease;
+  line-height: 1;
 }
 
-.btn-signup {
-  width: 60%;
-  margin: 1.8rem auto 1.6rem;
-  display: block;
-  padding: 0.95rem;
-  background: var(--accent);
-  color: white;
+/* Float up when filled or focused (placeholder=" " trick) */
+.float-group input:not(:placeholder-shown) ~ label,
+.float-group input:focus ~ label {
+  top: 7px;
+  font-size: 0.68rem;
+  color: var(--accent);
+  transform: none;
+}
+
+/* Inputs inside float-group */
+.float-group input,
+.float-group select {
+  flex: 1;
   border: none;
-  border-radius: 12px;
-  font-size: 1rem;
+  outline: none;
+  background: transparent;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  font-family: 'Inter', system-ui, sans-serif;
+  padding-top: 2px;
+}
+
+.float-group input:focus { outline: none; }
+
+/* ── Select Group ─────────────────────────────────────────── */
+.select-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  color: var(--text-dark);
+}
+
+.select-group select option { color: var(--text-dark); background: #fff; }
+
+.select-arrow {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: #aaa;
+  pointer-events: none;
+}
+
+/* Float select label up when group has .active class (set by JS) */
+.select-group.active label {
+  top: 7px;
+  font-size: 0.68rem;
+  color: var(--accent);
+  transform: none;
+}
+
+/* ── Password toggle ───────────────────────────────────────── */
+.toggle-pw {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  color: #aaa;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.toggle-pw:hover { color: #666; }
+
+/* ── Details/summary Dropdown (register) ─────────────────── */
+.reg-drop-wrap {
+  padding: 0;
+  align-items: stretch;
+  min-height: 52px;
+  cursor: pointer;
+}
+
+.reg-drop-wrap .drop-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
+  color: var(--accent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.reg-drop-wrap .custom-dropdown {
+  flex: 1;
+  position: static;
+  user-select: none;
+}
+
+.reg-drop-wrap .custom-dropdown summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 14px 14px 40px;
+  cursor: pointer;
+  font-size: 0.92rem;
+  color: #999;
+  font-family: 'Inter', system-ui, sans-serif;
+  border-radius: var(--radius);
+  min-height: 52px;
+  box-sizing: border-box;
+}
+
+.reg-drop-wrap .custom-dropdown summary::-webkit-details-marker { display: none; }
+.reg-drop-wrap .custom-dropdown summary::marker { display: none; }
+
+.reg-drop-wrap .custom-dropdown.selected summary {
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.reg-drop-wrap .drop-chevron {
+  font-size: 11px;
+  color: #aaa;
+  transition: transform 0.22s;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.reg-drop-wrap .custom-dropdown[open] .drop-chevron {
+  transform: rotate(180deg);
+}
+
+.reg-drop-wrap .dropdown-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+  z-index: 9999;
+  list-style: none;
+  overflow: hidden;
+  padding: 4px 0;
+  border: 1px solid rgba(0,0,0,0.07);
+  animation: regDropIn 0.18s ease;
+}
+
+@keyframes regDropIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reg-drop-wrap .dropdown-menu li {
+  padding: 12px 18px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--text-dark);
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reg-drop-wrap .dropdown-menu li:hover {
+  background: rgba(196,165,123,0.15);
+  color: var(--accent-dark);
+}
+
+.reg-drop-wrap .dropdown-menu li i {
+  font-size: 12px;
+  color: var(--accent);
+  width: 14px;
+  text-align: center;
+}
+
+/* ── Wizard ───────────────────────────────────────────────────── */
+.wizard-wrapper {
+  overflow: hidden;   /* clips step 2 out of view; dropdown uses position:fixed */
+  width: 100%;        /* explicit width so step percentage resolves correctly */
+  padding-top: 2px;
+}
+
+.wizard-track {
+  display: flex;
+  flex-wrap: nowrap;
+  width: 200%;        /* exactly 2 steps wide — each step gets 50% = 100% of wrapper */
+  transition: transform 0.42s cubic-bezier(0.4, 0, 0.2, 1);
+  /* NOTE: will-change:transform is intentionally omitted — it creates a CSS
+     containing block that traps position:fixed children (the dropdown menu)
+     inside overflow:hidden on .wizard-wrapper, making the menu invisible. */
+}
+
+.wizard-step {
+  width: 50%;         /* 50% of 200%-wide track = full wrapper width */
+  min-width: 0;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: none;
+  padding: 0;
+}
+
+/* ── Step Navigation Buttons ─────────────────────────────────── */
+.step-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.2rem;
+  gap: 0.8rem;
+}
+
+.btn-nav {
+  padding: 0.7rem 1.4rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  box-shadow: var(--shadow);
-  transition: all 0.2s ease;
+  text-decoration: none;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background 0.22s, transform 0.22s, box-shadow 0.22s;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
 
-.btn-signup:hover {
-  background: var(--accent-dark);
+.btn-prev {
+  background: rgba(255,255,255,0.15);
+  color: var(--text-light);
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+.btn-prev:hover {
+  background: rgba(255,255,255,0.25);
   transform: translateY(-1px);
 }
 
-.divider {
+.btn-next {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow);
+  margin-left: auto;
+}
+
+.btn-next:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.btn-submit {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow);
+  margin-left: auto;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.22);
+}
+
+.btn-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Error Banner ───────────────────────────────────────── */
+.reg-error-msg {
+  background: rgba(220,53,69,0.18);
+  border: 1px solid rgba(220,53,69,0.4);
+  color: #ffe0e3;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  margin-bottom: 0.8rem;
+}
+
+/* ── Full-page register success overlay ───────────────────── */
+.reg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(61,32,15,0.65);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 99998;
   display: flex;
   align-items: center;
-  margin: 1.4rem 0 1rem;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.9rem;
+  justify-content: center;
+  animation: roFadeIn 0.3s ease;
 }
 
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.2);
+@keyframes roFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
-.divider span {
-  padding: 0 1.2rem;
-}
-
-.login-link {
+.reg-overlay-card {
+  background: rgba(93,58,31,0.93);
+  border: 1px solid rgba(255,255,255,0.22);
+  border-radius: 22px;
+  padding: 52px 60px;
   text-align: center;
-  font-size: 0.95rem;
-  color: var(--text-light);
-  margin-top: 0.8rem;
-}
-
-.login-link a {
-  color: var(--accent);
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.login-link a:hover {
-  text-decoration: underline;
-}
-
-.terms-agreement {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.8rem;
-  margin: 1.5rem 0 1.8rem;
-  color: var(--text-light);
-  font-size: 0.9rem;
+  gap: 28px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 28px 64px rgba(0,0,0,0.45);
+  animation: roCardIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
 }
 
-.terms-agreement input[type="checkbox"] {
-  accent-color: var(--accent);
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
+@keyframes roCardIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
 }
 
-.terms-link {
-  color: var(--accent);
-  text-decoration: none;
-  font-weight: 500;
+.reg-success-msg {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.3px;
+  line-height: 1.3;
 }
 
-.terms-link:hover {
-  text-decoration: underline;
+/* ── PL Spinner (register theme) ─────────────────────────── */
+.pl {
+  width: 6em;
+  height: 6em;
 }
 
-/* Right: Visual */
+.pl__ring { animation: ringA 2s linear infinite; }
+
+.pl__ring--a { stroke: var(--accent);      animation-name: ringA; }
+.pl__ring--b { stroke: var(--bg-form);     animation-name: ringB; }
+.pl__ring--c { stroke: var(--bg-visual);   animation-name: ringC; }
+.pl__ring--d { stroke: var(--accent-dark); animation-name: ringD; }
+
+@keyframes ringA {
+  from,4%  {stroke-dasharray:0 660;stroke-width:20;stroke-dashoffset:-330}
+  12%      {stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-335}
+  32%      {stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-595}
+  40%,54%  {stroke-dasharray:0 660;stroke-width:20;stroke-dashoffset:-660}
+  62%      {stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-665}
+  82%      {stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-925}
+  90%,to   {stroke-dasharray:0 660;stroke-width:20;stroke-dashoffset:-990}
+}
+@keyframes ringB {
+  from,12% {stroke-dasharray:0 220;stroke-width:20;stroke-dashoffset:-110}
+  20%      {stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-115}
+  40%      {stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-195}
+  48%,62%  {stroke-dasharray:0 220;stroke-width:20;stroke-dashoffset:-220}
+  70%      {stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-225}
+  90%      {stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-305}
+  98%,to   {stroke-dasharray:0 220;stroke-width:20;stroke-dashoffset:-330}
+}
+@keyframes ringC {
+  from     {stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:0}
+  8%       {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-5}
+  28%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-175}
+  36%,58%  {stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-220}
+  66%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-225}
+  86%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-395}
+  94%,to   {stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-440}
+}
+@keyframes ringD {
+  from,8%  {stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:0}
+  16%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-5}
+  36%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-175}
+  44%,50%  {stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-220}
+  58%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-225}
+  78%      {stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-395}
+  86%,to   {stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-440}
+}
+
+/* ── Visual Side ────────────────────────────────────────────── */
 .visual-side {
   flex: 1;
   background: linear-gradient(135deg, #5D3A1F 0%, #8B5A34 50%, #9B5C37 100%);
@@ -195,28 +517,24 @@ h1 {
 }
 
 .visual-side::before {
-  content: 'D COFFEE';
+  content: 'HANEUS CAFE';
   position: absolute;
-  font-size: 10rem;
+  font-size: 7rem;
   font-weight: 900;
-  color: rgba(255, 255, 255, 0.08);
+  color: rgba(255,255,255,0.07);
   letter-spacing: -0.02em;
   text-align: center;
   white-space: nowrap;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
   z-index: 1;
 }
 
+/* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1023px) {
-  .split-screen {
-    flex-direction: column;
-  }
-  .visual-side {
-    display: none;
-  }
-  .auth-side {
-    padding: 1.5rem;
-  }
-  .form-container {
-    max-width: 420px;
-  }
+  .split-screen { flex-direction: column; }
+  .visual-side  { display: none; }
+  .auth-side    { padding: 1.5rem; }
+  .form-container { max-width: 420px; }
+  body { overflow-y: auto; }
 }

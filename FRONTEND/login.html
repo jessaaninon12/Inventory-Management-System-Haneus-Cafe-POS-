@@ -4,15 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>User Login</title>
-
-<!-- Google Font -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-
-<!-- Font Awesome -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="css/login.css">
+<link rel="stylesheet" href="css/login.css">
 </head>
 <body>
 
@@ -28,29 +22,74 @@
   <div class="right">
     <h2>USER LOGIN</h2>
 
-    <div class="input-group">
-      <i class="fa-regular fa-user"></i>
-      <input type="text" placeholder="Username">
-    </div>
+    <form id="loginForm">
 
-    <div class="input-group">
-      <i class="fa-solid fa-lock"></i>
-      <input type="password" id="password" placeholder="Password">
-      <i class="fa-regular fa-eye" id="togglePasswordIcon" style="cursor:pointer; display:none;"></i>
-    </div>
+      <!-- 1. Account Type (details/summary dropdown) -->
+      <div class="input-group login-drop-wrap" id="userTypeGroup">
+        <i class="fa-solid fa-user-tag drop-icon"></i>
+        <details class="custom-dropdown" id="userTypeDropdown">
+          <summary>
+            <span id="userTypeDisplay">Account Type</span>
+            <i class="fa-solid fa-chevron-down drop-chevron" id="dropChevron"></i>
+          </summary>
+          <ul class="dropdown-menu">
+            <li data-value="Admin"><i class="fa-solid fa-crown"></i> Admin</li>
+            <li data-value="Staff"><i class="fa-solid fa-user"></i> Staff</li>
+          </ul>
+        </details>
+        <input type="hidden" id="userType" name="userType" value="">
+      </div>
 
-    <div class="options">
-      <label><input type="checkbox"> Remember me</label>
-    </div>
+      <!-- 2. Username -->
+      <div class="input-group float-group">
+        <i class="fa-regular fa-user"></i>
+        <input type="text" id="username" name="username" placeholder=" " autocomplete="username" required>
+        <label for="username">Username</label>
+      </div>
 
-    <button class="login-btn">Login</button>
+      <!-- 3. Password -->
+      <div class="input-group float-group">
+        <i class="fa-solid fa-lock"></i>
+        <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password" required>
+        <label for="password">Password</label>
+        <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password visibility">
+          <i class="fa-regular fa-eye" id="togglePwIcon"></i>
+        </button>
+      </div>
+
+      <div class="options">
+        <label><input type="checkbox" name="rememberMe"> Remember me</label>
+      </div>
+
+      <div id="errorMsg" class="error-msg" style="display:none;"></div>
+
+      <button type="submit" id="loginBtn" class="login-btn">Login</button>
+
+    </form>
 
     <div class="register">
-      Don’t have an account? <a href="register.html">Register</a>
+      Don't have an account? <a href="register.html">Register</a>
     </div>
 
   </div>
 
+</div>
+
+<!-- ── Full-page login success overlay ───────────────────── -->
+<div id="loginSuccessOverlay" class="login-overlay" style="display:none;">
+  <div class="login-overlay-card">
+    <p id="welcomeMsg" class="welcome-msg"></p>
+    <svg class="pl" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+      <circle class="pl__ring pl__ring--a" cx="120" cy="120" r="105" fill="none"
+        stroke-width="20" stroke-dasharray="0 660" stroke-dashoffset="-330" stroke-linecap="round"/>
+      <circle class="pl__ring pl__ring--b" cx="120" cy="120" r="35" fill="none"
+        stroke-width="20" stroke-dasharray="0 220" stroke-dashoffset="-110" stroke-linecap="round"/>
+      <circle class="pl__ring pl__ring--c" cx="85" cy="120" r="70" fill="none"
+        stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
+      <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none"
+        stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
+    </svg>
+  </div>
 </div>
 
 <script src="js/login.js"></script>

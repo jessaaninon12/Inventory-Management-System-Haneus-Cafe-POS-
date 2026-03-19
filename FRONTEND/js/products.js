@@ -14,7 +14,7 @@ function statusBadge(stockStatus) {
 async function loadProducts() {
   const tbody = document.getElementById('productTableBody');
   try {
-    const res = await fetch(`${API}/products/`);
+    const res = await fetch(`${API}/products/view/`);
     const data = await res.json();
     const products = data.results || data;
     if (!products.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No products found.</td></tr>'; return; }
@@ -53,7 +53,7 @@ document.getElementById('editForm').addEventListener('submit', async function(e)
     stock: parseInt(document.getElementById('editStock').value),
   };
   try {
-    const res = await fetch(`${API}/products/${currentEditingProductId}/`, {
+    const res = await fetch(`${API}/products/edit/${currentEditingProductId}/`, {
       method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
     });
     if (!res.ok) { const err = await res.json(); alert(JSON.stringify(err)); return; }
@@ -72,7 +72,7 @@ function closeDeleteModal() { document.getElementById('deleteModal').style.displ
 
 async function confirmDelete() {
   try {
-    const res = await fetch(`${API}/products/${currentDeletingProductId}/`, { method: 'DELETE' });
+    const res = await fetch(`${API}/products/delete/${currentDeletingProductId}/`, { method: 'DELETE' });
     if (res.status === 204 || res.ok) {
       alert('Product deleted successfully!');
       closeDeleteModal();

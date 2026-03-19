@@ -66,6 +66,8 @@ class RegisterController(APIView):
                 username=request.data.get("username", ""),
                 email=request.data.get("email", ""),
                 password=request.data.get("password", ""),
+                confirm_password=request.data.get("confirm_password", ""),
+                user_type=request.data.get("user_type", "Staff"),
             )
             user_dto = service.register(dto)
             return Response(
@@ -97,6 +99,7 @@ class LoginController(APIView):
         dto = LoginDTO(
             username=request.data.get("username", ""),
             password=request.data.get("password", ""),
+            user_type=request.data.get("user_type", ""),
         )
         user_dto = service.login(dto)
         if user_dto is None:
@@ -186,3 +189,272 @@ class ChangePasswordController(APIView):
             return Response({"success": True, "message": "Password updated successfully."})
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ---------------------------------------------------------------------------
+# Admin user management  — /api/users/admin/*
+# ---------------------------------------------------------------------------
+
+class AdminUserListController(APIView):
+    """
+    GET /api/users/admin/view/  → list all Admin users
+    """
+
+    @extend_schema(tags=["Users – Admin"], responses=ProfileResponseSchema(many=True))
+    def get(self, request):
+        service = _get_service()
+        users = service.get_all_users_by_type("Admin")
+        return Response([u.to_dict() for u in users])
+
+
+class AdminUserDetailController(APIView):
+    """
+    GET /api/users/admin/view/<pk>/  → retrieve a single Admin user
+    """
+
+    @extend_schema(tags=["Users – Admin"], responses={200: ProfileResponseSchema, 404: ErrorSchema})
+    def get(self, request, pk):
+        service = _get_service()
+        user = service.get_profile(pk)
+        if user is None or user.user_type != "Admin":
+            return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(user.to_dict())
+
+
+class AdminUserCreateController(APIView):
+    """
+    POST /api/users/admin/create/  → register a new Admin user
+    """
+
+    @extend_schema(
+        tags=["Users – Admin"],
+        request=RegisterRequestDoc,
+        responses={201: AuthSuccessSchema, 400: ErrorSchema},
+    )
+    def post(self, request):
+        service = _get_service()
+        try:
+            dto = CreateUserDTO(
+                first_name=request.data.get("first_name", ""),
+                last_name=request.data.get("last_name", ""),
+                username=request.data.get("username", ""),
+                email=request.data.get("email", ""),
+                password=request.data.get("password", ""),
+                confirm_password=request.data.get("confirm_password", ""),
+                user_type="Admin",
+            )
+            user_dto = service.register(dto)
+            return Response({"success": True, "user": user_dto.to_dict()}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            errors = e.args[0]
+            if isinstance(errors, list):
+                return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(errors)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminUserEditController(APIView):
+    """
+    PUT /api/users/admin/edit/<pk>/  → full profile update for an Admin user
+    """
+
+    @extend_schema(
+        tags=["Users – Admin"],
+        request=UpdateProfileRequestSchema,
+        responses={200: ProfileResponseSchema, 404: ErrorSchema},
+    )
+    def put(self, request, pk):
+        service = _get_service()
+        # Verify the target user is an Admin
+        existing = service.get_profile(pk)
+        if existing is None or existing.user_type != "Admin":
+            return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
+        dto = UpdateUserDTO(
+            first_name=request.data.get("first_name"),
+            last_name=request.data.get("last_name"),
+            email=request.data.get("email"),
+            phone=request.data.get("phone"),
+            bio=request.data.get("bio"),
+            avatar_url=request.data.get("avatar_url"),
+        )
+        user_dto = service.update_profile(pk, dto)
+        if user_dto is None:
+            return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(user_dto.to_dict())
+
+
+class AdminUserDeleteController(APIView):
+    """
+    DELETE /api/users/admin/delete/<pk>/  → remove an Admin user
+    """
+
+    @extend_schema(tags=["Users – Admin"], responses={204: None, 404: ErrorSchema})
+    def delete(self, request, pk):
+        service = _get_service()
+        existing = service.get_profile(pk)
+        if existing is None or existing.user_type != "Admin":
+            return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
+        service.delete_user(pk)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdminUserPartialEditController(APIView):
+    """
+    PATCH /api/users/admin/partialedit/<pk>/  → partial update (only supplied fields)
+    """
+
+    @extend_schema(
+        tags=["Users – Admin"],
+        request=UpdateProfileRequestSchema,
+        responses={200: ProfileResponseSchema, 404: ErrorSchema},
+    )
+    def patch(self, request, pk):
+        service = _get_service()
+        existing = service.get_profile(pk)
+        if existing is None or existing.user_type != "Admin":
+            return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
+        dto = UpdateUserDTO(
+            first_name=request.data.get("first_name"),
+            last_name=request.data.get("last_name"),
+            email=request.data.get("email"),
+            phone=request.data.get("phone"),
+            bio=request.data.get("bio"),
+            avatar_url=request.data.get("avatar_url"),
+        )
+        user_dto = service.update_profile(pk, dto)
+        if user_dto is None:
+            return Response({"error": "Admin user not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(user_dto.to_dict())
+
+
+# ---------------------------------------------------------------------------
+# Staff user management  — /api/users/staff/*
+# ---------------------------------------------------------------------------
+
+class StaffUserListController(APIView):
+    """
+    GET /api/users/staff/view/  → list all Staff users
+    """
+
+    @extend_schema(tags=["Users – Staff"], responses=ProfileResponseSchema(many=True))
+    def get(self, request):
+        service = _get_service()
+        users = service.get_all_users_by_type("Staff")
+        return Response([u.to_dict() for u in users])
+
+
+class StaffUserDetailController(APIView):
+    """
+    GET /api/users/staff/view/<pk>/  → retrieve a single Staff user
+    """
+
+    @extend_schema(tags=["Users – Staff"], responses={200: ProfileResponseSchema, 404: ErrorSchema})
+    def get(self, request, pk):
+        service = _get_service()
+        user = service.get_profile(pk)
+        if user is None or user.user_type != "Staff":
+            return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(user.to_dict())
+
+
+class StaffUserCreateController(APIView):
+    """
+    POST /api/users/staff/create/  → register a new Staff user
+    """
+
+    @extend_schema(
+        tags=["Users – Staff"],
+        request=RegisterRequestDoc,
+        responses={201: AuthSuccessSchema, 400: ErrorSchema},
+    )
+    def post(self, request):
+        service = _get_service()
+        try:
+            dto = CreateUserDTO(
+                first_name=request.data.get("first_name", ""),
+                last_name=request.data.get("last_name", ""),
+                username=request.data.get("username", ""),
+                email=request.data.get("email", ""),
+                password=request.data.get("password", ""),
+                confirm_password=request.data.get("confirm_password", ""),
+                user_type="Staff",
+            )
+            user_dto = service.register(dto)
+            return Response({"success": True, "user": user_dto.to_dict()}, status=status.HTTP_201_CREATED)
+        except ValueError as e:
+            errors = e.args[0]
+            if isinstance(errors, list):
+                return Response({"errors": errors}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": str(errors)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StaffUserEditController(APIView):
+    """
+    PUT /api/users/staff/edit/<pk>/  → full profile update for a Staff user
+    """
+
+    @extend_schema(
+        tags=["Users – Staff"],
+        request=UpdateProfileRequestSchema,
+        responses={200: ProfileResponseSchema, 404: ErrorSchema},
+    )
+    def put(self, request, pk):
+        service = _get_service()
+        existing = service.get_profile(pk)
+        if existing is None or existing.user_type != "Staff":
+            return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
+        dto = UpdateUserDTO(
+            first_name=request.data.get("first_name"),
+            last_name=request.data.get("last_name"),
+            email=request.data.get("email"),
+            phone=request.data.get("phone"),
+            bio=request.data.get("bio"),
+            avatar_url=request.data.get("avatar_url"),
+        )
+        user_dto = service.update_profile(pk, dto)
+        if user_dto is None:
+            return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(user_dto.to_dict())
+
+
+class StaffUserDeleteController(APIView):
+    """
+    DELETE /api/users/staff/delete/<pk>/  → remove a Staff user
+    """
+
+    @extend_schema(tags=["Users – Staff"], responses={204: None, 404: ErrorSchema})
+    def delete(self, request, pk):
+        service = _get_service()
+        existing = service.get_profile(pk)
+        if existing is None or existing.user_type != "Staff":
+            return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
+        service.delete_user(pk)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class StaffUserPartialEditController(APIView):
+    """
+    PATCH /api/users/staff/partialedit/<pk>/  → partial update (only supplied fields)
+    """
+
+    @extend_schema(
+        tags=["Users – Staff"],
+        request=UpdateProfileRequestSchema,
+        responses={200: ProfileResponseSchema, 404: ErrorSchema},
+    )
+    def patch(self, request, pk):
+        service = _get_service()
+        existing = service.get_profile(pk)
+        if existing is None or existing.user_type != "Staff":
+            return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
+        dto = UpdateUserDTO(
+            first_name=request.data.get("first_name"),
+            last_name=request.data.get("last_name"),
+            email=request.data.get("email"),
+            phone=request.data.get("phone"),
+            bio=request.data.get("bio"),
+            avatar_url=request.data.get("avatar_url"),
+        )
+        user_dto = service.update_profile(pk, dto)
+        if user_dto is None:
+            return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
+        return Response(user_dto.to_dict())

@@ -54,7 +54,7 @@ async function loadLowStock() {
 // ---------- Restock Modal ----------
 function openRestockModal(productId) {
   // Fetch product detail so we have current data
-  fetch(`${API}/products/${productId}/`)
+  fetch(`${API}/products/view/${productId}/`)
     .then(r => r.json())
     .then(p => {
       currentRestockingProduct = p;
@@ -111,7 +111,7 @@ document.getElementById('restockForm').addEventListener('submit', async function
 
 // ---------- View Modal ----------
 function openViewModal(productId) {
-  fetch(`${API}/products/${productId}/`)
+  fetch(`${API}/products/view/${productId}/`)
     .then(r => r.json())
     .then(p => {
       currentViewingProduct = p;

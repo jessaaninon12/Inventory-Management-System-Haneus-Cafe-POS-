@@ -9,7 +9,7 @@ let loadedProducts = [];
 async function loadProducts() {
   const tbody = document.getElementById('stockTableBody');
   try {
-    const res = await fetch(`${API}/products/`);
+    const res = await fetch(`${API}/products/view/`);
     const data = await res.json();
     const products = data.results || data;
     loadedProducts = products;

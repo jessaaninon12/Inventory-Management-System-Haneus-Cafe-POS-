@@ -6,7 +6,45 @@ where Django ORM is used.  Repositories translate between these models
 and the domain entities.
 """
 
+from django.conf import settings
 from django.db import models
+
+
+# ------------------------------------------------------------------
+# User role tables
+# ------------------------------------------------------------------
+class UserAdminModel(models.Model):
+    """Maps to the ``useradmin`` table. One row per Admin-type user."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="admin_profile",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "useradmin"
+
+    def __str__(self):
+        return f"Admin: {self.user.username}"
+
+
+class UserStaffModel(models.Model):
+    """Maps to the ``userstaff`` table. One row per Staff-type user."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="staff_profile",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "userstaff"
+
+    def __str__(self):
+        return f"Staff: {self.user.username}"
 
 
 # ------------------------------------------------------------------

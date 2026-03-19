@@ -28,9 +28,17 @@ class UserService:
         )
         errors = entity.validate()
 
+        # user_type validation
+        if dto.user_type not in ("Admin", "Staff"):
+            errors.append("Account type must be Admin or Staff.")
+
         # Password length check
         if not dto.password or len(str(dto.password)) < 6:
             errors.append("Password must be at least 6 characters.")
+
+        # Confirm password check
+        if dto.confirm_password and dto.password != dto.confirm_password:
+            errors.append("Passwords do not match.")
 
         # Uniqueness checks via repository
         if dto.username and self.repository.username_exists(dto.username):
@@ -69,8 +77,8 @@ class UserService:
     # ------------------------------------------------------------------
 
     def login(self, dto):
-        """Authenticate credentials. Returns UserDTO on success, None on failure."""
-        user = self.repository.authenticate(dto.username, dto.password)
+        """Authenticate credentials (and user_type). Returns UserDTO on success, None on failure."""
+        user = self.repository.authenticate(dto.username, dto.password, dto.user_type)
         if user is None:
             return None
         return UserDTO.from_entity(user)
@@ -88,3 +96,12 @@ class UserService:
         if saved is None:
             return None
         return UserDTO.from_entity(saved)
+
+    def get_all_users_by_type(self, user_type):
+        """Return a list of UserDTOs filtered by user_type ('Admin' or 'Staff')."""
+        entities = self.repository.get_all_by_type(user_type)
+        return [UserDTO.from_entity(e) for e in entities]
+
+    def delete_user(self, user_id):
+        """Delete a user by ID. Returns True on success, False if not found."""
+        return self.repository.delete(user_id)
