@@ -17,6 +17,7 @@ class UserDTO:
         bio="",
         avatar_url="",
         date_joined=None,
+        user_type="Staff",
     ):
         self.id = id
         self.username = username
@@ -27,6 +28,7 @@ class UserDTO:
         self.bio = bio
         self.avatar_url = avatar_url
         self.date_joined = date_joined
+        self.user_type = user_type
 
     @staticmethod
     def from_entity(entity):
@@ -40,6 +42,7 @@ class UserDTO:
             bio=entity.bio,
             avatar_url=entity.avatar_url,
             date_joined=entity.date_joined,
+            user_type=getattr(entity, "user_type", "Staff"),
         )
 
     def to_dict(self):
@@ -53,6 +56,7 @@ class UserDTO:
             "bio": self.bio,
             "avatar_url": self.avatar_url,
             "date_joined": str(self.date_joined) if self.date_joined else None,
+            "user_type": self.user_type,
         }
 
 
@@ -66,12 +70,16 @@ class CreateUserDTO:
         username="",
         email="",
         password="",
+        confirm_password="",
+        user_type="Staff",
     ):
         self.first_name = first_name
         self.last_name = last_name
         self.username = username
         self.email = email
         self.password = password
+        self.confirm_password = confirm_password
+        self.user_type = user_type
 
 
 class UpdateUserDTO:
@@ -89,9 +97,10 @@ class UpdateUserDTO:
 class LoginDTO:
     """Payload for login credentials."""
 
-    def __init__(self, username="", password=""):
+    def __init__(self, username="", password="", user_type=""):
         self.username = username
         self.password = password
+        self.user_type = user_type
 
 
 class ChangePasswordDTO:

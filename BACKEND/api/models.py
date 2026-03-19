@@ -3,11 +3,21 @@ from django.db import models
 
 
 class User(AbstractUser):
-    """Custom user model for admin accounts — stored in the 'users' table."""
+    """Custom user model — stored in the 'users' table."""
+
+    USER_TYPE_CHOICES = [
+        ("Admin", "Admin"),
+        ("Staff", "Staff"),
+    ]
 
     phone = models.CharField(max_length=30, blank=True, default="")
     bio = models.TextField(blank=True, default="")
     avatar_url = models.CharField(max_length=500, blank=True, default="")
+    user_type = models.CharField(
+        max_length=10,
+        choices=USER_TYPE_CHOICES,
+        default="Staff",
+    )
 
     class Meta:
         db_table = "users"

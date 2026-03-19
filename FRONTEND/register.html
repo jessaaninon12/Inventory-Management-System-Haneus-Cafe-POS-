@@ -4,76 +4,162 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Haneus Café — Sign Up</title>
-  
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- LucideIconsCDN -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
   <link rel="stylesheet" href="css/register.css">
 </head>
 <body>
 
 <div class="split-screen">
 
-  <!-- Left:Sign Up Form -->
+  <!-- Left: Sign Up Form -->
   <div class="auth-side">
     <div class="form-container">
+
       <h1>REGISTER</h1>
       <p class="form-subtitle">Create New Account</p>
 
-      <form id="signupForm">
-        <div class="input-row">
-          <div class="input-group">
-            <i data-lucide="user"></i>
-            <input type="text" name="firstName" placeholder="First Name" required autocomplete="given-name">
-          </div>
-          <div class="input-group">
-            <i data-lucide="user"></i>
-            <input type="text" name="lastName" placeholder="Last Name" required autocomplete="family-name">
-          </div>
-        </div>
+      <!-- Step Indicators -->
+      <div class="step-indicators">
+        <div class="step-dot active" id="dot1"></div>
+        <div class="step-line"></div>
+        <div class="step-dot" id="dot2"></div>
+      </div>
 
-        <div class="input-row">
-          <div class="input-group">
-            <i data-lucide="user"></i>
-            <input type="text" name="username" placeholder="User Name" required autocomplete="username">
-          </div>
-          <div class="input-group">
-            <i data-lucide="mail"></i>
-            <input type="email" name="email" placeholder="Email Address" required autocomplete="email">
-          </div>
-        </div>
+      <!-- Success card removed — replaced by full-page overlay below -->
 
-        <div class="input-row">
-          <div class="input-group password-wrapper">
-            <i data-lucide="lock"></i>
-            <input type="password" id="password" name="password" placeholder="Password" required autocomplete="new-password">
-          </div>
-          <div class="input-group password-wrapper">
-            <i data-lucide="lock"></i>
-            <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" required autocomplete="new-password">
-          </div>
-        </div>
+      <!-- Error Banner -->
+      <div id="regErrorMsg" class="reg-error-msg" style="display:none;"></div>
 
-        <div class="terms-agreement">
-          <input type="checkbox" id="agreeTerms" name="agreeTerms" required />
-          <label for="agreeTerms">I agree to the <a href="#" class="terms-link">Terms & Privacy</a></label>
-        </div>
+      <form id="signupForm" novalidate>
 
-        <button type="submit" class="btn-signup">Sign Up</button>
+        <!-- Wizard wrapper -->
+        <div class="wizard-wrapper">
+          <div class="wizard-track" id="wizardTrack">
+
+            <!-- ─ STEP 1: Personal info + account type ─ -->
+            <fieldset class="wizard-step" id="step1">
+
+              <!-- First Name -->
+              <div class="input-group float-group">
+                <i class="fa-regular fa-user field-icon"></i>
+                <input type="text" id="firstName" name="firstName"
+                       placeholder=" " autocomplete="given-name" required>
+                <label for="firstName">First Name</label>
+              </div>
+
+              <!-- Last Name -->
+              <div class="input-group float-group">
+                <i class="fa-regular fa-user field-icon"></i>
+                <input type="text" id="lastName" name="lastName"
+                       placeholder=" " autocomplete="family-name" required>
+                <label for="lastName">Last Name</label>
+              </div>
+
+              <!-- Account Type (details/summary dropdown) -->
+              <div class="input-group reg-drop-wrap" id="userTypeGroup">
+                <i class="fa-solid fa-shield-halved drop-icon"></i>
+                <details class="custom-dropdown" id="userTypeDropdown">
+                  <summary>
+                    <span id="userTypeDisplay">Account Type</span>
+                    <i class="fa-solid fa-chevron-down drop-chevron"></i>
+                  </summary>
+                  <ul class="dropdown-menu">
+                    <li data-value="Admin"><i class="fa-solid fa-crown"></i> Admin</li>
+                    <li data-value="Staff"><i class="fa-solid fa-user"></i> Staff</li>
+                  </ul>
+                </details>
+                <input type="hidden" id="userType" name="userType" value="">
+              </div>
+
+              <!-- Step 1 nav -->
+              <div class="step-nav">
+                <a href="login.html" class="btn-nav btn-prev">← Back to Login</a>
+                <button type="button" id="nextBtn" class="btn-nav btn-next">Next →</button>
+              </div>
+
+            </fieldset>
+
+            <!-- ─ STEP 2: Account credentials ─ -->
+            <fieldset class="wizard-step" id="step2">
+
+              <!-- Username -->
+              <div class="input-group float-group">
+                <i class="fa-solid fa-at field-icon"></i>
+                <input type="text" id="username" name="username"
+                       placeholder=" " autocomplete="username" required>
+                <label for="username">Username</label>
+              </div>
+
+              <!-- Email -->
+              <div class="input-group float-group">
+                <i class="fa-regular fa-envelope field-icon"></i>
+                <input type="email" id="email" name="email"
+                       placeholder=" " autocomplete="email" required>
+                <label for="email">Email Address</label>
+              </div>
+
+              <!-- Password -->
+              <div class="input-group float-group pw-group">
+                <i class="fa-solid fa-lock field-icon"></i>
+                <input type="password" id="password" name="password"
+                       placeholder=" " autocomplete="new-password" required>
+                <label for="password">Password</label>
+                <button type="button" class="toggle-pw" id="togglePw1" aria-label="Toggle password">
+                  <i class="fa-regular fa-eye" id="togglePw1Icon"></i>
+                </button>
+              </div>
+
+              <!-- Confirm Password -->
+              <div class="input-group float-group pw-group">
+                <i class="fa-solid fa-lock field-icon"></i>
+                <input type="password" id="confirmPassword" name="confirmPassword"
+                       placeholder=" " autocomplete="new-password" required>
+                <label for="confirmPassword">Confirm Password</label>
+                <button type="button" class="toggle-pw" id="togglePw2" aria-label="Toggle confirm password">
+                  <i class="fa-regular fa-eye" id="togglePw2Icon"></i>
+                </button>
+              </div>
+
+              <!-- Step 2 nav -->
+              <div class="step-nav">
+                <button type="button" id="prevBtn" class="btn-nav btn-prev">← Previous</button>
+                <button type="submit" id="submitBtn" class="btn-nav btn-submit">Create Account</button>
+              </div>
+
+            </fieldset>
+
+          </div><!-- /wizard-track -->
+        </div><!-- /wizard-wrapper -->
+
       </form>
 
-      <div class="login-link">
-        Already have an account? <a href="login.html">Login here.</a>
-      </div>
-    </div>
-  </div>
+    </div><!-- /form-container -->
+  </div><!-- /auth-side -->
 
-  <!-- Right: Aesthetic Panel (same sa login) -->
+  <!-- Right: Aesthetic Panel -->
   <div class="visual-side"></div>
 
+</div><!-- /split-screen -->
+
+<!-- ── Full-page register success overlay ──────────────── -->
+<div id="regSuccessOverlay" class="reg-overlay" style="display:none;">
+  <div class="reg-overlay-card">
+    <p id="regSuccessMsg" class="reg-success-msg"></p>
+    <svg class="pl" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+      <circle class="pl__ring pl__ring--a" cx="120" cy="120" r="105" fill="none"
+        stroke-width="20" stroke-dasharray="0 660" stroke-dashoffset="-330" stroke-linecap="round"/>
+      <circle class="pl__ring pl__ring--b" cx="120" cy="120" r="35" fill="none"
+        stroke-width="20" stroke-dasharray="0 220" stroke-dashoffset="-110" stroke-linecap="round"/>
+      <circle class="pl__ring pl__ring--c" cx="85" cy="120" r="70" fill="none"
+        stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
+      <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none"
+        stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
+    </svg>
+  </div>
 </div>
 
 <script src="js/register.js"></script>

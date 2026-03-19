@@ -20,6 +20,7 @@ class User:
         avatar_url="",
         date_joined=None,
         is_active=True,
+        user_type="Staff",
     ):
         self.id = id
         self.username = username
@@ -31,6 +32,7 @@ class User:
         self.avatar_url = avatar_url
         self.date_joined = date_joined or datetime.now()
         self.is_active = is_active
+        self.user_type = user_type
 
     # ------------------------------------------------------------------
     # Business rules

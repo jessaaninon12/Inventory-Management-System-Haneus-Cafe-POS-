@@ -3,6 +3,8 @@ Order application service — orchestrates business logic.
 Depends only on domain entities, DTOs, and the repository interface.
 """
 
+from typing import Optional
+
 from domain.entities.order import Order, OrderItem
 from domain.entities.inventory import InventoryTransaction
 from application.dtos.order_dto import OrderDTO
@@ -16,8 +18,8 @@ class OrderService:
     def __init__(
         self,
         repository: OrderRepositoryInterface,
-        inventory_repository: InventoryRepositoryInterface | None = None,
-        product_repository: ProductRepositoryInterface | None = None,
+        inventory_repository: Optional[InventoryRepositoryInterface] = None,
+        product_repository: Optional[ProductRepositoryInterface] = None,
     ):
         # Primary persistence for orders (create, update, read, delete)
         self.repository = repository

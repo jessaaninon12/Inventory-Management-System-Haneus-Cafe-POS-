@@ -175,12 +175,13 @@ Quit the server with CTRL-BREAK.
 
 | URL | Description |
 |-----|-------------|
-| http://localhost:8000/api/docs/ | **Scalar** interactive API reference (recommended) |
+| http://localhost:8000/api/scaler/v1 | **Scalar** interactive API reference — new canonical URL |
+| http://localhost:8000/api/docs/ | Scalar interactive API reference (legacy, still works) |
 | http://localhost:8000/api/redoc/ | ReDoc alternative API view |
 | http://localhost:8000/api/schema/ | Raw OpenAPI 3.0 JSON schema |
 | http://localhost:8000/admin/ | Django admin panel |
 
-> Open **http://localhost:8000/api/docs/** to browse and test every endpoint directly in the browser — no Postman needed.
+> Open **http://localhost:8000/api/scaler/v1** to browse and test every endpoint directly in the browser — no Postman needed.
 
 ---
 
@@ -276,7 +277,7 @@ python manage.py createsuperuser   # Optional
 python manage.py runserver
 ```
 
-Open **http://localhost:8000/api/docs/** to see the interactive API documentation.
+Open **http://localhost:8000/api/scaler/v1** to see the interactive API documentation.
 
 ---
 
@@ -531,13 +532,16 @@ All endpoints prefixed with `/api/`.
 - `POST /api/auth/register/` — Register a new user
 - `POST /api/auth/login/` — Authenticate and return user data
 
-### Products (Clean Architecture)
-- `GET /api/products/` — List all products
-- `POST /api/products/` — Create a product
-- `GET /api/products/<id>/` — Get product detail
-- `PUT /api/products/<id>/` — Update a product
-- `DELETE /api/products/<id>/` — Delete a product
+### Products
+- `GET /api/products/view/` — List all products
+- `GET /api/products/view/<id>/` — Get product detail
+- `POST /api/products/create/` — Create a product
+- `PUT /api/products/edit/<id>/` — Full update of a product
+- `DELETE /api/products/delete/<id>/` — Delete a product
+- `PATCH /api/products/partialedit/<id>/` — Partial update (only supplied fields are changed)
 - `GET /api/products/low-stock/` — List low-stock products
+
+> **PATCH** is used for partial updates — only the fields included in the request body are changed; all other fields remain untouched.
 
 ### Orders (Clean Architecture)
 - `GET /api/orders/` — List all orders
@@ -554,7 +558,23 @@ All endpoints prefixed with `/api/`.
 - `POST /api/inventory/adjust/` — Record a stock adjustment
 - `GET /api/inventory/<product_id>/history/` — Transaction history
 
-### Profile
+### Users — Admin
+- `GET /api/users/admin/view/` — List all Admin users
+- `GET /api/users/admin/view/<id>/` — Get Admin user detail
+- `POST /api/users/admin/create/` — Create an Admin user
+- `PUT /api/users/admin/edit/<id>/` — Full update of an Admin user profile
+- `DELETE /api/users/admin/delete/<id>/` — Delete an Admin user
+- `PATCH /api/users/admin/partialedit/<id>/` — Partial update of an Admin user
+
+### Users — Staff
+- `GET /api/users/staff/view/` — List all Staff users
+- `GET /api/users/staff/view/<id>/` — Get Staff user detail
+- `POST /api/users/staff/create/` — Create a Staff user
+- `PUT /api/users/staff/edit/<id>/` — Full update of a Staff user profile
+- `DELETE /api/users/staff/delete/<id>/` — Delete a Staff user
+- `PATCH /api/users/staff/partialedit/<id>/` — Partial update of a Staff user
+
+### Profile (personal)
 - `GET /api/profile/<id>/` — Get user profile (first name, last name, email, phone, bio, avatar, joined date)
 - `PUT /api/profile/<id>/` — Update profile fields
 - `PUT /api/profile/<id>/password/` — Change password (requires current password)
@@ -570,7 +590,8 @@ All endpoints prefixed with `/api/`.
 - `POST /api/upload/` — Upload an image file (multipart/form-data, field name: `file`). Returns `{ "url": "/media/uploads/<uuid>.<ext>" }`.
 
 ### API Documentation (Scalar)
-- `http://localhost:8000/api/docs/` — **Scalar v1** interactive API reference (recommended)
+- `http://localhost:8000/api/scaler/v1` — **Scalar v1** interactive API reference (recommended, new canonical URL)
+- `http://localhost:8000/api/docs/` — Scalar v1 interactive API reference (legacy, still works)
 - `http://localhost:8000/api/redoc/` — ReDoc alternative view
 - `http://localhost:8000/api/schema/` — Raw OpenAPI 3.0 JSON schema
 
@@ -594,7 +615,7 @@ Leave this terminal running. The server must stay active at `http://localhost:80
 
 ### Step 2 — Open Scalar in your browser
 
-Go to **http://localhost:8000/api/docs/** (no extra characters — just `/api/docs/`).
+Go to **http://localhost:8000/api/scaler/v1** (the new canonical URL; the old `/api/docs/` still works too).
 
 You'll see the Scalar API reference page with a sidebar on the left and a test panel on the right.
 
@@ -758,7 +779,7 @@ All values are computed from your real database data.
 - You can switch between different **response examples** in the schema to see what success vs. error responses look like.
 - The **raw OpenAPI schema** is available at `http://localhost:8000/api/schema/` if you want to import it into Postman or other tools.
 - If you see CORS errors, make sure `CORS_ALLOW_ALL_ORIGINS = True` is set in `config/settings.py` (it is by default).
-- **Common mistake:** visiting `http://localhost:8000/api/docs/**` (with extra `**`) gives a 404 — the correct URL is `http://localhost:8000/api/docs/` (just a trailing slash).
+- **Common mistake:** the canonical docs URL is `http://localhost:8000/api/scaler/v1` (no trailing slash). The legacy `http://localhost:8000/api/docs/` also still works.
 
 ---
 

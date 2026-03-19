@@ -48,6 +48,16 @@ class UserRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def authenticate(self, username, password):
-        """Verify credentials. Returns User entity on success, None on failure."""
+    def authenticate(self, username, password, user_type=""):
+        """Verify credentials (and optionally user_type). Returns User entity on success, None on failure."""
+        pass
+
+    @abstractmethod
+    def get_all_by_type(self, user_type):
+        """Return a list of User entities filtered by user_type ('Admin' or 'Staff')."""
+        pass
+
+    @abstractmethod
+    def delete(self, user_id):
+        """Delete a user by primary key. Returns True on success, False if not found."""
         pass

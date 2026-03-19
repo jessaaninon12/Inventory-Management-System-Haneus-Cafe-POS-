@@ -62,54 +62,253 @@ body{
   display:flex;
   flex-direction:column;
   justify-content:center;
-  padding:300px;
+  padding:60px 80px;
   color:white;
+  overflow-y:auto;
+}
+
+@media(min-width:1400px){
+  .right{ padding:60px 120px; }
 }
 
 .right h2{
-  font-size:42px;
-  margin-bottom:50px;
+  font-size:36px;
+  margin-bottom:40px;
   letter-spacing:2px;
 }
 
-/* INPUT STYLE */
+/* ── INPUT GROUP (base) ────────────────────────────────── */
 .input-group{
   background:#f1f1f1;
   display:flex;
   align-items:center;
   padding:16px 20px;
   border-radius:12px;
-  margin-bottom:25px;
+  margin-bottom:20px;
   box-shadow:0 6px 12px rgba(0,0,0,0.3);
-  transition:0.3s;
+  transition:box-shadow 0.3s, transform 0.3s;
+  position:relative;
 }
 
 .input-group:focus-within{
-  transform:translateY(-3px);
+  transform:translateY(-2px);
   box-shadow:0 10px 20px rgba(0,0,0,0.4);
 }
 
-.input-group i{
-  color:#333;
-  font-size:18px;
+.input-group > i:first-child{
+  color:#555;
+  font-size:17px;
   margin-right:12px;
+  flex-shrink:0;
+  pointer-events:none;
 }
 
-.input-group input{
+.input-group input,
+.input-group select{
   flex:1;
   border:none;
   outline:none;
-  font-size:17px;
+  font-size:16px;
+  background:transparent;
+  color:#333;
+  font-family:'Poppins',sans-serif;
+}
+
+/* ── FLOATING LABEL ───────────────────────────────────────── */
+.float-group{
+  padding:16px 20px 6px 52px; /* 52px left = room for absolutely-positioned icon */
+  align-items:flex-end;
+}
+
+/* Absolutely center the icon vertically — it was a flex item before (aligned to bottom) */
+.float-group > i:first-child{
+  position:absolute;
+  left:18px;
+  top:50%;
+  transform:translateY(-50%);
+  margin-right:0;    /* clear the inline margin from .input-group > i:first-child */
+  flex-shrink:0;
+  pointer-events:none;
+}
+
+.float-group label{
+  position:absolute;
+  left:52px;
+  top:50%;
+  transform:translateY(-50%);
+  font-size:14px;
+  color:#888;
+  pointer-events:none;
+  transition:top 0.22s ease, font-size 0.22s ease, color 0.22s ease, transform 0.22s ease;
+  line-height:1;
   background:transparent;
 }
 
-/* OPTIONS */
+/* Float up when input has value (placeholder=" " trick) or is focused */
+.float-group input:not(:placeholder-shown) ~ label,
+.float-group input:focus ~ label{
+  top:5px;
+  font-size:10px;
+  color:#a6a345;
+  transform:none;
+}
+
+.float-group input{
+  padding-top:4px;
+}
+
+/* ── DETAILS/SUMMARY DROPDOWN (button-style selector) ──────────── */
+.login-drop-wrap{
+  padding:0;
+  align-items:stretch;
+  min-height:46px;
+  position:relative;
+  overflow:visible;     /* must NOT be hidden — dropdown escapes via position:fixed */
+  /* Solid opaque background — rgba was compositing on dark page and disappearing */
+  background:#f1f1f1;
+  border:1.5px solid rgba(140,79,34,0.25);
+  box-shadow:0 4px 10px rgba(0,0,0,0.18);
+}
+
+.login-drop-wrap:focus-within{
+  border-color:rgba(166,163,69,0.60);
+  box-shadow:0 0 0 2px rgba(166,163,69,0.25), 0 4px 10px rgba(0,0,0,0.18);
+  /* MUST stay transform:none — any CSS transform makes this a containing block
+     for its position:fixed dropdown menu, trapping it inside overflow:hidden */
+  transform:none;
+}
+
+.drop-icon{
+  position:absolute;
+  left:18px;
+  top:50%;
+  transform:translateY(-50%);
+  color:#555;   /* consistent with other input icons */
+  font-size:16px;
+  pointer-events:none;
+  z-index:1;
+}
+
+.custom-dropdown{
+  flex:1;
+  position:static;
+  user-select:none;
+}
+
+.custom-dropdown summary{
+  list-style:none;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:12px 16px 12px 46px;
+  cursor:pointer;
+  font-size:14px;
+  color:#888;    /* matches placeholder color of other inputs */
+  font-weight:400;
+  font-family:'Poppins',sans-serif;
+  border-radius:12px;
+  transition:background 0.15s;
+  min-height:46px;
+  box-sizing:border-box;
+}
+
+.custom-dropdown summary::-webkit-details-marker{ display:none; }
+.custom-dropdown summary::marker{ display:none; }
+
+.custom-dropdown.selected summary{
+  color:#333;    /* matches filled input text color */
+  font-weight:500;
+}
+
+.drop-chevron{
+  font-size:12px;
+  color:#555;   /* consistent with icon color */
+  transition:transform 0.22s;
+  flex-shrink:0;
+  margin-left:8px;
+}
+
+.custom-dropdown[open] .drop-chevron{
+  transform:rotate(180deg);
+}
+
+/* Menu renders via position:fixed + JS positioning — always above other elements */
+.dropdown-menu{
+  position:fixed;
+  top:0;
+  left:0;
+  right:auto;
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.22);
+  z-index:99999;   /* well above every other element */
+  list-style:none;
+  overflow:hidden;
+  padding:4px 0;
+  border:1px solid rgba(140,79,34,0.12);
+  animation:dropFadeIn 0.18s ease;
+}
+
+@keyframes dropFadeIn{
+  from{ opacity:0; transform:translateY(-8px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.dropdown-menu li{
+  padding:12px 20px;
+  cursor:pointer;
+  font-size:14px;
+  color:#3d1f0a;
+  font-family:'Poppins',sans-serif;
+  transition:background 0.15s;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.dropdown-menu li:hover{
+  background:rgba(140,79,34,0.10);
+  color:#6b3210;
+}
+
+.dropdown-menu li i{
+  font-size:13px;
+  color:#8c4f22;
+  width:16px;
+  text-align:center;
+}
+
+/* ── PASSWORD TOGGLE ───────────────────────────────────── */
+.toggle-pw{
+  background:none;
+  border:none;
+  cursor:pointer;
+  padding:4px 2px;
+  color:#888;
+  font-size:15px;
+  display:flex;
+  align-items:center;
+  transition:color 0.2s;
+  flex-shrink:0;
+  margin-left:6px;
+}
+
+.toggle-pw:hover{
+  color:#555;
+}
+
+/* ── OPTIONS ────────────────────────────────────────────── */
 .options{
   display:flex;
-  justify-content:space-between;
   align-items:center;
   font-size:14px;
-  margin-bottom:35px;
+  margin-bottom:20px;
+  gap:8px;
+}
+
+.options input[type="checkbox"]{
+  accent-color:#a6a345;
+  cursor:pointer;
 }
 
 .options a{
@@ -121,57 +320,185 @@ body{
   text-decoration:underline;
 }
 
-/* BUTTON */
+/* ── ERROR MESSAGE ──────────────────────────────────────── */
+.error-msg{
+  background:rgba(220,53,69,0.18);
+  border:1px solid rgba(220,53,69,0.4);
+  color:#ffe0e3;
+  padding:10px 14px;
+  border-radius:8px;
+  font-size:13px;
+  margin-bottom:16px;
+}
+
+/* ── LOGIN BUTTON ───────────────────────────────────────── */
 .login-btn{
   width:100%;
-  padding:16px;
+  padding:15px;
   background:#a6a345;
   border:none;
   border-radius:12px;
-  font-size:20px;
+  font-size:18px;
   font-weight:600;
   color:white;
   cursor:pointer;
   box-shadow:0 6px 12px rgba(0,0,0,0.4);
-  transition:0.3s;
+  transition:background 0.25s, transform 0.25s, box-shadow 0.25s;
+  font-family:'Poppins',sans-serif;
 }
 
-.login-btn:hover{
+.login-btn:hover:not(:disabled){
   background:#8e8c3c;
   transform:translateY(-3px);
+  box-shadow:0 10px 18px rgba(0,0,0,0.45);
 }
 
-/* REGISTER LINK */
+.login-btn:disabled{
+  opacity:0.7;
+  cursor:not-allowed;
+  transform:none;
+}
+
+/* ── FULL-PAGE LOGIN SUCCESS OVERLAY ───────────────────── */
+.login-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(74,47,33,0.62);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  z-index:99998;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  animation:loFadeIn 0.3s ease;
+}
+
+@keyframes loFadeIn{
+  from{ opacity:0; }
+  to{ opacity:1; }
+}
+
+.login-overlay-card{
+  background:rgba(140,79,34,0.92);
+  border:1px solid rgba(255,255,255,0.22);
+  border-radius:22px;
+  padding:52px 60px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:28px;
+  max-width:420px;
+  width:90%;
+  box-shadow:0 28px 64px rgba(0,0,0,0.45);
+  animation:loCardIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes loCardIn{
+  from{ transform:scale(0.8); opacity:0; }
+  to{ transform:scale(1); opacity:1; }
+}
+
+.welcome-msg{
+  font-size:1.45rem;
+  font-weight:700;
+  color:#fff;
+  letter-spacing:0.4px;
+  line-height:1.3;
+}
+
+/* ── PL SPINNER (project-themed) ────────────────────────── */
+.pl{
+  width:6em;
+  height:6em;
+}
+
+.pl__ring{
+  animation:ringA 2s linear infinite;
+}
+
+.pl__ring--a{
+  stroke:#a6a345;
+  animation-name:ringA;
+}
+.pl__ring--b{
+  stroke:#ffd9a8;
+  animation-name:ringB;
+}
+.pl__ring--c{
+  stroke:#8c4f22;
+  animation-name:ringC;
+}
+.pl__ring--d{
+  stroke:#4a4a0f;
+  animation-name:ringD;
+}
+
+@keyframes ringA{
+  from,4%{stroke-dasharray:0 660;stroke-width:20;stroke-dashoffset:-330}
+  12%{stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-335}
+  32%{stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-595}
+  40%,54%{stroke-dasharray:0 660;stroke-width:20;stroke-dashoffset:-660}
+  62%{stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-665}
+  82%{stroke-dasharray:60 600;stroke-width:30;stroke-dashoffset:-925}
+  90%,to{stroke-dasharray:0 660;stroke-width:20;stroke-dashoffset:-990}
+}
+@keyframes ringB{
+  from,12%{stroke-dasharray:0 220;stroke-width:20;stroke-dashoffset:-110}
+  20%{stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-115}
+  40%{stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-195}
+  48%,62%{stroke-dasharray:0 220;stroke-width:20;stroke-dashoffset:-220}
+  70%{stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-225}
+  90%{stroke-dasharray:20 200;stroke-width:30;stroke-dashoffset:-305}
+  98%,to{stroke-dasharray:0 220;stroke-width:20;stroke-dashoffset:-330}
+}
+@keyframes ringC{
+  from{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:0}
+  8%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-5}
+  28%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-175}
+  36%,58%{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-220}
+  66%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-225}
+  86%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-395}
+  94%,to{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-440}
+}
+@keyframes ringD{
+  from,8%{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:0}
+  16%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-5}
+  36%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-175}
+  44%,50%{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-220}
+  58%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-225}
+  78%{stroke-dasharray:40 400;stroke-width:30;stroke-dashoffset:-395}
+  86%,to{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-440}
+}
+
+/* ── REGISTER LINK ──────────────────────────────────────── */
 .register{
   text-align:center;
-  margin-top:30px;
-  font-size:15px;
+  margin-top:28px;
+  font-size:14px;
 }
 
 .register a{
   color:#ffd9a8;
   text-decoration:none;
   font-weight:600;
+  transition:color 0.2s;
 }
 
-/* RESPONSIVE */
-@media(max-width:1000px){
-  .container{
-    flex-direction:column;
-  }
+.register a:hover{
+  color:#fff;
+  text-decoration:underline;
+}
 
-  .left{
-    height:300px;
-  }
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:768px){
+  .left{ display:none; }
+  .right{ padding:40px 24px; min-height:100vh; }
+}
 
-  .left h1{
-    transform:none;
-    left:20px;
-    bottom:20px;
-    font-size:60px;
-  }
-
-  .right{
-    padding:50px 30px;
-  }
+@media(min-width:769px) and (max-width:1000px){
+  .container{ flex-direction:column; }
+  .left{ height:220px; flex:none; }
+  .left h1{ transform:none; left:20px; bottom:20px; font-size:60px; }
+  .right{ padding:40px 30px; overflow-y:auto; }
 }

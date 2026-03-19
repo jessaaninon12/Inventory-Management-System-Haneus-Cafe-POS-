@@ -64,7 +64,7 @@ document.getElementById('createProductForm').addEventListener('submit', async fu
     const body = { name, category, price, cost, stock, unit, description, low_stock_threshold: lowStockThreshold };
     if (image_url) body.image_url = image_url;
 
-    const res = await fetch(`${API}/products/`, {
+    const res = await fetch(`${API}/products/create/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

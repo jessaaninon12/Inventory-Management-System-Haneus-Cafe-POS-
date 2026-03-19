@@ -9,12 +9,33 @@ from api.controllers.user_controller import (
     LoginController,
     ProfileDetailController,
     RegisterController,
+    # Admin user management
+    AdminUserListController,
+    AdminUserDetailController,
+    AdminUserCreateController,
+    AdminUserEditController,
+    AdminUserDeleteController,
+    AdminUserPartialEditController,
+    # Staff user management
+    StaffUserListController,
+    StaffUserDetailController,
+    StaffUserCreateController,
+    StaffUserEditController,
+    StaffUserDeleteController,
+    StaffUserPartialEditController,
 )
 
 from api.controllers.product_controller import (
     LowStockController,
     ProductDetailController,
     ProductListCreateController,
+    # New standardised product endpoints
+    ProductViewListController,
+    ProductViewDetailController,
+    ProductCreateController,
+    ProductEditController,
+    ProductDeleteController,
+    ProductPartialEditController,
 )
 from api.controllers.order_controller import (
     OrderCancelController,
@@ -39,30 +60,55 @@ urlpatterns = [
     path("auth/register/", RegisterController.as_view(), name="register"),
     path("auth/login/", LoginController.as_view(), name="login"),
 
-    # ── Profile ───────────────────────────────────────────────────────────
+    # ── Profile ─────────────────────────────────────────────────────────
     path("profile/<int:pk>/", ProfileDetailController.as_view(), name="profile-detail"),
     path("profile/<int:pk>/password/", ChangePasswordController.as_view(), name="profile-password"),
-    # ── Dashboard ─────────────────────────────────────────────────────────
+
+    # ── Dashboard ─────────────────────────────────────────────────────
     path("dashboard/", DashboardController.as_view(), name="dashboard"),
     path("dashboard/chart/", DashboardChartController.as_view(), name="dashboard-chart"),
 
-    # ── Products ──────────────────────────────────────────────────────
+    # ── Products (legacy — kept for backward compatibility) ────────────────
     path("products/", ProductListCreateController.as_view(), name="product-list-v2"),
     path("products/low-stock/", LowStockController.as_view(), name="product-low-stock"),
     path("products/<int:pk>/", ProductDetailController.as_view(), name="product-detail-v2"),
 
-    # ── Orders ────────────────────────────────────────────────────────
+    # ── Products (standardised naming) ──────────────────────────────
+    path("products/view/", ProductViewListController.as_view(), name="product-view-list"),
+    path("products/view/<int:pk>/", ProductViewDetailController.as_view(), name="product-view-detail"),
+    path("products/create/", ProductCreateController.as_view(), name="product-create"),
+    path("products/edit/<int:pk>/", ProductEditController.as_view(), name="product-edit"),
+    path("products/delete/<int:pk>/", ProductDeleteController.as_view(), name="product-delete"),
+    path("products/partialedit/<int:pk>/", ProductPartialEditController.as_view(), name="product-partialedit"),
+
+    # ── Orders ──────────────────────────────────────────────────
     path("orders/", OrderListCreateController.as_view(), name="order-list"),
     path("orders/<int:pk>/", OrderDetailController.as_view(), name="order-detail"),
     path("orders/<int:pk>/cancel/", OrderCancelController.as_view(), name="order-cancel"),
     path("orders/<int:pk>/complete/", OrderCompleteController.as_view(), name="order-complete"),
 
-    # ── Sales Analytics ───────────────────────────────────────────────────
+    # ── Sales Analytics ────────────────────────────────────────────
     path("sales/analytics/", SalesAnalyticsController.as_view(), name="sales-analytics"),
 
-    # ── Inventory ─────────────────────────────────────────────────────────
+    # ── Inventory ─────────────────────────────────────────────────────
     path("inventory/", InventorySummaryController.as_view(), name="inventory-summary"),
     path("inventory/low-stock/", LowStockInventoryController.as_view(), name="inventory-low-stock"),
     path("inventory/adjust/", StockAdjustController.as_view(), name="inventory-adjust"),
     path("inventory/<int:product_id>/history/", ProductHistoryController.as_view(), name="inventory-history"),
+
+    # ── Users – Admin (standardised naming) ──────────────────────────
+    path("users/admin/view/", AdminUserListController.as_view(), name="admin-user-view-list"),
+    path("users/admin/view/<int:pk>/", AdminUserDetailController.as_view(), name="admin-user-view-detail"),
+    path("users/admin/create/", AdminUserCreateController.as_view(), name="admin-user-create"),
+    path("users/admin/edit/<int:pk>/", AdminUserEditController.as_view(), name="admin-user-edit"),
+    path("users/admin/delete/<int:pk>/", AdminUserDeleteController.as_view(), name="admin-user-delete"),
+    path("users/admin/partialedit/<int:pk>/", AdminUserPartialEditController.as_view(), name="admin-user-partialedit"),
+
+    # ── Users – Staff (standardised naming) ──────────────────────────
+    path("users/staff/view/", StaffUserListController.as_view(), name="staff-user-view-list"),
+    path("users/staff/view/<int:pk>/", StaffUserDetailController.as_view(), name="staff-user-view-detail"),
+    path("users/staff/create/", StaffUserCreateController.as_view(), name="staff-user-create"),
+    path("users/staff/edit/<int:pk>/", StaffUserEditController.as_view(), name="staff-user-edit"),
+    path("users/staff/delete/<int:pk>/", StaffUserDeleteController.as_view(), name="staff-user-delete"),
+    path("users/staff/partialedit/<int:pk>/", StaffUserPartialEditController.as_view(), name="staff-user-partialedit"),
 ]
