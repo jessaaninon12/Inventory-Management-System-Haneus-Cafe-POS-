@@ -34,7 +34,7 @@ def test_mysql_connection():
     port = int(os.environ.get("DB_PORT", "3306"))
     user = os.environ.get("DB_USER", "root")
     password = os.environ.get("DB_PASSWORD", "")
-    db_name = os.environ.get("DB_NAME", "haneus_cafe_db")
+    db_name = os.environ.get("DB_NAME", "HaneusCafeDB")
 
     try:
         conn = MySQLdb.connect(
@@ -60,20 +60,33 @@ def test_mssql_connection():
         print("[FAIL] pyodbc is not installed. Run: pip install pyodbc")
         return False
 
-    host = os.environ.get("DB_HOST", "localhost")
-    port = os.environ.get("DB_PORT", "1433")
-    user = os.environ.get("DB_USER", "sa")
-    password = os.environ.get("DB_PASSWORD", "")
-    db_name = os.environ.get("DB_NAME", "HaneusCafeDB")
-    driver = os.environ.get("DB_MSSQL_DRIVER", "ODBC Driver 17 for SQL Server")
+    host        = os.environ.get("DB_HOST", "localhost")
+    port        = os.environ.get("DB_PORT", "1433")
+    user        = os.environ.get("DB_USER", "")
+    password    = os.environ.get("DB_PASSWORD", "")
+    db_name     = os.environ.get("DB_NAME", "HaneusCafeDB")
+    driver      = os.environ.get("DB_MSSQL_DRIVER", "ODBC Driver 17 for SQL Server")
+    windows_auth = os.environ.get("DB_WINDOWS_AUTH", "False").lower() in ("true", "1", "yes")
 
-    conn_str = (
+    # Named instances / LocalDB already embed the instance name; plain hosts get the port.
+    if "\\" in host or "(" in host:
+        server = host
+    else:
+        server = f"{host},{port}"
+
+    base = (
         f"DRIVER={{{driver}}};"
-        f"SERVER={host},{port};"
+        f"SERVER={server};"
         f"DATABASE={db_name};"
-        f"UID={user};"
-        f"PWD={password};"
+        "TrustServerCertificate=yes;"
     )
+
+    if windows_auth or not user:
+        conn_str = base + "Trusted_Connection=yes;"
+        auth_label = "Windows Authentication"
+    else:
+        conn_str = base + f"UID={user};PWD={password};"
+        auth_label = "SQL Server Authentication"
 
     try:
         conn = pyodbc.connect(conn_str, timeout=5)
@@ -81,12 +94,15 @@ def test_mssql_connection():
         cursor.execute("SELECT @@VERSION;")
         version = cursor.fetchone()[0].split("\n")[0]
         conn.close()
-        print(f"[OK] SQL Server — {version}")
-        print(f"     Connected to {db_name}@{host}:{port}")
+        print(f"[OK] SQL Server ({auth_label}) — {version}")
+        print(f"     Connected to {db_name}@{server}")
         return True
     except Exception as e:
         print(f"[FAIL] SQL Server connection error: {e}")
-        print(f"       Make sure SQL Server is running and '{db_name}' exists in SSMS.")
+        print(f"       Auth used   : {auth_label}")
+        print(f"       Server      : {server}")
+        print(f"       Database    : {db_name}")
+        print( "       Tip: check DB_WINDOWS_AUTH, DB_USER, DB_PASSWORD in .env")
         return False
 
 

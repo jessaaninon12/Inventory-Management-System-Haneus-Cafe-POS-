@@ -42,10 +42,11 @@ def prompt(text, default=""):
 def setup_mysql():
     """Collect MySQL connection details and return env lines."""
     print("\n── MySQL / MariaDB (XAMPP) ──────────────────────────")
-    print("  Make sure XAMPP is running and the database exists.")
+    print("  Make sure XAMPP MySQL is running.")
+    print("  The database will be created automatically if it does not exist.")
     print("  Default: root user, no password, port 3306.\n")
 
-    db_name = prompt("Database name", "Haneus-Inventory")
+    db_name = prompt("Database name", "HaneusCafeDB")
     db_user = prompt("Username", "root")
     db_pass = prompt("Password (leave blank for none)", "")
     db_host = prompt("Host", "127.0.0.1")
@@ -64,17 +65,28 @@ def setup_mysql():
 def setup_mssql():
     """Collect SQL Server connection details and return env lines."""
     print("\n── SQL Server (SSMS 19) ────────────────────────────")
-    print("  Make sure SQL Server is running and the database exists.")
-    print("  For named instances use: localhost\\SQLEXPRESS\n")
+    print("  Make sure SQL Server is running.")
+    print("  The database will be created automatically if it does not exist.")
+    print("  For named instances use: localhost\\SQLEXPRESS")
+    print("  For Windows Authentication, leave Username blank and set Windows Auth=True.\n")
 
-    db_name = prompt("Database name", "HaneusCafeDB")
-    db_user = prompt("Username", "sa")
-    db_pass = prompt("Password", "")
-    db_host = prompt("Host (e.g. localhost or localhost\\SQLEXPRESS)", "localhost")
-    db_port = prompt("Port", "1433")
+    db_name   = prompt("Database name", "HaneusCafeDB")
+    db_host   = prompt("Host (e.g. localhost or localhost\\SQLEXPRESS)", "localhost")
+    db_port   = prompt("Port", "1433")
     db_driver = prompt("ODBC Driver", "ODBC Driver 17 for SQL Server")
 
-    return {
+    win_auth  = input("  Use Windows Authentication? (y/N): ").strip().lower() == "y"
+
+    if win_auth:
+        db_user = ""
+        db_pass = ""
+        db_windows_auth = "True"
+    else:
+        db_user = prompt("Username (leave blank for Windows Auth)", "")
+        db_pass = prompt("Password (leave blank if none)", "")
+        db_windows_auth = "False"
+
+    config = {
         "DB_ENGINE": "mssql",
         "DB_NAME": db_name,
         "DB_USER": db_user,
@@ -82,7 +94,9 @@ def setup_mssql():
         "DB_HOST": db_host,
         "DB_PORT": db_port,
         "DB_MSSQL_DRIVER": db_driver,
+        "DB_WINDOWS_AUTH": db_windows_auth,
     }
+    return config
 
 
 def write_env(config):
@@ -114,22 +128,26 @@ def print_next_steps(engine):
 
     if engine == "mysql":
         print("  1. Make sure XAMPP Apache + MySQL are running.")
-        print("  2. Create the database in phpMyAdmin if not done:")
-        print('       CREATE DATABASE `Haneus-Inventory`;')
-        print("  3. Install the MySQL driver:")
+        print("  2. Install the MySQL driver:")
         print("       pip install mysqlclient")
+        print("  3. Run migrations (the database is created automatically):")
     elif engine == "mssql":
         print("  1. Make sure SQL Server is running (check SSMS).")
-        print("  2. Create the database in SSMS if not done:")
-        print("       CREATE DATABASE HaneusCafeDB;")
-        print("  3. Install the SQL Server driver:")
+        print("  2. Install the SQL Server driver:")
         print("       pip install mssql-django pyodbc")
+        print("  3. Run migrations (the database is created automatically):")
 
     print()
-    print("  Then run:")
+    print("  Standard Django commands:")
     print("    python manage.py makemigrations api")
     print("    python manage.py makemigrations infrastructure")
     print("    python manage.py migrate")
+    print()
+    print("  EF-style aliases (same behavior):")
+    print("    python manage.py add_migration api")
+    print("    python manage.py add_migration infrastructure")
+    print("    python manage.py update_database")
+    print()
     print("    python manage.py runserver")
     print()
     print("  API docs will be available at:")
