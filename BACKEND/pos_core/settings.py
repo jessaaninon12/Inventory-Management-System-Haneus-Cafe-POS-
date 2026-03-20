@@ -81,21 +81,24 @@ WSGI_APPLICATION = "pos_core.wsgi.application"
 DB_ENGINE = os.environ.get("DB_ENGINE", "mysql").lower()
 
 if DB_ENGINE == "mssql":
-    # Microsoft SQL Server (SSMS)
+    # Microsoft SQL Server (SSMS 19)
     # Requires: pip install mssql-django pyodbc
+    _mssql_options = {
+        "driver": os.environ.get("DB_MSSQL_DRIVER", "ODBC Driver 17 for SQL Server"),
+        "extra_params": "TrustServerCertificate=yes",
+    }
+    if os.environ.get("DB_WINDOWS_AUTH", "False").lower() in ("true", "1", "yes"):
+        _mssql_options["trusted_connection"] = "yes"
+
     DATABASES = {
         "default": {
             "ENGINE": "mssql",
             "NAME": os.environ.get("DB_NAME", "HaneusCafeDB"),
-            "USER": os.environ.get("DB_USER", "sa"),
+            "USER": os.environ.get("DB_USER", ""),
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "localhost"),
             "PORT": os.environ.get("DB_PORT", "1433"),
-            "OPTIONS": {
-                "driver": os.environ.get(
-                    "DB_MSSQL_DRIVER", "ODBC Driver 17 for SQL Server"
-                ),
-            },
+            "OPTIONS": _mssql_options,
         }
     }
 
@@ -104,7 +107,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ.get("DB_NAME", "Haneus-Inventory"),
+            "NAME": os.environ.get("DB_NAME", "HaneusCafeDB"),
             "USER": os.environ.get("DB_USER", "root"),
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
