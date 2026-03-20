@@ -88,7 +88,7 @@
         <td>Admin</td>
         <td><span class="status">Active</span></td>
         <td>               
-            <button class="btn btn-edit" onclick="openEditModal()">Edit</button>
+            <button class="btn btn-edit" onclick="openEditModal(this)">Edit</button>
             <button class="btn btn-delete" onclick="openDeleteModal()">Delete</button>
 
         </td>
@@ -124,28 +124,29 @@
     <!-- User Field -->
     <div class="form-group">
       <label>User <span class="required">*</span></label>
-      <input type="text" placeholder="Enter username" value="">
+      <input id="modalUsername" type="text" placeholder="Enter username" value="">
     </div>
 
     <!-- Role Field -->
     <div class="form-group">
       <label>Role <span class="required">*</span></label>
-      <select>
+      <select id="modalRole">
         <option>Admin</option>
-        <option>Staff</option>
+        <option>Manager</option>
+        <option>Cashier</option>
       </select>
     </div>
 
     <!-- Email Field -->
     <div class="form-group">
       <label>Email <span class="required">*</span></label>
-      <input type="email" placeholder="Enter email" value="">
+      <input id="modalEmail" type="email" placeholder="Enter email" value="">
     </div>
 
     <!-- Phone Field -->
     <div class="form-group">
       <label>Phone <span class="required">*</span></label>
-      <input type="tel" placeholder="Enter phone number" value="">
+      <input id="modalPhone" type="tel" placeholder="Enter phone number" value="">
     </div>
 
     <!-- Password Fields Side by Side -->
@@ -153,14 +154,14 @@
       <div class="form-group">
         <label>Password <span class="required">*</span></label>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="••••••••" value="">
+          <input id="modalPassword" type="password" placeholder="••••••••" value="">
           <button class="btn-toggle-password" onclick="togglePassword(this)" type="button"></button>
         </div>
       </div>
       <div class="form-group">
         <label>Confirm Password <span class="required">*</span></label>
         <div class="password-input-wrapper">
-          <input type="password" placeholder="••••••••" value="">
+          <input id="modalConfirmPassword" type="password" placeholder="••••••••" value="">
           <button class="btn-toggle-password" onclick="togglePassword(this)" type="button"></button>
         </div>
       </div>
@@ -170,7 +171,7 @@
     <div class="form-group status-group">
       <label>Status</label>
       <label class="toggle-switch">
-        <input type="checkbox" checked>
+        <input id="modalStatus" type="checkbox" checked>
         <span class="slider"></span>
       </label>
     </div>
@@ -181,10 +182,16 @@
       <button class="btn btn-save">Save Changes</button>
     </div>
 
+
+
+
   </div>
 
   <script>
     function openModal(){
+      clearModalFields();
+      document.querySelector('#modal .modal-header h3').textContent = 'Add User';
+      document.querySelector('.btn-save').textContent = 'Add User';
       document.getElementById('modal').classList.add('active');
     }
 
@@ -192,8 +199,37 @@
       document.getElementById('modal').classList.remove('active');
     }
 
-    function openEditModal(){
+    function openEditModal(btn){
+      const row = btn.closest('tr');
+      const cells = row.querySelectorAll('td');
+
+      document.querySelector('#modal .modal-header h3').textContent = 'Edit User';
+      document.querySelector('.btn-save').textContent = 'Save Changes';
+
+      document.getElementById('modalUsername').value = cells[1].textContent.trim();
+      document.getElementById('modalPhone').value = cells[2].textContent.trim();
+      document.getElementById('modalEmail').value = cells[3].textContent.trim();
+      document.getElementById('modalRole').value = cells[4].textContent.trim();
+      document.getElementById('modalStatus').checked = cells[5].textContent.trim().toLowerCase() === 'active';
+
+      // Optionally set a real image if available (demo placeholder used)
+      document.getElementById('userImage').src = 'https://via.placeholder.com/120';
+
+      document.getElementById('modalPassword').value = '';
+      document.getElementById('modalConfirmPassword').value = '';
+
       document.getElementById('modal').classList.add('active');
+    }
+
+    function clearModalFields(){
+      document.getElementById('userImage').src = 'https://via.placeholder.com/120';
+      document.getElementById('modalUsername').value = '';
+      document.getElementById('modalRole').value = 'Admin';
+      document.getElementById('modalEmail').value = '';
+      document.getElementById('modalPhone').value = '';
+      document.getElementById('modalPassword').value = '';
+      document.getElementById('modalConfirmPassword').value = '';
+      document.getElementById('modalStatus').checked = true;
     }
 
     function openDeleteModal(){
