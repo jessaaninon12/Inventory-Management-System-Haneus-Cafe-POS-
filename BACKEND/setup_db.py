@@ -44,9 +44,10 @@ def setup_mysql():
     print("\n── MySQL / MariaDB (XAMPP) ──────────────────────────")
     print("  Make sure XAMPP MySQL is running.")
     print("  The database will be created automatically if it does not exist.")
-    print("  Default: root user, no password, port 3306.\n")
+    print("  Default: root user, no password, port 3306.")
+    print("  Note: MySQL always stores database names in lowercase.\n")
 
-    db_name = prompt("Database name", "HaneusCafeDB")
+    db_name = prompt("Database name", "haneuscafedb").lower()
     db_user = prompt("Username", "root")
     db_pass = prompt("Password (leave blank for none)", "")
     db_host = prompt("Host", "127.0.0.1")
@@ -70,7 +71,7 @@ def setup_mssql():
     print("  For named instances use: localhost\\SQLEXPRESS")
     print("  For Windows Authentication, leave Username blank and set Windows Auth=True.\n")
 
-    db_name   = prompt("Database name", "HaneusCafeDB")
+    db_name   = prompt("Database name", "haneuscafedb").lower()
     db_host   = prompt("Host (e.g. localhost or localhost\\SQLEXPRESS)", "localhost")
     db_port   = prompt("Port", "1433")
     db_driver = prompt("ODBC Driver", "ODBC Driver 17 for SQL Server")
@@ -120,6 +121,31 @@ def write_env(config):
 
     ENV_FILE.write_text("\n".join(lines), encoding="utf-8")
     print(f"\n  .env file created at: {ENV_FILE}")
+
+
+def create_database_now(config):
+    """
+    Create the database immediately after writing .env.
+
+    Injects the collected config into os.environ so that
+    ensure_database_exists() can read it without needing Django
+    to be fully initialised.
+    """
+    for key, value in config.items():
+        os.environ[key] = str(value)
+
+    # BACKEND directory must be on sys.path for the import to work.
+    backend_dir = str(BASE_DIR)
+    if backend_dir not in sys.path:
+        sys.path.insert(0, backend_dir)
+
+    print("\n  Creating database if it does not exist...")
+    try:
+        from infrastructure.data.db_init import ensure_database_exists
+        ensure_database_exists()
+    except ImportError as exc:
+        print(f"  [warning] Could not import db_init: {exc}")
+        print("  The database will be created when you run: python manage.py migrate")
 
 
 def print_next_steps(engine):
@@ -176,6 +202,7 @@ def main():
         sys.exit(1)
 
     write_env(config)
+    create_database_now(config)
     print_next_steps(config["DB_ENGINE"])
 
 

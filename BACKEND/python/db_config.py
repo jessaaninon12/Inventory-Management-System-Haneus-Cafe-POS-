@@ -34,7 +34,7 @@ def test_mysql_connection():
     port = int(os.environ.get("DB_PORT", "3306"))
     user = os.environ.get("DB_USER", "root")
     password = os.environ.get("DB_PASSWORD", "")
-    db_name = os.environ.get("DB_NAME", "HaneusCafeDB")
+    db_name = os.environ.get("DB_NAME", "haneuscafedb")
 
     try:
         conn = MySQLdb.connect(
@@ -64,7 +64,7 @@ def test_mssql_connection():
     port        = os.environ.get("DB_PORT", "1433")
     user        = os.environ.get("DB_USER", "")
     password    = os.environ.get("DB_PASSWORD", "")
-    db_name     = os.environ.get("DB_NAME", "HaneusCafeDB")
+    db_name     = os.environ.get("DB_NAME", "haneuscafedb")
     driver      = os.environ.get("DB_MSSQL_DRIVER", "ODBC Driver 17 for SQL Server")
     windows_auth = os.environ.get("DB_WINDOWS_AUTH", "False").lower() in ("true", "1", "yes")
 

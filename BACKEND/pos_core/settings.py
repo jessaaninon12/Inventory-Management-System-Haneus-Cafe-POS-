@@ -93,7 +93,7 @@ if DB_ENGINE == "mssql":
     DATABASES = {
         "default": {
             "ENGINE": "mssql",
-            "NAME": os.environ.get("DB_NAME", "HaneusCafeDB"),
+            "NAME": os.environ.get("DB_NAME", "haneuscafedb"),
             "USER": os.environ.get("DB_USER", ""),
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "localhost"),
@@ -107,7 +107,7 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ.get("DB_NAME", "HaneusCafeDB"),
+            "NAME": os.environ.get("DB_NAME", "haneuscafedb"),
             "USER": os.environ.get("DB_USER", "root"),
             "PASSWORD": os.environ.get("DB_PASSWORD", ""),
             "HOST": os.environ.get("DB_HOST", "127.0.0.1"),

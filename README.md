@@ -32,7 +32,7 @@ All endpoints for products, authentication, users (admin and staff), inventory, 
 
 ## Installation Requirements
 
-The user must have Python and pip installed on their machine. A virtual environment must be created before installing dependencies. The user must choose one database engine, either SQL Server through SSMS 19 or MySQL through XAMPP, depending on their environment. No manual database creation is required. The system will automatically create the database during the migration step.
+The user must have Python and pip installed on their machine. A virtual environment must be created before installing dependencies. The user must choose one database engine, either SQL Server through SSMS 19 or MySQL through XAMPP, depending on their environment. No manual database creation is required. The database is created automatically when the setup script runs, before any migration commands are executed.
 
 To set up the environment, run the following commands inside the BACKEND folder.
 
@@ -77,7 +77,7 @@ To configure the database, run the interactive setup script:
 python setup_db.py
 ```
 
-This script will ask for the database engine and connection details, then generate a .env file automatically. The database will be created automatically when migrations run, so no manual database creation is needed in SSMS or phpMyAdmin.
+This script will ask for the database engine and connection details, then generate a .env file automatically. It also creates the database immediately after the .env is written. No manual database creation is needed in SSMS or phpMyAdmin before running migrations.
 
 ---
 
@@ -91,10 +91,22 @@ Step 1. Activate the virtual environment.
 venv\Scripts\activate
 ```
 
-Step 2. Run the setup script to generate your .env file if you have not done so already.
+Step 2. Run the setup script. This generates the .env file and creates the database automatically.
 
 ```
 python setup_db.py
+```
+
+Choose A for MySQL via XAMPP or B for SQL Server via SSMS 19. Press Enter to accept the default values shown in brackets. The script will print a confirmation line when the database is ready, for example:
+
+```
+[db_init] MySQL/MariaDB: database 'haneuscafedb' is ready (host: 127.0.0.1:3306).
+```
+
+or for SQL Server:
+
+```
+[db_init] SQL Server: database 'haneuscafedb' is ready (server: localhost,1433, auth: Windows Authentication).
 ```
 
 Step 3. Generate migration files.
@@ -104,7 +116,9 @@ python manage.py makemigrations api
 python manage.py makemigrations infrastructure
 ```
 
-Step 4. Apply migrations. The database will be created automatically if it does not exist.
+Because the database already exists after Step 2, no warnings will appear here.
+
+Step 4. Apply migrations. This creates all tables in the database.
 
 ```
 python manage.py migrate
@@ -116,7 +130,7 @@ Step 5. Start the development server.
 python manage.py runserver
 ```
 
-The server will be available at http://localhost:8000. Open the API reference at http://localhost:8000/api/scaler/v1 to browse and test all endpoints.
+The server will be available at http://127.0.0.1:8000. Open the API reference at http://localhost:8000/api/scaler/v1 to browse and test all endpoints.
 
 ---
 
@@ -146,9 +160,13 @@ The add_migration command is an alias for makemigrations. The update_database co
 
 The project follows a code-first approach where database tables are created automatically from model definitions. Developers do not need to write SQL to set up the schema. All migrations are handled through Django management commands.
 
+The database is created automatically when setup_db.py runs. The same auto-create logic also runs again when python manage.py migrate is called, so the database is always guaranteed to exist before Django applies any migration files.
+
 All batch and script-based migration files have been removed. Only manual Django commands are used to manage migrations. This keeps the process consistent across different operating systems and environments.
 
 The system supports flexible authentication for SQL Server, including SQL Server Authentication and Windows Authentication. It also supports multiple server configurations with automatic fallback. This allows the project to run in different environments without requiring manual database setup or credential changes.
+
+The database name haneuscafedb is used for both MySQL and SQL Server. MySQL on Windows always stores database names in lowercase, so the name is kept in lowercase to match exactly what MySQL stores. SQL Server works with the same lowercase name without any issues.
 
 ---
 
