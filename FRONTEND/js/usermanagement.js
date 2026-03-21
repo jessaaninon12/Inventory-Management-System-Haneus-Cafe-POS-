@@ -133,7 +133,6 @@ function renderTable() {
 
   tbody.innerHTML = filteredUsers.map(u => `
     <tr>
-      <td>#${u.id}</td>
       <td>${escHtml(u.username || '—')}</td>
       <td>${escHtml(fullName(u))}</td>
       <td>${escHtml(u.email || '—')}</td>

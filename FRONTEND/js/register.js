@@ -145,6 +145,47 @@ function setupToggle(btnId, iconId, inputId) {
 setupToggle('togglePw1', 'togglePw1Icon', 'password');
 setupToggle('togglePw2', 'togglePw2Icon', 'confirmPassword');
 
+// ── Real-time username uniqueness check ──────────────────────────
+(function setupUsernameCheck() {
+  const input = document.getElementById('username');
+  if (!input) return;
+
+  // Insert hint element right after the username input-group
+  const group = input.closest('.input-group');
+  const hint  = document.createElement('p');
+  hint.className = 'field-hint';
+  hint.setAttribute('aria-live', 'polite');
+  group.insertAdjacentElement('afterend', hint);
+
+  // Clear hint on every keystroke
+  input.addEventListener('input', () => {
+    hint.className  = 'field-hint';
+    hint.textContent = '';
+    input.classList.remove('username-error', 'username-ok');
+  });
+
+  // Check on blur
+  input.addEventListener('blur', async () => {
+    const val = input.value.trim();
+    if (!val) return;
+    try {
+      const res  = await fetch(`${API_BASE}/api/auth/check-username/?username=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (!data.available) {
+        hint.className   = 'field-hint hint-error';
+        hint.textContent = '\u26A0 Username already used';
+        input.classList.add('username-error');
+      } else {
+        hint.className   = 'field-hint hint-ok';
+        hint.textContent = '\u2713 Username available';
+        input.classList.add('username-ok');
+      }
+    } catch {
+      /* silent — server will validate on submit */
+    }
+  });
+}());
+
 // ── Form submission ──────────────────────────────────────────────
 signupForm.addEventListener('submit', async (e) => {
   e.preventDefault();

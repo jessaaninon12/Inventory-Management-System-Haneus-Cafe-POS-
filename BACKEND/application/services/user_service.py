@@ -105,3 +105,7 @@ class UserService:
     def delete_user(self, user_id):
         """Delete a user by ID. Returns True on success, False if not found."""
         return self.repository.delete(user_id)
+
+    def check_username_exists(self, username):
+        """Return True if the username is already taken."""
+        return self.repository.username_exists(username)

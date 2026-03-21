@@ -530,7 +530,32 @@ h1 {
   z-index: 1;
 }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ── Inline field hints (username uniqueness) ──────────────── */
+.field-hint {
+  font-size: 0.78rem;
+  margin: -0.6rem 0 0.6rem 0;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Inter', system-ui, sans-serif;
+  min-height: 1.2em;
+  transition: color 0.2s;
+}
+
+.hint-error {
+  color: #ff7b8a;
+  background: rgba(220,53,69,0.1);
+}
+
+.hint-ok {
+  color: #6ee7b7;
+  background: rgba(16,185,129,0.1);
+}
+
+/* Input border feedback */
+.username-error { box-shadow: 0 0 0 2px rgba(220,53,69,0.5) !important; }
+.username-ok    { box-shadow: 0 0 0 2px rgba(16,185,129,0.45) !important; }
+
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 1023px) {
   .split-screen { flex-direction: column; }
   .visual-side  { display: none; }

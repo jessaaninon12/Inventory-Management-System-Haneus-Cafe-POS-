@@ -11,11 +11,16 @@
 </head>
 <body>
 
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 <div class="layout">
 
-  <aside>
+  <aside id="main-sidebar">
     <div class="sidebar-inner">
-      <div class="logo">Haneus Cafe</div>
+      <div class="sidebar-logo-row">
+        <div class="logo">Haneus Cafe</div>
+        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+      </div>
 
       <div class="nav-group">
         <div class="nav-title">Main</div>
@@ -24,15 +29,13 @@
 
       <div class="nav-group">
         <div class="nav-title">Inventory</div>
-        <a href="products.html"       class="nav-link sidebar-active"><i data-lucide="box"></i> Products</a>
-        <a href="createproduct.html" class="nav-link"><i data-lucide="plus-square"></i> Create Product</a>
-        <a href="lowstock.html"     class="nav-link"><i data-lucide="alert-triangle"></i> Low Stocks</a>
+        <a href="products.html"   class="nav-link sidebar-active"><i data-lucide="box"></i> Products</a>
       </div>
 
       <div class="nav-group">
         <div class="nav-title">Stock</div>
         <a href="managestock.html"   class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
-        <a href="#" class="nav-link"><i data-lucide="truck"></i> Supplier</a>
+        <a href="supplier.html" class="nav-link"><i data-lucide="truck"></i> Supplier</a>
       </div>
 
       <div class="nav-group">
@@ -55,82 +58,173 @@
 
   <main>
 
-    <header>
-      <h1>Products</h1>
-      <div class="subtitle">Manage all menu items and inventory products</div>
+    <header class="page-header">
+      <div class="page-header-left">
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div>
+          <h1>Products</h1>
+          <div class="subtitle">Manage all menu items and inventory products</div>
+        </div>
+      </div>
+      <button class="btn-create-float" onclick="openCreateModal()">
+        <i data-lucide="plus"></i> Create Product
+      </button>
     </header>
 
-    <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="productTableBody">
-          <tr><td colspan="7" style="text-align:center;color:var(--mocha);">Loading products...</td></tr>
-        </tbody>
-      </table>
+    <!-- Toolbar -->
+    <div class="products-toolbar">
+      <div class="products-search-wrap">
+        <i data-lucide="search" class="products-search-icon"></i>
+        <input type="text" id="productSearch" class="products-search" placeholder="Search by name or category..." />
+      </div>
+      <select id="productSort" class="products-sort">
+        <option value="">Sort: Default</option>
+        <option value="name-asc">Name A &#8594; Z</option>
+        <option value="name-desc">Name Z &#8594; A</option>
+        <option value="price-asc">Price Low &#8594; High</option>
+        <option value="price-desc">Price High &#8594; Low</option>
+      </select>
+    </div>
+
+    <!-- Card Grid -->
+    <div class="products-grid" id="productsGrid">
+      <p style="color:var(--mocha);padding:2rem;">Loading products...</p>
     </div>
 
   </main>
 
 </div>
 
-<!-- edit product modal niya-->
-<div id="editModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:500px;">
-    <h2>Edit Product</h2>
-    <form id="editForm">
-      <div style="margin-bottom:1rem;">
-        <label>Product Name</label>
-        <input type="text" id="editName" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+<!-- ── Create / Edit Product Modal ──────────────────────────── -->
+<div id="productModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card floating-card-wide">
+    <div class="floating-card-header">
+      <h2 id="modalTitle">Create Product</h2>
+      <button class="floating-card-close" onclick="closeProductModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="floating-card-body">
+
+      <!-- Row 1: Name + Category -->
+      <div class="fc-form-row">
+        <div class="fc-form-group">
+          <label for="pName">Product Name *</label>
+          <input type="text" id="pName" placeholder="e.g. Iced Caramel Macchiato" />
+        </div>
+        <div class="fc-form-group">
+          <label for="pCategory">Category *</label>
+          <select id="pCategory">
+            <option value="">Select category</option>
+            <option value="Beverages">Beverages</option>
+            <option value="Desserts">Desserts</option>
+            <option value="Pastries">Pastries</option>
+            <option value="Ingredients">Ingredients</option>
+            <option value="Merchandise">Merchandise</option>
+          </select>
+        </div>
       </div>
-      <div style="margin-bottom:1rem;">
-        <label>Category</label>
-        <select id="editCategory" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
-          <option value="Beverages">Beverages</option>
-          <option value="Desserts">Desserts</option>
-          <option value="Pastries">Pastries</option>
-          <option value="Ingredients">Ingredients</option>
-          <option value="Merchandise">Merchandise</option>
-        </select>
+
+      <!-- Row 2: Selling Price + Cost Per Unit -->
+      <div class="fc-form-row">
+        <div class="fc-form-group">
+          <label for="pPrice">Selling Price (&#8369;) *</label>
+          <div class="fc-input-affix">
+            <span class="fc-affix-label">&#8369;</span>
+            <input type="number" id="pPrice" step="0.01" min="0" placeholder="0.00" />
+          </div>
+        </div>
+        <div class="fc-form-group">
+          <label for="pCost">Cost Per Unit (&#8369;) *</label>
+          <div class="fc-input-affix">
+            <span class="fc-affix-label">&#8369;</span>
+            <input type="number" id="pCost" step="0.01" min="0" placeholder="0.00" />
+          </div>
+        </div>
       </div>
-      <div style="margin-bottom:1rem;">
-        <label>Price (₱)</label>
-        <input type="number" id="editPrice" step="0.01" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+
+      <!-- Row 3: Initial Stock + Unit of Measure -->
+      <div class="fc-form-row">
+        <div class="fc-form-group">
+          <label for="pStock">Initial Stock Quantity</label>
+          <input type="number" id="pStock" min="0" value="0" placeholder="0" />
+        </div>
+        <div class="fc-form-group">
+          <label for="pUnit">Unit of Measure *</label>
+          <select id="pUnit">
+            <option value="Piece/Item">Piece/Item</option>
+            <option value="Kilogram">Kilogram</option>
+            <option value="Gram">Gram</option>
+            <option value="Liter">Liter</option>
+            <option value="Milliliter">Milliliter</option>
+            <option value="Cup">Cup</option>
+            <option value="Dozen">Dozen</option>
+            <option value="Pack">Pack</option>
+          </select>
+        </div>
       </div>
-      <div style="margin-bottom:1rem;">
-        <label>Stock</label>
-        <input type="number" id="editStock" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+
+      <!-- Description -->
+      <div class="fc-form-group">
+        <label for="pDesc">Description</label>
+        <textarea id="pDesc" class="fc-textarea" rows="3"
+          placeholder="Short description, ingredients, allergens, preparation notes…"></textarea>
       </div>
-      <div style="display:flex; gap:1rem; justify-content:flex-end;">
-        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Save Changes</button>
+
+      <!-- Product Image -->
+      <div class="fc-form-group">
+        <label>Product Image</label>
+        <div class="fc-img-upload-wrap">
+          <label for="pImage" class="fc-img-choose-btn">
+            <i data-lucide="upload-cloud"></i>
+            <span id="pImageFileName">Choose File</span>
+          </label>
+          <input type="file" id="pImage" accept="image/*" style="display:none;" />
+          <div class="fc-img-preview" id="pImagePreview">
+            <i data-lucide="image" style="width:28px;height:28px;opacity:0.3;"></i>
+            <span class="fc-no-img">No image selected</span>
+          </div>
+        </div>
       </div>
-    </form>
+
+      <!-- Low Stock Threshold -->
+      <div class="fc-form-group">
+        <label for="pThreshold">Low Stock Alert Threshold *</label>
+        <input type="number" id="pThreshold" min="0" value="10" />
+        <div class="fc-hint">Notify admin when stock falls to or below this number</div>
+      </div>
+
+    </div>
+    <div class="floating-card-footer">
+      <button class="btn btn-secondary" onclick="closeProductModal()">Cancel</button>
+      <button class="btn btn-primary" id="saveProductBtn" onclick="submitProductForm()">Create Product</button>
+    </div>
   </div>
 </div>
 
-<!-- delete confirmation modal sa products -->
-<div id="deleteModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:400px;">
-    <h2>Delete Product</h2>
-    <p id="deleteMessage" style="margin:1rem 0;"></p>
-    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+<!-- ── Delete Confirmation Modal ─────────────────────────── -->
+<div id="deleteModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card delete-card">
+    <div class="floating-card-header">
+      <h2>Delete Product</h2>
+      <button class="floating-card-close" onclick="closeDeleteModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="floating-card-body">
+      <p id="deleteMsg" class="delete-msg"></p>
+    </div>
+    <div class="floating-card-footer">
       <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn btn-delete" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
     </div>
   </div>
 </div>
 
   <script src="js/logout-modal.js"></script>
   <script src="js/products.js"></script>
+  <script src="js/sidebar-toggle.js"></script>
 </body>
 </html>

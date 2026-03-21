@@ -245,3 +245,97 @@ class TransactionResponseSchema(serializers.Serializer):
     reference = serializers.CharField()
     notes = serializers.CharField()
     timestamp = serializers.CharField(allow_null=True)
+
+
+# ── POS Sales ─────────────────────────────────────────────────────
+
+class SaleItemRequestSchema(serializers.Serializer):
+    product_id  = serializers.IntegerField(required=False, allow_null=True)
+    product_name = serializers.CharField()
+    quantity    = serializers.IntegerField()
+    unit_price  = serializers.DecimalField(max_digits=10, decimal_places=2)
+    cost_price  = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+
+
+class SaleItemResponseSchema(serializers.Serializer):
+    id = serializers.IntegerField()
+    product_id = serializers.IntegerField(allow_null=True)
+    product_name = serializers.CharField()
+    quantity = serializers.IntegerField()
+    unit_price = serializers.CharField()
+    cost_price = serializers.CharField()
+    subtotal = serializers.CharField()
+
+
+class SaleResponseSchema(serializers.Serializer):
+    id = serializers.IntegerField()
+    sale_id = serializers.CharField()
+    customer_name = serializers.CharField()
+    table_number = serializers.CharField(allow_blank=True)
+    payment_method = serializers.CharField()
+    subtotal = serializers.CharField()
+    tax = serializers.CharField()
+    total = serializers.CharField()
+    status = serializers.CharField()
+    items_count = serializers.IntegerField()
+    items = SaleItemResponseSchema(many=True)
+    created_at = serializers.CharField(allow_null=True)
+    updated_at = serializers.CharField(allow_null=True)
+
+
+class CreateSaleRequestSchema(serializers.Serializer):
+    sale_id = serializers.CharField()
+    customer_name = serializers.CharField()
+    table_number = serializers.CharField(required=False, allow_blank=True, default="")
+    payment_method = serializers.ChoiceField(
+        choices=["Cash", "Card", "GCash", "Maya"], default="Cash"
+    )
+    subtotal = serializers.DecimalField(max_digits=12, decimal_places=2)
+    tax = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    status = serializers.ChoiceField(
+        choices=["Pending", "Completed", "Cancelled"], default="Completed"
+    )
+    items = SaleItemRequestSchema(many=True)
+
+
+class UpdateSaleRequestSchema(serializers.Serializer):
+    customer_name = serializers.CharField(required=False)
+    table_number = serializers.CharField(required=False, allow_blank=True)
+    payment_method = serializers.ChoiceField(
+        choices=["Cash", "Card", "GCash", "Maya"], required=False
+    )
+    status = serializers.ChoiceField(
+        choices=["Pending", "Completed", "Cancelled"], required=False
+    )
+
+
+# ── Compute Totals ────────────────────────────────────────────────
+
+class ComputeTotalsItemSchema(serializers.Serializer):
+    """Single line-item for the compute-totals endpoint."""
+    product_id   = serializers.IntegerField(required=False, allow_null=True)
+    product_name = serializers.CharField(required=False, default="")
+    quantity     = serializers.IntegerField(min_value=1)
+    unit_price   = serializers.DecimalField(max_digits=10, decimal_places=2)
+    cost_price   = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
+
+
+class ComputeTotalsRequestSchema(serializers.Serializer):
+    """POST /api/sales/compute-totals/ — request body."""
+    items         = ComputeTotalsItemSchema(many=True)
+    cash_tendered = serializers.DecimalField(
+        max_digits=12, decimal_places=2, required=False, default=0
+    )
+
+
+class ComputeTotalsResponseSchema(serializers.Serializer):
+    """POST /api/sales/compute-totals/ — response body."""
+    subtotal         = serializers.CharField(help_text="Σ (quantity × unit_price)")
+    tax              = serializers.CharField(help_text="Subtotal × 0.12  (12% VAT)")
+    total            = serializers.CharField(help_text="Subtotal + Tax")
+    tax_rate         = serializers.CharField(help_text="0.12")
+    change           = serializers.CharField(help_text="CashTendered − Total")
+    cogs             = serializers.CharField(help_text="Σ (quantity × cost_price)")
+    gross_profit     = serializers.CharField(help_text="Subtotal − COGS")
+    total_units_sold = serializers.IntegerField(help_text="Σ quantity")

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Suppliers - Haneus Cafe Admin</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="css/supplier.css">
+</head>
+<body>
+
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+<div class="layout">
+
+  <!-- ── Sidebar ───────────────────────────────────────────── -->
+  <aside id="main-sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-logo-row">
+        <div class="logo">Haneus Cafe</div>
+        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Main</div>
+        <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Inventory</div>
+        <a href="products.html" class="nav-link"><i data-lucide="box"></i> Products</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Stock</div>
+        <a href="managestock.html" class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
+        <a href="supplier.html"    class="nav-link sidebar-active"><i data-lucide="truck"></i> Supplier</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Sales</div>
+        <a href="sales.html" class="nav-link"><i data-lucide="dollar-sign"></i> Sales</a>
+      </div>
+
+      <div class="nav-group admin-only">
+        <div class="nav-title">Users</div>
+        <a href="UserManagement.html" class="nav-link" style="font-size:14px;"><i data-lucide="shield-user"></i> User Management</a>
+      </div>
+
+      <div class="nav-group">
+        <div class="nav-title">Settings</div>
+        <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
+        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ──────────────────────────────────────── -->
+  <main>
+
+    <div class="page-header">
+      <div class="page-header-left">
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div>
+          <h1>Suppliers</h1>
+          <div class="subtitle">Manage your product suppliers and their contact details</div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="openAddModal()">
+        <i data-lucide="plus"></i> Add Supplier
+      </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="supplier-toolbar">
+      <div class="supplier-search-wrap">
+        <i data-lucide="search" class="supplier-search-icon"></i>
+        <input type="text" id="supplierSearch" class="supplier-search"
+               placeholder="Search by company, owner, or email…" />
+      </div>
+    </div>
+
+    <!-- Card Grid -->
+    <div class="supplier-grid" id="supplierGrid">
+      <p style="color:var(--mocha);padding:2rem;">Loading suppliers…</p>
+    </div>
+
+  </main>
+
+</div>
+
+<!-- ── Add / Edit Supplier Modal ─────────────────────────── -->
+<div id="supplierModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card">
+    <div class="fc-header">
+      <h2 id="modalTitle">Add Supplier</h2>
+      <button class="fc-close" onclick="closeSupplierModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="fc-body">
+      <div class="fc-group">
+        <label for="sCompany">Company Name *</label>
+        <input type="text" id="sCompany" placeholder="e.g. Zaldy Co and Friend" />
+      </div>
+      <div class="fc-group">
+        <label for="sOwner">Owner Name *</label>
+        <input type="text" id="sOwner" placeholder="e.g. John Adrian James Tabamo Pabuto" />
+      </div>
+      <div class="fc-group">
+        <label for="sEmail">Email</label>
+        <input type="email" id="sEmail" placeholder="e.g. contact@supplier.com" />
+      </div>
+      <div class="fc-group">
+        <label for="sPhone">Phone</label>
+        <input type="text" id="sPhone" placeholder="e.g. (63+) 9010123921" />
+      </div>
+      <div class="fc-group">
+        <label for="sAddress">Address</label>
+        <input type="text" id="sAddress" placeholder="e.g. BRGY Balbautog Sitio Uwagan Purok Insan" />
+      </div>
+      <div class="fc-group">
+        <label for="sProducts">Supplied Products <span style="font-weight:400;color:var(--mocha);">(comma-separated)</span></label>
+        <input type="text" id="sProducts" placeholder="e.g. Paracetamol, Grass" />
+      </div>
+      <div class="fc-group">
+        <label for="sImageFile">Upload Image <span style="font-weight:400;color:var(--mocha);">(optional — .jpg, .png, .jpeg)</span></label>
+        <input type="file" id="sImageFile" accept=".jpg,.jpeg,.png" />
+        <div id="sImagePreview" style="display:none;margin-top:0.5rem;">
+          <img id="sImagePreviewImg" style="width:80px;height:80px;border-radius:0.625rem;object-fit:cover;border:2px solid var(--latte);" alt="Preview" />
+        </div>
+      </div>
+    </div>
+    <div class="fc-footer">
+      <button class="btn btn-secondary" onclick="closeSupplierModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitSupplierForm()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete Confirmation Modal ─────────────────────────── -->
+<div id="deleteModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card" style="max-width:380px;">
+    <div class="fc-header">
+      <h2>Delete Supplier</h2>
+      <button class="fc-close" onclick="closeDeleteModal()" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="fc-body">
+      <p id="deleteMsg" class="delete-msg"></p>
+    </div>
+    <div class="fc-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/logout-modal.js"></script>
+<script src="js/supplier.js"></script>
+<script src="js/sidebar-toggle.js"></script>
+</body>
+</html>

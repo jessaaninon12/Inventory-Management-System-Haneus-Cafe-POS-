@@ -2,7 +2,8 @@
 lucide.createIcons();
 
 const API = 'http://127.0.0.1:8000/api';
-const alertBox = document.getElementById('profileAlert');
+const toast = document.getElementById('profileToast');
+let toastTimer = null;
 
 // Get logged-in user from localStorage (set during login)
 function getUserId() {
@@ -13,11 +14,12 @@ function getUserId() {
 }
 
 function showAlert(msg, type) {
-  alertBox.textContent = msg;
-  alertBox.style.display = 'block';
-  alertBox.style.background = type === 'success' ? '#dcfce7' : '#fee2e2';
-  alertBox.style.color = type === 'success' ? '#166534' : '#991b1b';
-  setTimeout(() => { alertBox.style.display = 'none'; }, 4000);
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.className = 'profile-toast ' + (type === 'success' ? 'success' : 'error');
+  toast.style.display = 'block';
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.style.display = 'none'; }, 4500);
 }
 
 // ---------- Load profile ----------
@@ -136,43 +138,130 @@ document.getElementById('profileForm').addEventListener('submit', async function
   }
 });
 
-// ---------- Change password ----------
-document.getElementById('passwordForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const userId = getUserId();
-  if (!userId) { showAlert('No user session.', 'error'); return; }
+// ---------- Change Password Modal ----------
+const pwModal      = document.getElementById('changePasswordModal');
+const openPwBtn    = document.getElementById('openChangePasswordBtn');
+const closePwBtn   = document.getElementById('closePasswordModalBtn');
+const cancelPwBtn  = document.getElementById('cancelPasswordBtn');
+const submitPwBtn  = document.getElementById('submitPasswordBtn');
 
-  const currentPassword = document.getElementById('currentPassword').value;
-  const newPassword     = document.getElementById('newPassword').value;
-  const confirmPassword = document.getElementById('confirmPassword').value;
+function openPasswordModal() {
+  document.getElementById('currentPassword').value = '';
+  document.getElementById('newPassword').value     = '';
+  document.getElementById('confirmPassword').value = '';
+  resetEyeIcons();
+  pwModal.style.display = 'flex';
+  lucide.createIcons();
+}
+function closePasswordModal() {
+  pwModal.style.display = 'none';
+}
+if (openPwBtn)   openPwBtn.addEventListener('click', openPasswordModal);
+if (closePwBtn)  closePwBtn.addEventListener('click', closePasswordModal);
+if (cancelPwBtn) cancelPwBtn.addEventListener('click', closePasswordModal);
+if (pwModal) {
+  pwModal.addEventListener('click', (e) => { if (e.target === pwModal) closePasswordModal(); });
+}
 
-  if (newPassword !== confirmPassword) {
-    showAlert('New password and confirmation do not match.', 'error');
-    return;
-  }
-  if (newPassword.length < 6) {
-    showAlert('New password must be at least 6 characters.', 'error');
-    return;
-  }
+// ---------- Eye toggle buttons ----------
+function resetEyeIcons() {
+  document.querySelectorAll('.eye-btn').forEach(btn => {
+    const target = document.getElementById(btn.dataset.target);
+    if (target) target.type = 'password';
+    const icon = btn.querySelector('i[data-lucide]');
+    if (icon) { icon.setAttribute('data-lucide', 'eye'); }
+  });
+  lucide.createIcons();
+}
 
-  try {
-    const res = await fetch(`${API}/profile/${userId}/password/`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      showAlert(err.error || 'Password change failed.', 'error');
-      return;
+document.querySelectorAll('.eye-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    const target = document.getElementById(this.dataset.target);
+    if (!target) return;
+    const isHidden = target.type === 'password';
+    target.type = isHidden ? 'text' : 'password';
+    const icon = this.querySelector('i[data-lucide]');
+    if (icon) {
+      icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+      lucide.createIcons();
     }
+  });
+});
 
-    showAlert('Password updated successfully!', 'success');
-    document.getElementById('passwordForm').reset();
-  } catch (err) {
-    console.error(err);
-    showAlert('Failed to change password.', 'error');
+// ---------- Submit password change ----------
+if (submitPwBtn) {
+  submitPwBtn.addEventListener('click', async function() {
+    const userId = getUserId();
+    if (!userId) { showAlert('No user session.', 'error'); closePasswordModal(); return; }
+
+    const currentPassword = document.getElementById('currentPassword').value;
+    const newPassword     = document.getElementById('newPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    if (!currentPassword) { showAlert('Please enter your current password.', 'error'); return; }
+    if (newPassword !== confirmPassword) { showAlert('New password and confirmation do not match.', 'error'); return; }
+    if (newPassword.length < 8) { showAlert('New password must be at least 8 characters.', 'error'); return; }
+
+    submitPwBtn.disabled = true;
+    try {
+      const res = await fetch(`${API}/profile/${userId}/password/`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        showAlert(err.error || 'Password change failed.', 'error');
+        return;
+      }
+      showAlert('Password updated successfully!', 'success');
+      closePasswordModal();
+    } catch (err) {
+      console.error(err);
+      showAlert('Failed to change password. Is the backend running?', 'error');
+    } finally {
+      submitPwBtn.disabled = false;
+    }
+  });
+}
+
+// ---------- Delete Account modal ----------
+const deleteBtn         = document.getElementById('deleteAccountBtn');
+const deleteModal       = document.getElementById('deleteAccountModal');
+const confirmDeleteBtn  = document.getElementById('confirmDeleteAccountBtn');
+
+if (deleteBtn) {
+  deleteBtn.addEventListener('click', () => {
+    deleteModal.style.display = 'flex';
+    lucide.createIcons();
+  });
+}
+if (deleteModal) {
+  deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) deleteModal.style.display = 'none'; });
+}
+if (confirmDeleteBtn) {
+  confirmDeleteBtn.addEventListener('click', () => {
+    // TODO: wire to actual delete endpoint when backend supports it
+    showAlert('Account deletion is not yet available. Contact your admin.', 'error');
+    deleteModal.style.display = 'none';
+  });
+}
+
+// ---------- Log Out from All Devices ----------
+const logoutAllBtn = document.getElementById('logoutAllBtn');
+if (logoutAllBtn) {
+  logoutAllBtn.addEventListener('click', () => {
+    showAlert('You have been logged out from all devices.', 'success');
+    setTimeout(() => { localStorage.clear(); window.location.href = 'login.html'; }, 1800);
+  });
+}
+
+// ---------- Keyboard close ----------
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closePasswordModal();
+    if (deleteModal) deleteModal.style.display = 'none';
   }
 });
 

@@ -40,6 +40,27 @@ def _get_service():
     return UserService(UserRepository())
 
 
+class CheckUsernameController(APIView):
+    """
+    GET /api/auth/check-username/?username=<value>
+    Returns {"available": true} or {"available": false, "error": "Username already used"}
+    Used by the registration form for real-time uniqueness feedback.
+    """
+
+    @extend_schema(tags=["Auth"], responses={200: None})
+    def get(self, request):
+        username = request.query_params.get("username", "").strip()
+        if not username:
+            return Response(
+                {"available": False, "error": "Username is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        service = _get_service()
+        if service.check_username_exists(username):
+            return Response({"available": False, "error": "Username already used"})
+        return Response({"available": True})
+
+
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------

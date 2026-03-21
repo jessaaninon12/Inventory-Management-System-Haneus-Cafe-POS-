@@ -11,11 +11,17 @@
 </head>
 <body>
 
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 <div class="layout">
 
-  <aside>
+  <!-- ── Sidebar ─────────────────────────────────────────── -->
+  <aside id="main-sidebar">
     <div class="sidebar-inner">
-      <div class="logo">Haneus Cafe</div>
+      <div class="sidebar-logo-row">
+        <div class="logo">Haneus Cafe</div>
+        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+      </div>
 
       <div class="nav-group">
         <div class="nav-title">Main</div>
@@ -24,15 +30,13 @@
 
       <div class="nav-group">
         <div class="nav-title">Inventory</div>
-        <a href="products.html"       class="nav-link"><i data-lucide="box"></i> Products</a>
-        <a href="createproduct.html" class="nav-link"><i data-lucide="plus-square"></i> Create Product</a>
-        <a href="lowstock.html"     class="nav-link"><i data-lucide="alert-triangle"></i> Low Stocks</a>
+        <a href="products.html" class="nav-link"><i data-lucide="box"></i> Products</a>
       </div>
 
       <div class="nav-group">
         <div class="nav-title">Stock</div>
-        <a href="managestock.html"   class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
-        <a href="#" class="nav-link"><i data-lucide="truck"></i> Supplier</a>
+        <a href="managestock.html" class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
+        <a href="supplier.html"   class="nav-link"><i data-lucide="truck"></i> Supplier</a>
       </div>
 
       <div class="nav-group">
@@ -42,126 +46,216 @@
 
       <div class="nav-group admin-only">
         <div class="nav-title">Users</div>
-        <a href="UserManagement.html" class="nav-link " style="font-size: 14px;"><i data-lucide="shield-user"></i> User Management</a>
+        <a href="UserManagement.html" class="nav-link" style="font-size:14px;"><i data-lucide="shield-user"></i> User Management</a>
       </div>
 
       <div class="nav-group">
         <div class="nav-title">Settings</div>
-        <a href="profile.html"        class="nav-link sidebar-active"><i data-lucide="user"></i> Profile</a>
+        <a href="profile.html" class="nav-link sidebar-active"><i data-lucide="user"></i> Profile</a>
         <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
       </div>
     </div>
   </aside>
 
+  <!-- ── Main Content ──────────────────────────────────── -->
   <main>
 
-    <header>
-      <h1>My Profile</h1>
-      <div class="subtitle">Manage your account details, avatar, and security settings</div>
-      <div id="profileAlert" style="display:none;padding:0.75rem 1rem;border-radius:0.5rem;margin-top:1rem;font-size:0.875rem;"></div>
-    </header>
-
-    <div class="profile-container">
-
-      <div class="profile-header">
-        <div class="avatar-upload">
-          <img src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="Profile" class="avatar-large" id="avatarPreview">
-          <div class="avatar-overlay">Change</div>
-          <input type="file" id="avatarInput" accept="image/*">
-        </div>
-
-        <div class="profile-info">
-          <h2 id="profileDisplayName">Loading...</h2>
-          <p>Admin • Haneus Cafe Owner</p>
-          <p id="profileJoined" style="margin-top:0.5rem;"></p>
-        </div>
-      </div>
-
-      <div class="section-title">Personal Information</div>
-
-      <form id="profileForm">
-        <div class="form-grid">
-
-          <div class="form-group">
-            <label for="fullName">Full Name</label>
-            <input type="text" id="firstName" value="" placeholder="First name" required>
-          </div>
-
-          <div class="form-group">
-            <label for="lastName">Last Name</label>
-            <input type="text" id="lastName" value="" placeholder="Last name" required>
-          </div>
-
-          <div class="form-group">
-            <label for="email">Email Address</label>
-            <input type="email" id="email" value="" required>
-          </div>
-
-          <div class="form-group">
-            <label for="phone">Phone Number</label>
-            <input type="tel" id="phone" value="" placeholder="+63 917 123 4567">
-          </div>
-
-          <div class="form-group full-width">
-            <label for="bio">Short Bio / Role Description</label>
-            <textarea id="bio" rows="3" placeholder="Short bio or role description..."></textarea>
-          </div>
-
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn btn-outline">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Changes</button>
-        </div>
-      </form>
-
-      <div class="section-title">Change Password</div>
-
-      <form id="passwordForm">
-        <div class="form-grid">
-
-          <div class="form-group">
-            <label for="currentPassword">Current Password</label>
-            <input type="password" id="currentPassword" required>
-          </div>
-
-          <div class="form-group">
-            <label for="newPassword">New Password</label>
-            <input type="password" id="newPassword" required>
-          </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">Confirm New Password</label>
-            <input type="password" id="confirmPassword" required>
-          </div>
-
-          <div class="form-group full-width">
-            <div class="security-note">
-              Password must be at least 8 characters, include uppercase, lowercase, number, and special character.
-            </div>
-          </div>
-
-        </div>
-
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary">Update Password</button>
-        </div>
-      </form>
-
-      <div class="section-title">Account Actions</div>
-
-      <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-        <button class="btn btn-danger">Delete Account</button>
-        <button class="btn btn-outline">Log Out from All Devices</button>
-      </div>
-
+    <!-- Mobile toggle + toast -->
+    <div class="page-topbar">
+      <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+        <i data-lucide="panel-left"></i>
+      </button>
+      <div id="profileToast" class="profile-toast" style="display:none;"></div>
     </div>
 
-  </main>
+    <!-- ── Profile Card ──────────────────────────────────── -->
+    <div class="profile-card">
 
+      <!-- Hero Banner -->
+      <div class="profile-banner">
+        <img src="images/coffee1.png" class="banner-bg-img" alt="Cafe Banner" />
+        <div class="banner-overlay"></div>
+      </div>
+
+      <!-- Avatar + Identity row (overlaps banner) -->
+      <div class="profile-hero-row">
+        <div class="avatar-wrap">
+          <img id="avatarPreview"
+               src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg"
+               alt="Profile Avatar" class="avatar-lg" />
+          <label class="avatar-edit-btn" for="avatarInput" title="Change photo">
+            <i data-lucide="camera"></i>
+          </label>
+          <input type="file" id="avatarInput" accept="image/*" style="display:none;" />
+        </div>
+
+        <div class="profile-identity">
+          <h2 id="profileDisplayName">Loading…</h2>
+          <div class="profile-role-badge">
+            <i data-lucide="shield-check"></i>
+            Admin &bull; Haneus Cafe Owner
+          </div>
+          <div class="profile-joined" id="profileJoined"></div>
+        </div>
+      </div>
+
+      <!-- ── Split Area ──────────────────────────────────── -->
+      <div class="profile-split">
+
+        <!-- Left: Personal Info Form -->
+        <div class="profile-form-panel">
+          <div class="section-label">Personal Information</div>
+          <form id="profileForm" novalidate>
+
+            <div class="name-row">
+              <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input type="text" id="firstName" placeholder="First name" />
+              </div>
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input type="text" id="lastName" placeholder="Last name" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="phone">Phone Number</label>
+              <input type="tel" id="phone" placeholder="+63 917 123 4567" />
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" placeholder="admin@haneuscafe.com" />
+            </div>
+
+            <div class="form-group">
+              <label for="bio">Short Bio / Role Description</label>
+              <textarea id="bio" rows="3" placeholder="Short bio or role description…"></textarea>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn btn-outline" onclick="loadProfile()">
+                <i data-lucide="rotate-ccw"></i> Reset
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i data-lucide="save"></i> Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Right: Decorative Panel -->
+        <div class="profile-deco-panel">
+          <div class="deco-circles"></div>
+          <img src="images/coffee.png" alt="Cafe Decor" class="deco-img" />
+          <div class="deco-caption">
+            <span class="deco-brand">Haneus Cafe</span>
+            <span class="deco-tagline">Brewed with passion</span>
+          </div>
+        </div>
+
+      </div><!-- /.profile-split -->
+
+      <!-- ── Action Buttons ───────────────────────────────── -->
+      <div class="profile-actions-row">
+        <button class="btn btn-outline-brown" id="openChangePasswordBtn">
+          <i data-lucide="lock"></i> Change Password
+        </button>
+        <button class="btn btn-danger" id="deleteAccountBtn">
+          <i data-lucide="trash-2"></i> Delete Account
+        </button>
+        <button class="btn btn-outline" id="logoutAllBtn">
+          <i data-lucide="monitor-off"></i> Log Out from All Devices
+        </button>
+      </div>
+
+    </div><!-- /.profile-card -->
+
+  </main>
+</div>
+
+<!-- ── Change Password Modal ──────────────────────────── -->
+<div id="changePasswordModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card">
+    <div class="fc-header">
+      <div class="fc-header-left">
+        <i data-lucide="lock" class="fc-icon"></i>
+        <h2>Change Password</h2>
+      </div>
+      <button class="fc-close" id="closePasswordModalBtn" aria-label="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="fc-body">
+      <div class="pw-field">
+        <label>Current Password</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="currentPassword" placeholder="Enter current password" autocomplete="current-password" />
+          <button type="button" class="eye-btn" data-target="currentPassword" aria-label="Toggle visibility">
+            <i data-lucide="eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="pw-field">
+        <label>New Password</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="newPassword" placeholder="Enter new password" autocomplete="new-password" />
+          <button type="button" class="eye-btn" data-target="newPassword" aria-label="Toggle visibility">
+            <i data-lucide="eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="pw-field">
+        <label>Confirm New Password</label>
+        <div class="pw-input-wrap">
+          <input type="password" id="confirmPassword" placeholder="Confirm new password" autocomplete="new-password" />
+          <button type="button" class="eye-btn" data-target="confirmPassword" aria-label="Toggle visibility">
+            <i data-lucide="eye"></i>
+          </button>
+        </div>
+      </div>
+      <div class="pw-rules">
+        <i data-lucide="info" style="width:13px;height:13px;flex-shrink:0;margin-top:1px;"></i>
+        Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.
+      </div>
+    </div>
+    <div class="fc-footer">
+      <button class="btn btn-secondary" id="cancelPasswordBtn">Cancel</button>
+      <button class="btn btn-primary" id="submitPasswordBtn">
+        <i data-lucide="check"></i> Update Password
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete Account Confirm Modal ────────────────────── -->
+<div id="deleteAccountModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card" style="max-width:380px;">
+    <div class="fc-header">
+      <div class="fc-header-left">
+        <i data-lucide="alert-triangle" class="fc-icon" style="color:#dc2626;"></i>
+        <h2>Delete Account</h2>
+      </div>
+      <button class="fc-close" onclick="document.getElementById('deleteAccountModal').style.display='none'">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="fc-body">
+      <p style="font-size:0.9rem;color:var(--espresso);line-height:1.6;">
+        Are you sure you want to delete your account? This action is <strong>permanent</strong> and cannot be undone.
+      </p>
+    </div>
+    <div class="fc-footer">
+      <button class="btn btn-secondary" onclick="document.getElementById('deleteAccountModal').style.display='none'">Cancel</button>
+      <button class="btn btn-danger" id="confirmDeleteAccountBtn">
+        <i data-lucide="trash-2"></i> Delete Account
+      </button>
+    </div>
+  </div>
 </div>
 
 <script src="js/logout-modal.js"></script>
 <script src="js/profile.js"></script>
+<script src="js/sidebar-toggle.js"></script>
 </body>
 </html>

@@ -11,12 +11,17 @@
 </head>
 <body>
 
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
+
 <div class="layout">
 
   <!-- Sidebar – Sales is active -->
-  <aside>
+  <aside id="main-sidebar">
     <div class="sidebar-inner">
-      <div class="logo">Haneus Cafe</div>
+      <div class="sidebar-logo-row">
+        <div class="logo">Haneus Cafe</div>
+        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+      </div>
 
       <div class="nav-group">
         <div class="nav-title">Main</div>
@@ -25,15 +30,13 @@
 
       <div class="nav-group">
         <div class="nav-title">Inventory</div>
-        <a href="products.html"       class="nav-link"><i data-lucide="box"></i> Products</a>
-        <a href="createproduct.html" class="nav-link"><i data-lucide="plus-square"></i> Create Product</a>
-        <a href="lowstock.html"     class="nav-link"><i data-lucide="alert-triangle"></i> Low Stocks</a>
+        <a href="products.html"  class="nav-link"><i data-lucide="box"></i> Products</a>
       </div>
 
       <div class="nav-group">
         <div class="nav-title">Stock</div>
         <a href="managestock.html"   class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
-        <a href="#" class="nav-link"><i data-lucide="truck"></i> Supplier</a>
+        <a href="supplier.html" class="nav-link"><i data-lucide="truck"></i> Supplier</a>
       </div>
 
       <div class="nav-group">
@@ -56,9 +59,16 @@
 
   <main>
 
-    <header>
-      <h1>Sales & Orders</h1>
-      <div class="subtitle">View and manage all transactions and customer orders</div>
+    <header style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div>
+          <h1>Sales &amp; Orders</h1>
+          <div class="subtitle">View and manage all transactions and customer orders</div>
+        </div>
+      </div>
     </header>
 
     <div class="summary-cards">
@@ -165,5 +175,6 @@
 
   <script src="js/logout-modal.js"></script>
   <script src="js/sales.js"></script>
+  <script src="js/sidebar-toggle.js"></script>
 </body>
 </html>

@@ -15,7 +15,7 @@ async function loadLowStock() {
     document.getElementById('lowStockCount').textContent = products.length;
 
     if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No low-stock products \u2014 all stocked up!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No low-stock products
       return;
     }
 
@@ -31,7 +31,6 @@ async function loadLowStock() {
       return `
         <tr data-product-id="${p.id}">
           <td>${p.name}</td>
-          <td>#${p.id}</td>
           <td>${p.category}</td>
           <td>${p.stock}</td>
           <td>${p.low_stock_threshold}</td>
@@ -47,7 +46,7 @@ async function loadLowStock() {
     }).join('');
   } catch (e) {
     console.error(e);
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Failed to load low-stock products.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Failed to load low-stock products.</td></tr>'
   }
 }
 

@@ -1,6 +1,7 @@
 """
 Dashboard repository — concrete implementation using Django ORM.
 Provides aggregation queries for dashboard summary data.
+Combines data from both the legacy OrderModel and the POS SaleModel.
 """
 
 from datetime import date, datetime, timedelta
@@ -18,7 +19,13 @@ from django.utils import timezone
 from application.interfaces.dashboard_repository_interface import (
     DashboardRepositoryInterface,
 )
-from infrastructure.data.models import OrderItemModel, OrderModel, ProductModel
+from infrastructure.data.models import (
+    OrderItemModel,
+    OrderModel,
+    ProductModel,
+    SaleModel,
+    SaleItemModel,
+)
 
 
 class DashboardRepository(DashboardRepositoryInterface):
@@ -28,8 +35,8 @@ class DashboardRepository(DashboardRepositoryInterface):
     # ------------------------------------------------------------------
 
     def get_total_sales(self):
-        """Sum of (quantity * unit_price) across all completed orders."""
-        result = (
+        """Sum from completed orders + completed POS sales."""
+        order_result = (
             OrderItemModel.objects
             .filter(order__status="Completed")
             .aggregate(
@@ -39,7 +46,17 @@ class DashboardRepository(DashboardRepositoryInterface):
                 )
             )
         )
-        return float(result["total"])
+        sale_result = (
+            SaleModel.objects
+            .filter(status="Completed")
+            .aggregate(
+                total=Coalesce(
+                    Sum("total"),
+                    Value(0, output_field=DecimalField()),
+                )
+            )
+        )
+        return float(order_result["total"]) + float(sale_result["total"])
 
     def get_total_sales_returns(self):
         """Sum of (quantity * unit_price) across all cancelled orders."""
@@ -80,7 +97,11 @@ class DashboardRepository(DashboardRepositoryInterface):
 
     def get_total_orders_today(self):
         today = date.today()
-        return OrderModel.objects.filter(date__date=today).count()
+        order_count = OrderModel.objects.filter(date__date=today).count()
+        sale_count = SaleModel.objects.filter(
+            created_at__date=today, status="Completed"
+        ).count()
+        return order_count + sale_count
 
     # ------------------------------------------------------------------
     # Charts
@@ -111,7 +132,8 @@ class DashboardRepository(DashboardRepositoryInterface):
     # ------------------------------------------------------------------
 
     def get_top_selling_products(self, limit=5):
-        qs = (
+        """Combine top sellers from both orders and POS sales."""
+        qs_orders = (
             OrderItemModel.objects
             .filter(order__status="Completed")
             .values("product_name")
@@ -122,15 +144,36 @@ class DashboardRepository(DashboardRepositoryInterface):
                     Value(0, output_field=DecimalField()),
                 ),
             )
-            .order_by("-total_revenue")[:limit]
         )
+        qs_sales = (
+            SaleItemModel.objects
+            .filter(sale__status="Completed")
+            .values("product_name")
+            .annotate(
+                total_quantity=Coalesce(Sum("quantity"), Value(0)),
+                total_revenue=Coalesce(
+                    Sum(F("quantity") * F("unit_price")),
+                    Value(0, output_field=DecimalField()),
+                ),
+            )
+        )
+        combined = {}
+        for row in list(qs_orders) + list(qs_sales):
+            name = row["product_name"]
+            if name not in combined:
+                combined[name] = {"total_quantity": 0, "total_revenue": 0.0}
+            combined[name]["total_quantity"] += int(row["total_quantity"])
+            combined[name]["total_revenue"] += float(row["total_revenue"])
+        sorted_items = sorted(
+            combined.items(), key=lambda x: x[1]["total_revenue"], reverse=True
+        )[:limit]
         return [
             {
-                "product_name": row["product_name"],
-                "total_quantity": row["total_quantity"],
-                "total_revenue": str(round(float(row["total_revenue"]), 2)),
+                "product_name": name,
+                "total_quantity": data["total_quantity"],
+                "total_revenue": str(round(data["total_revenue"], 2)),
             }
-            for row in qs
+            for name, data in sorted_items
         ]
 
     def get_low_stock_products(self, limit=5):
@@ -150,29 +193,51 @@ class DashboardRepository(DashboardRepositoryInterface):
         ]
 
     def get_recent_sales(self, limit=5):
-        qs = (
-            OrderModel.objects
+        """Return the latest sales from POS (SaleModel), with fallback to OrderModel."""
+        qs_sales = (
+            SaleModel.objects
             .prefetch_related("items")
-            .order_by("-date")[:limit]
+            .filter(status="Completed")
+            .order_by("-created_at")[:limit]
         )
         results = []
-        for order in qs:
-            total = sum(
-                float(item.unit_price) * item.quantity
-                for item in order.items.all()
-            )
-            first_item = order.items.first()
+        for sale in qs_sales:
+            first_item = sale.items.first()
             results.append({
-                "id": order.pk,
-                "order_id": order.order_id,
-                "customer_name": order.customer_name,
+                "id": sale.pk,
+                "order_id": sale.receipt_number or sale.sale_id,
+                "customer_name": sale.customer_name,
                 "product_name": first_item.product_name if first_item else "",
                 "category": "",
-                "total": str(round(total, 2)),
-                "status": order.status,
-                "date": str(order.date) if order.date else None,
+                "total": str(round(float(sale.total), 2)),
+                "status": sale.status,
+                "date": str(sale.created_at) if sale.created_at else None,
                 "image_url": "",
             })
+        # Fallback: also include order-based data if POS sales are few
+        if len(results) < limit:
+            qs_orders = (
+                OrderModel.objects
+                .prefetch_related("items")
+                .order_by("-date")[: limit - len(results)]
+            )
+            for order in qs_orders:
+                total = sum(
+                    float(item.unit_price) * item.quantity
+                    for item in order.items.all()
+                )
+                first_item = order.items.first()
+                results.append({
+                    "id": order.pk,
+                    "order_id": order.order_id,
+                    "customer_name": order.customer_name,
+                    "product_name": first_item.product_name if first_item else "",
+                    "category": "",
+                    "total": str(round(total, 2)),
+                    "status": order.status,
+                    "date": str(order.date) if order.date else None,
+                    "image_url": "",
+                })
         return results
 
     # ------------------------------------------------------------------

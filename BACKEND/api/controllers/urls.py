@@ -6,6 +6,7 @@ All endpoints are prefixed with /api/ by the root config/urls.py.
 from django.urls import path
 from api.controllers.user_controller import (
     ChangePasswordController,
+    CheckUsernameController,
     LoginController,
     ProfileDetailController,
     RegisterController,
@@ -54,11 +55,17 @@ from api.controllers.dashboard_controller import (
     DashboardController,
 )
 from api.controllers.sales_analytics_controller import SalesAnalyticsController
+from api.controllers.sale_controller import (
+    SaleListCreateController,
+    SaleDetailController,
+    SaleComputeTotalsController,
+)
 
 urlpatterns = [
-    # ── Auth ──────────────────────────────────────────────────────────────
+    # ── Auth ──────────────────────────────────────────────────────
     path("auth/register/", RegisterController.as_view(), name="register"),
     path("auth/login/", LoginController.as_view(), name="login"),
+    path("auth/check-username/", CheckUsernameController.as_view(), name="check-username"),
 
     # ── Profile ─────────────────────────────────────────────────────────
     path("profile/<int:pk>/", ProfileDetailController.as_view(), name="profile-detail"),
@@ -86,6 +93,15 @@ urlpatterns = [
     path("orders/<int:pk>/", OrderDetailController.as_view(), name="order-detail"),
     path("orders/<int:pk>/cancel/", OrderCancelController.as_view(), name="order-cancel"),
     path("orders/<int:pk>/complete/", OrderCompleteController.as_view(), name="order-complete"),
+
+    # ── POS Sales ─────────────────────────────────────────────────
+    path("sales/create/", SaleListCreateController.as_view(), name="sale-create"),
+    path("sales/view/", SaleListCreateController.as_view(), name="sale-view-list"),
+    path("sales/view/<int:pk>/", SaleDetailController.as_view(), name="sale-view-detail"),
+    path("sales/edit/<int:pk>/", SaleDetailController.as_view(), name="sale-edit"),
+    path("sales/delete/<int:pk>/", SaleDetailController.as_view(), name="sale-delete"),
+    path("sales/partialedit/<int:pk>/", SaleDetailController.as_view(), name="sale-partialedit"),
+    path("sales/compute-totals/", SaleComputeTotalsController.as_view(), name="sale-compute-totals"),
 
     # ── Sales Analytics ────────────────────────────────────────────
     path("sales/analytics/", SalesAnalyticsController.as_view(), name="sales-analytics"),

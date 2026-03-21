@@ -1,259 +1,229 @@
-// Manage stock page — API-driven
+/* =================================================================
+   managestock.js — Inventory table: status badges, relative time,
+   view / edit-stock / delete modals.
+================================================================= */
+'use strict';
 lucide.createIcons();
 
 const API = 'http://127.0.0.1:8000/api';
-let pendingStockChange = null;
 let loadedProducts = [];
+let editingProductId = null;
+let deletingProductId = null;
 
-// ---------- Load all products ----------
+// ── Helpers ─────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function getStockStatus(p) {
+  const threshold = p.low_stock_threshold || 10;
+  if (!p.stock || p.stock <= 0)                    return { label: 'Out of Stock', cls: 'status-out' };
+  if (p.stock <= Math.floor(threshold / 2))         return { label: 'Critical',     cls: 'status-critical' };
+  if (p.stock <= threshold)                         return { label: 'Low Stock',    cls: 'status-low' };
+  return                                                   { label: 'In Stock',     cls: 'status-ok' };
+}
+
+function relativeTime(dateStr) {
+  if (!dateStr) return '—';
+  const d    = new Date(dateStr);
+  const diff = Date.now() - d.getTime();
+  const secs = Math.floor(diff / 1000);
+  const mins = Math.floor(secs / 60);
+  const hrs  = Math.floor(mins / 60);
+  const days = Math.floor(hrs  / 24);
+  const timeStr = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+  if (secs < 60)  return 'Just now';
+  if (mins < 60)  return `${mins} min${mins > 1 ? 's' : ''} ago`;
+  if (hrs  < 24)  return `${hrs} hour${hrs > 1 ? 's' : ''} ago`;
+  if (days === 1) return `Yesterday, ${timeStr}`;
+  if (days < 7)   return `${days} days ago`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── Load / Render ───────────────────────────────────────────────
 async function loadProducts() {
   const tbody = document.getElementById('stockTableBody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mocha);padding:2rem;">Loading…</td></tr>';
   try {
-    const res = await fetch(`${API}/products/view/`);
+    const res  = await fetch(`${API}/products/view/`);
     const data = await res.json();
-    const products = data.results || data;
-    loadedProducts = products;
-
-    if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No products found.</td></tr>';
-      return;
-    }
-
-    tbody.innerHTML = products.map(p => `
-      <tr data-product-id="${p.id}">
-        <td>${p.name}</td>
-        <td>#${p.id}</td>
-        <td>${p.stock} ${p.unit}</td>
-        <td>
-          <div class="stock-input-group">
-            <button onclick="decrementStock(this)">\u2212</button>
-            <input type="number" value="0" />
-            <button onclick="incrementStock(this)">+</button>
-            <button class="btn btn-primary" style="margin-left:0.75rem; padding:0.5rem 1rem;"
-              onclick="applyStockChange(${p.id}, '${p.name.replace(/'/g,"\\'")}'  , '${p.stock} ${p.unit}')">Apply</button>
-          </div>
-        </td>
-        <td>${p.updated_at ? new Date(p.updated_at).toLocaleString() : '\u2014'}</td>
-        <td><span class="history-badge" onclick="openHistoryModal(${p.id}, '${p.name.replace(/'/g,"\\'")}')">View log</span></td>
-      </tr>`).join('');
+    loadedProducts = data.results || data;
+    renderTable(loadedProducts);
   } catch (e) {
     console.error(e);
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Failed to load products.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:2rem;">Failed to load products. Is the backend running?</td></tr>';
   }
 }
 
-// ---------- +/- helpers ----------
-function incrementStock(btn) {
-  const input = btn.previousElementSibling;
-  input.value = parseInt(input.value || 0) + 1;
+function renderTable(products) {
+  const tbody = document.getElementById('stockTableBody');
+  if (!products.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mocha);padding:2.5rem;">No products found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = products.map(p => {
+    const status   = getStockStatus(p);
+    const updated  = relativeTime(p.updated_at);
+    const category = escHtml(p.category || 'Uncategorized');
+    return `
+      <tr data-product-id="${p.id}">
+        <td><span class="product-name">${escHtml(p.name)}</span></td>
+        <td><span class="category-tag">${category}</span></td>
+        <td><span class="updated-time">${updated}</span></td>
+        <td><span class="status-badge ${status.cls}">${status.label}</span></td>
+        <td>
+          <div class="action-icons">
+            <button class="action-btn action-view" title="View" onclick="openViewModal(${p.id})">
+              <i data-lucide="eye"></i>
+            </button>
+            <button class="action-btn action-edit" title="Edit Stock" onclick="openEditStockModal(${p.id})">
+              <i data-lucide="pencil"></i>
+            </button>
+            <button class="action-btn action-delete" title="Delete" onclick="openDeleteStockModal(${p.id})">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+  lucide.createIcons();
 }
 
-function decrementStock(btn) {
-  const input = btn.nextElementSibling;
-  const v = parseInt(input.value || 0);
-  input.value = (isNaN(v) ? 0 : v) - 1;
-}
+// ── Search ────────────────────────────────────────────────────
+document.querySelector('.search-input')?.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#stockTableBody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
 
-// ---------- Apply / Confirm ----------
-function applyStockChange(productId, productName, currentStock) {
-  const row = document.querySelector(`[data-product-id="${productId}"]`);
-  const input = row.querySelector('.stock-input-group input');
-  const qty = parseInt(input.value || 0);
-
-  if (qty === 0) { alert('Please enter a quantity to adjust.'); return; }
-
-  pendingStockChange = { productId, productName, quantity: qty, currentStock };
-
-  const op = qty > 0 ? 'Add' : 'Remove';
-  document.getElementById('stockConfirmDetails').innerHTML = `
-    <div style="display:grid; gap:1rem;">
-      <div>
-        <p style="color:#999; font-size:0.875rem;">Product</p>
-        <p style="font-weight:500;">${productName}</p>
-      </div>
-      <div>
-        <p style="color:#999; font-size:0.875rem;">Current Stock</p>
-        <p style="font-weight:500;">${currentStock}</p>
-      </div>
-      <div style="padding:1rem; background:#f5f5f5; border-radius:4px;">
-        <p style="color:#999; font-size:0.875rem; margin-bottom:0.5rem;">Adjustment</p>
-        <p style="font-size:1.5rem; font-weight:600;">${qty > 0 ? '+' : ''}${qty} units</p>
-        <p style="color:#999; font-size:0.875rem; margin-top:0.5rem;">${op}</p>
-      </div>
-    </div>
+// ── View Modal ───────────────────────────────────────────────
+function openViewModal(productId) {
+  const p = loadedProducts.find(x => x.id === productId);
+  if (!p) return;
+  const status = getStockStatus(p);
+  document.getElementById('viewModalContent').innerHTML = `
+    <div class="ms-detail-row"><span class="ms-detail-label">Product Name</span><span class="ms-detail-val">${escHtml(p.name)}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Category</span><span class="ms-detail-val">${escHtml(p.category || 'Uncategorized')}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Current Stock</span><span class="ms-detail-val">${p.stock} ${escHtml(p.unit || '')}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Reorder Threshold</span><span class="ms-detail-val">${p.low_stock_threshold || 10}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Status</span><span class="status-badge ${status.cls}">${status.label}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Last Updated</span><span class="ms-detail-val">${p.updated_at ? new Date(p.updated_at).toLocaleString() : '—'}</span></div>
+    ${p.description ? `<div class="ms-detail-row"><span class="ms-detail-label">Description</span><span class="ms-detail-val">${escHtml(p.description)}</span></div>` : ''}
   `;
-  document.getElementById('stockConfirmModal').style.display = 'flex';
+  document.getElementById('viewModal').style.display = 'flex';
+  lucide.createIcons();
+}
+function closeViewModal() {
+  document.getElementById('viewModal').style.display = 'none';
 }
 
-function closeStockConfirmModal() {
-  document.getElementById('stockConfirmModal').style.display = 'none';
-  pendingStockChange = null;
+// ── Edit Stock Modal ───────────────────────────────────────────
+function openEditStockModal(productId) {
+  const p = loadedProducts.find(x => x.id === productId);
+  if (!p) return;
+  editingProductId = productId;
+  document.getElementById('editStockProductName').textContent = p.name;
+  document.getElementById('editStockCurrentVal').textContent  = `${p.stock} ${p.unit || ''}`;
+  document.getElementById('editStockQty').value               = 0;
+  document.getElementById('editStockNotes').value             = '';
+  document.getElementById('editStockModal').style.display = 'flex';
+  lucide.createIcons();
 }
-
-async function confirmStockChange() {
-  if (!pendingStockChange) return;
-
+function closeEditStockModal() {
+  document.getElementById('editStockModal').style.display = 'none';
+  editingProductId = null;
+}
+function msAdjust(delta) {
+  const inp = document.getElementById('editStockQty');
+  inp.value = parseInt(inp.value || 0) + delta;
+}
+async function submitEditStock() {
+  const qty   = parseInt(document.getElementById('editStockQty').value || 0);
+  const notes = document.getElementById('editStockNotes').value.trim();
+  if (qty === 0) { alert('Please enter a non-zero adjustment.'); return; }
   try {
     const res = await fetch(`${API}/inventory/adjust/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        product_id: pendingStockChange.productId,
-        quantity_change: pendingStockChange.quantity,
+        product_id: editingProductId,
+        quantity_change: qty,
         transaction_type: 'adjustment',
         reference: '',
-        notes: `Manual adjustment from Manage Stock page`,
+        notes: notes || 'Manual adjustment from Manage Stock',
       }),
     });
-
     if (!res.ok) {
       const err = await res.json();
       alert('Adjustment failed: ' + JSON.stringify(err.errors || err));
       return;
     }
-
-    alert(`Stock adjusted by ${pendingStockChange.quantity > 0 ? '+' : ''}${pendingStockChange.quantity} for ${pendingStockChange.productName}!`);
-    closeStockConfirmModal();
+    closeEditStockModal();
     loadProducts();
-  } catch (err) {
-    console.error(err);
+  } catch (e) {
     alert('Failed to adjust stock. Is the backend running?');
   }
 }
 
-// ---------- History Modal (real API) ----------
-async function openHistoryModal(productId, productName) {
-  document.getElementById('historyProductName').textContent = `${productName} — Stock History`;
-  document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:#999;">Loading history...</p>';
-  document.getElementById('historyModal').style.display = 'flex';
-
+// ── Delete Modal ───────────────────────────────────────────────
+function openDeleteStockModal(productId) {
+  const p = loadedProducts.find(x => x.id === productId);
+  if (!p) return;
+  deletingProductId = productId;
+  document.getElementById('deleteStockMsg').textContent =
+    `Delete "${p.name}"? This will permanently remove this product from inventory and cannot be undone.`;
+  document.getElementById('deleteStockModal').style.display = 'flex';
+  lucide.createIcons();
+}
+function closeDeleteStockModal() {
+  document.getElementById('deleteStockModal').style.display = 'none';
+  deletingProductId = null;
+}
+async function confirmDeleteStock() {
+  if (!deletingProductId) return;
   try {
-    const res = await fetch(`${API}/inventory/${productId}/history/`);
-    const history = await res.json();
-
-    if (!history.length) {
-      document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:#999;">No stock history recorded yet.</p>';
+    const res = await fetch(`${API}/products/${deletingProductId}/delete/`, { method: 'DELETE' });
+    if (!res.ok && res.status !== 204) {
+      const err = await res.json().catch(() => ({}));
+      alert('Delete failed: ' + JSON.stringify(err));
       return;
     }
-
-    let html = '<table style="width:100%; border-collapse:collapse;">';
-    html += '<tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:1rem 0;font-weight:600;">Date</th><th style="text-align:left;padding:1rem 0;font-weight:600;">Action</th><th style="text-align:left;padding:1rem 0;font-weight:600;">Quantity</th><th style="text-align:left;padding:1rem 0;font-weight:600;">Reference</th></tr>';
-
-    history.forEach(t => {
-      const d = t.timestamp ? new Date(t.timestamp) : null;
-      const dateStr = d ? d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : '\u2014';
-      const timeStr = d ? d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '';
-      const qtyStr = t.quantity_change > 0 ? `+${t.quantity_change}` : `${t.quantity_change}`;
-      const qtyColor = t.quantity_change > 0 ? '#15803d' : '#b91c1c';
-
-      html += `
-        <tr style="border-bottom:1px solid #eee;">
-          <td style="padding:1rem 0;color:#666;">
-            <div>${dateStr}</div>
-            <div style="font-size:0.875rem;color:#999;">${timeStr}</div>
-          </td>
-          <td style="padding:1rem 0;">
-            <div style="font-weight:500;">${t.transaction_type}</div>
-            <div style="font-size:0.875rem;color:#999;">${t.notes || ''}</div>
-          </td>
-          <td style="padding:1rem 0;">
-            <span style="font-weight:600;color:${qtyColor};">${qtyStr}</span>
-          </td>
-          <td style="padding:1rem 0;color:#999;">${t.reference || '\u2014'}</td>
-        </tr>`;
-    });
-
-    html += '</table>';
-    document.getElementById('historyContent').innerHTML = html;
+    closeDeleteStockModal();
+    loadProducts();
   } catch (e) {
-    console.error(e);
-    document.getElementById('historyContent').innerHTML = '<p style="text-align:center;color:red;">Failed to load history.</p>';
+    alert('Failed to delete product. Is the backend running?');
   }
 }
 
-function closeHistoryModal() {
-  document.getElementById('historyModal').style.display = 'none';
-}
-
-// ---------- Search filter ----------
-document.querySelector('.search-input')?.addEventListener('input', function() {
-  const q = this.value.toLowerCase();
-  document.querySelectorAll('#stockTableBody tr').forEach(row => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(q) ? '' : 'none';
-  });
-});
-
-// ---------- Close modals on outside click ----------
-window.addEventListener('click', function(event) {
-  if (event.target === document.getElementById('stockConfirmModal')) closeStockConfirmModal();
-  if (event.target === document.getElementById('historyModal'))     closeHistoryModal();
-  if (event.target === document.getElementById('receiveStockModal')) closeReceiveStockModal();
-});
-
-// ---------- Export CSV ----------
-function exportStockCsv() {
-  const rows = Array.from(document.querySelectorAll('#stockTableBody tr[data-product-id]'))
-    .filter(row => row.style.display !== 'none');
-  if (!rows.length) { alert('No rows to export.'); return; }
-  const header = ['Product', 'ID', 'Current Stock', 'Last Updated'];
-  const escape = (v) => {
-    const s = String(v ?? '').replace(/"/g, '""');
-    return /[",\n]/.test(s) ? `"${s}"` : s;
-  };
-  const lines = [header.join(',')];
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    const product = cells[0]?.textContent?.trim() || '';
-    const id = (cells[1]?.textContent || '').replace('#','').trim();
-    const stock = cells[2]?.textContent?.trim() || '';
-    const updated = cells[4]?.textContent?.trim() || '';
-    lines.push([product, id, stock, updated].map(escape).join(','));
-  });
-  const csv = lines.join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date();
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  a.href = url;
-  a.download = `inventory_stock_${y}-${m}-${d}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-document.getElementById('exportCsvBtn')?.addEventListener('click', exportStockCsv);
-
+// ── Receive New Stock Modal ──────────────────────────────────
 function openReceiveStockModal() {
-  const modal = document.getElementById('receiveStockModal');
   const select = document.getElementById('receiveProduct');
-  select.innerHTML = loadedProducts.map(p => `<option value="${p.id}">${p.name} (#${p.id}) — ${p.stock} ${p.unit}</option>`).join('');
+  select.innerHTML = loadedProducts.map(p =>
+    `<option value="${p.id}">${escHtml(p.name)} — ${p.stock} ${p.unit || ''}</option>`
+  ).join('');
   document.getElementById('receiveQuantity').value = 1;
   document.getElementById('receiveSupplier').value = '';
-  document.getElementById('receiveNotes').value = '';
-  modal.style.display = 'flex';
+  document.getElementById('receiveNotes').value    = '';
+  document.getElementById('receiveStockModal').style.display = 'flex';
+  lucide.createIcons();
 }
 function closeReceiveStockModal() {
   document.getElementById('receiveStockModal').style.display = 'none';
 }
-document.getElementById('receiveStockBtn')?.addEventListener('click', openReceiveStockModal);
-document.getElementById('receiveStockForm')?.addEventListener('submit', async function(e) {
-  e.preventDefault();
+async function submitReceiveStock() {
   const product_id = parseInt(document.getElementById('receiveProduct').value);
-  const quantity = parseInt(document.getElementById('receiveQuantity').value);
-  const supplier = document.getElementById('receiveSupplier').value.trim();
-  const notes = document.getElementById('receiveNotes').value.trim();
+  const quantity   = parseInt(document.getElementById('receiveQuantity').value);
+  const supplier   = document.getElementById('receiveSupplier').value.trim();
+  const notes      = document.getElementById('receiveNotes').value.trim();
   if (!product_id || !quantity || quantity <= 0) { alert('Please select a product and enter a valid quantity.'); return; }
   try {
     const res = await fetch(`${API}/inventory/adjust/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        product_id,
-        quantity_change: quantity,
+        product_id, quantity_change: quantity,
         transaction_type: 'stock_in',
         reference: supplier || '',
         notes: notes || 'Received new stock',
@@ -264,14 +234,107 @@ document.getElementById('receiveStockForm')?.addEventListener('submit', async fu
       alert('Receive failed: ' + JSON.stringify(err.errors || err));
       return;
     }
-    alert('Stock received successfully.');
     closeReceiveStockModal();
     loadProducts();
-  } catch (err) {
-    alert('Failed to receive stock.');
+  } catch (e) { alert('Failed to receive stock.'); }
+}
+
+// ── Export CSV ────────────────────────────────────────────────
+function exportStockCsv() {
+  if (!loadedProducts.length) { alert('No data to export.'); return; }
+  const esc = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
+  const hdr = ['Product Name', 'Category', 'Stock', 'Unit', 'Status', 'Last Updated'];
+  const rows = loadedProducts.map(p => {
+    const status = getStockStatus(p);
+    return [p.name, p.category || '', p.stock, p.unit || '', status.label, p.updated_at || ''].map(esc).join(',');
+  });
+  const blob = new Blob([[hdr.join(','), ...rows].join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const a    = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `inventory_${new Date().toISOString().slice(0,10)}.csv`,
+  });
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+document.getElementById('exportCsvBtn')?.addEventListener('click', exportStockCsv);
+
+// ── Low Stock Floating Modal ──────────────────────────────────
+async function openLowStockModal() {
+  document.getElementById('lowStockModal').style.display = 'flex';
+  lucide.createIcons();
+  await loadLowStockForModal();
+}
+function closeLowStockModal() { document.getElementById('lowStockModal').style.display = 'none'; }
+function handleLsOverlayClick(e) { if (e.target === document.getElementById('lowStockModal')) closeLowStockModal(); }
+
+async function loadLowStockForModal() {
+  const content  = document.getElementById('lowStockContent');
+  const badge    = document.getElementById('lsCountBadge');
+  const btnBadge = document.getElementById('lowStockBadge');
+  try {
+    const res      = await fetch(`${API}/products/low-stock/`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const products = await res.json();
+    const count    = products.length;
+    if (badge) badge.textContent = count;
+    if (btnBadge) { btnBadge.textContent = count; btnBadge.style.display = count > 0 ? 'inline' : 'none'; }
+    if (!count) {
+      content.innerHTML = `<div style="text-align:center;padding:2.5rem 1rem;"><i data-lucide="check-circle" style="width:40px;height:40px;color:#16a34a;display:block;margin:0 auto 0.75rem;"></i><p style="color:var(--mocha);font-size:0.9rem;">All products are well-stocked!</p></div>`;
+      lucide.createIcons(); return;
+    }
+    content.innerHTML = products.map(p => {
+      const isCritical = p.stock <= p.low_stock_threshold / 2;
+      const tagCls  = isCritical ? 'ls-critical' : 'ls-low';
+      const tagText = isCritical ? `Critical — ${p.stock} left` : `Low — ${p.stock} left`;
+      return `<div class="ls-item"><div><div class="ls-item-name">${escHtml(p.name)}</div><div class="ls-item-meta">${escHtml(p.category)} &bull; Reorder at ${p.low_stock_threshold}</div></div><span class="ls-stock-tag ${tagCls}">${tagText}</span></div>`;
+    }).join('');
+    lucide.createIcons();
+  } catch (e) {
+    console.error(e);
+    content.innerHTML = '<p style="text-align:center;color:#dc2626;padding:1.5rem;">Failed to load low-stock data.</p>';
+  }
+}
+
+// ── Overlay click close ───────────────────────────────────────────
+['viewModal','editStockModal','deleteStockModal','receiveStockModal'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', e => {
+    if (e.target === el) {
+      if (id === 'viewModal')         closeViewModal();
+      if (id === 'editStockModal')    closeEditStockModal();
+      if (id === 'deleteStockModal')  closeDeleteStockModal();
+      if (id === 'receiveStockModal') closeReceiveStockModal();
+    }
+  });
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeViewModal();
+    closeEditStockModal();
+    closeDeleteStockModal();
+    closeReceiveStockModal();
+    closeLowStockModal();
   }
 });
 
-// ---------- Init ----------
+// ── Receive Stock button ─────────────────────────────────────────
+document.getElementById('receiveStockBtn')?.addEventListener('click', openReceiveStockModal);
+
+// ── Low stock badge on page load ───────────────────────────────
+(async function initLowStockBadge() {
+  try {
+    const res = await fetch(`${API}/products/low-stock/`);
+    if (!res.ok) return;
+    const products = await res.json();
+    const btnBadge = document.getElementById('lowStockBadge');
+    if (btnBadge && products.length > 0) {
+      btnBadge.textContent = products.length;
+      btnBadge.style.display = 'inline';
+    }
+  } catch { /* silent */ }
+}());
+
+// ── Init ──────────────────────────────────────────────────────
 loadProducts();
 
