@@ -14,8 +14,8 @@ from application.interfaces.dashboard_repository_interface import (
 def _pct_change(current, previous):
     """Calculate percentage change; return 0 if previous is zero."""
     if previous == 0:
-        return 100.0 if current > 0 else 0.0
-    return ((current - previous) / abs(previous)) * 100
+        return 0.0
+    return round(((current - previous) / abs(previous)) * 100, 2)
 
 
 class DashboardService:

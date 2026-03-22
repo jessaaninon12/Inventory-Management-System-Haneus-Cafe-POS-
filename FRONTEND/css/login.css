@@ -471,7 +471,7 @@ body{
   86%,to{stroke-dasharray:0 440;stroke-width:20;stroke-dashoffset:-440}
 }
 
-/* ── REGISTER LINK ──────────────────────────────────────── */
+/* ── REGISTER/LOGIN LINK ───────────────────────────────────────── */
 .register{
   text-align:center;
   margin-top:28px;

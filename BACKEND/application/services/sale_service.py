@@ -26,9 +26,16 @@ def _generate_receipt_number(today_count: int) -> str:
     return f"REC-{date_str}-{seq}"
 
 
-def _generate_customer_number() -> str:
-    """Returns CUST-XXXXXX with a random 6-digit suffix."""
-    return "CUST-" + str(random.randint(100000, 999999))
+def _generate_customer_number(latest_num: int = 0) -> str:
+    """
+    Generate next customer number in strict ascending order.
+    Format: CUST-000001
+
+    Accepts the integer returned by SaleRepository.get_latest_customer_number()
+    (0 if no sales exist yet) and returns the next padded string.
+    """
+    next_num = (latest_num or 0) + 1
+    return "CUST-" + str(next_num).zfill(6)
 
 
 class SaleService:
@@ -62,7 +69,10 @@ class SaleService:
         # Generate unique receipt number using today's count
         today_count = self.repository.get_today_count()
         receipt_number = _generate_receipt_number(today_count)
-        customer_number = _generate_customer_number()
+        
+        # Generate strict ascending customer number
+        latest_customer = self.repository.get_latest_customer_number()
+        customer_number = _generate_customer_number(latest_customer)
 
         # Map incoming item payloads to domain SaleItem entities
         items = [
@@ -125,6 +135,11 @@ class SaleService:
     def delete_sale(self, pk):
         """Delete the sale by primary key; returns True if deleted."""
         return self.repository.delete(pk)
+
+    def get_next_customer_number(self):
+        """Return the customer number that the next sale will receive."""
+        latest = self.repository.get_latest_customer_number()
+        return _generate_customer_number(latest)
 
     def compute_totals(self, items, discount_rate=0.0, cash_tendered=0.0):
         """

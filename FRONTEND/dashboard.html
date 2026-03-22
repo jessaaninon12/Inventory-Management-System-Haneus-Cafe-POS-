@@ -7,11 +7,14 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/payment-modals.css">
 </head>
 <body>
 
-<div class="container">
+<div class="app-container">
 
   <!-- Mobile sidebar overlay -->
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
@@ -24,30 +27,30 @@
         <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
       </div>
       <nav>
-        <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-nav-section" data-role="all">
           <p class="sidebar-section-title">Main</p>
           <a href="#" class="sidebar-link sidebar-active"><i data-lucide="layout-dashboard"></i> Dashboard</a>
         </div>
-        <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-nav-section" data-role="admin">
           <p class="sidebar-section-title">Inventory</p>
           <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
         </div>
-        <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-nav-section" data-role="all">
           <p class="sidebar-section-title">Stock</p>
           <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
-          <a href="supplier.html" class="sidebar-link"><i data-lucide="truck"></i> Supplier</a>
+          <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
         </div>
-        <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-nav-section" data-role="admin">
           <p class="sidebar-section-title">Sales</p>
           <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i>Sales</a>
         </div>
         
-        <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-nav-section" data-role="admin">
           <p class="sidebar-section-title">Users</p>
-        <a href="UserManagement.html" class="sidebar-link " style="font-size: 13px;"><i data-lucide="shield-user"></i> User Management</a>
+        <a href="UserManagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
         </div>
 
-        <div style="margin-bottom:1.5rem;">
+        <div class="sidebar-nav-section" data-role="all">
           <p class="sidebar-section-title">Settings</p>
           <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i>Profile</a>
           <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i>Logout</a>
@@ -56,7 +59,7 @@
     </div>
   </aside>
 
-  <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+  <div class="main-wrapper">
 
     <header>
       <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
@@ -376,14 +379,56 @@
   </div>
 </div>
 
-  <!-- ══════════════════════════════════════════════════════════════
+  <!-- CASH PAYMENT MODAL -->
+  <div id="cash-payment-modal" class="payment-modal-overlay" onclick="closeCashModal(event)">
+    <div class="payment-modal" onclick="event.stopPropagation()">
+      <div class="payment-modal-content">
+        <div style="margin-bottom:1.5rem;text-align:center;">
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="cash-modal-order-num">#00001</strong></div>
+          <div style="font-size:0.9rem;color:#666;margin-bottom:1rem;">Customer #: <strong id="cash-modal-customer-num">CUST-00001</strong></div>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#333;">Amount Customer Gives</label>
+          <input type="number" id="cash-modal-amount" class="payment-modal-input" placeholder="₱0.00" min="0" step="0.01" />
+        </div>
+      </div>
+      <div class="payment-modal-actions">
+        <button id="cash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
+        <button id="cash-modal-ok-btn" class="payment-btn payment-btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GCASH PAYMENT MODAL -->
+  <div id="gcash-payment-modal" class="payment-modal-overlay" onclick="closeGCashModal(event)">
+    <div class="payment-modal" onclick="event.stopPropagation()">
+      <div class="payment-modal-content">
+        <div style="margin-bottom:1.5rem;text-align:center;">
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="gcash-modal-order-num">#00001</strong></div>
+          <div style="font-size:0.9rem;color:#666;margin-bottom:1.5rem;">Customer #: <strong id="gcash-modal-customer-num">CUST-00001</strong></div>
+        </div>
+        <div id="gcash-modal-qr" style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:0.5rem;padding:1.5rem;text-align:center;background:#f9f9f9;">
+        </div>
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Scan to Pay via GCash</div>
+          <div style="font-size:1.25rem;font-weight:600;color:#333;">Amount: <span id="gcash-modal-amount">₱0.00</span></div>
+        </div>
+      </div>
+      <div class="payment-modal-actions">
+        <button id="gcash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
+        <button id="gcash-modal-confirm-btn" class="payment-btn payment-btn-primary">CONFIRM PAYMENT</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
        RECEIPT MODAL
   ══════════════════════════════════════════════════════════════ -->
   <div id="receipt-modal-overlay" class="receipt-modal-overlay" onclick="closeReceiptModal(event)">
     <div class="receipt-modal" onclick="event.stopPropagation()">
 
       <!-- Printable paper area -->
-      <div class="receipt-paper" id="receipt-content">
+      <div class="receipt-paper" id="receipt-to-download">
         <div class="receipt-head">
           <div class="receipt-cafe-name">HANEUS CAFE</div>
           <div class="receipt-cafe-addr">BRGY Balbautog Sitio Uwagan</div>
@@ -423,7 +468,7 @@
 
       <!-- Action buttons (hidden when printing) -->
       <div class="receipt-actions no-print">
-        <button class="receipt-btn receipt-btn-download" onclick="printReceipt()">
+        <button class="receipt-btn receipt-btn-download" onclick="downloadReceiptPNG()">
           &#11015; Download Receipt
         </button>
         <button class="receipt-btn receipt-btn-ok" onclick="closeReceiptModal()">
@@ -448,6 +493,7 @@
     </div>
   </div>
 
+  <script src="js/role-control.js"></script>
   <script src="js/logout-modal.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/pos.js"></script>

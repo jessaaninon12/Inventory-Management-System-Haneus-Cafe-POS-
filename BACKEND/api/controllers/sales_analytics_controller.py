@@ -1,6 +1,8 @@
 """
 Sales Analytics API controller.
 Provides aggregated sales statistics for the Sales page summary cards.
+Combines data from both the legacy OrderModel and the POS SaleModel so that
+every completed POS transaction is reflected in the summary metrics.
 """
 
 from datetime import date, timedelta
@@ -12,21 +14,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.schema_serializers import SalesAnalyticsResponseSchema
-from infrastructure.data.models import OrderItemModel, OrderModel
+from infrastructure.data.models import OrderItemModel, OrderModel, SaleModel
 
 
 class SalesAnalyticsController(APIView):
     """
     GET /api/sales/analytics/
     Returns summary stats: today's sales, this week, pending orders, avg order.
+    Combines legacy order data (OrderModel) + POS sales (SaleModel).
     """
 
     @extend_schema(tags=["Sales"], responses=SalesAnalyticsResponseSchema)
     def get(self, request):
         today = date.today()
 
-        # Today's sales = sum of completed order-item revenue where order date is today
-        todays = (
+        # ── Today's Sales ──────────────────────────────────────────────
+        # Legacy orders: sum of completed order-item revenue dated today
+        legacy_today = (
             OrderItemModel.objects
             .filter(order__status="Completed", order__date__date=today)
             .aggregate(
@@ -35,13 +39,22 @@ class SalesAnalyticsController(APIView):
                 )
             )
         )
-        todays_sales = float(todays["total"])
+        # POS sales: sum of completed sales totals created today
+        pos_today = (
+            SaleModel.objects
+            .filter(status="Completed", created_at__date=today)
+            .aggregate(
+                total=Coalesce(Sum("total"), Value(0, output_field=DecimalField()))
+            )
+        )
+        todays_sales = float(legacy_today["total"]) + float(pos_today["total"])
 
-        # This week (Mon-Sun)
+        # ── This Week's Sales (Mon–Sun) ────────────────────────────────
         day_of_week = today.weekday()  # 0 = Monday
         monday = today - timedelta(days=day_of_week)
         sunday = monday + timedelta(days=6)
-        week = (
+
+        legacy_week = (
             OrderItemModel.objects
             .filter(
                 order__status="Completed",
@@ -54,14 +67,29 @@ class SalesAnalyticsController(APIView):
                 )
             )
         )
-        this_week_sales = float(week["total"])
+        pos_week = (
+            SaleModel.objects
+            .filter(
+                status="Completed",
+                created_at__date__gte=monday,
+                created_at__date__lte=sunday,
+            )
+            .aggregate(
+                total=Coalesce(Sum("total"), Value(0, output_field=DecimalField()))
+            )
+        )
+        this_week_sales = float(legacy_week["total"]) + float(pos_week["total"])
 
-        # Pending orders count
-        pending_orders = OrderModel.objects.filter(status="Pending").count()
+        # ── Pending Orders ────────────────────────────────────────────
+        # Count pending from both legacy orders and POS sales
+        pending_orders = (
+            OrderModel.objects.filter(status="Pending").count()
+            + SaleModel.objects.filter(status="Pending").count()
+        )
 
-        # Average order value (across all completed orders)
-        # Compute per-order totals then average
-        completed_orders = (
+        # ── Average Order Value ───────────────────────────────────────
+        # Compute per-order totals from legacy orders then average
+        legacy_completed = (
             OrderModel.objects
             .filter(status="Completed")
             .annotate(
@@ -72,11 +100,32 @@ class SalesAnalyticsController(APIView):
             )
             .aggregate(avg=Coalesce(Avg("order_total"), Value(0, output_field=DecimalField())))
         )
-        average_order = float(completed_orders["avg"])
+        legacy_avg = float(legacy_completed["avg"])
+        legacy_count = OrderModel.objects.filter(status="Completed").count()
+
+        # POS sales average
+        pos_completed = (
+            SaleModel.objects
+            .filter(status="Completed")
+            .aggregate(
+                total_sum=Coalesce(Sum("total"), Value(0, output_field=DecimalField())),
+                total_count=Count("id"),
+            )
+        )
+        pos_sum = float(pos_completed["total_sum"])
+        pos_count = pos_completed["total_count"]
+
+        # Weighted average across both sources
+        combined_count = legacy_count + pos_count
+        if combined_count > 0:
+            combined_sum = (legacy_avg * legacy_count) + pos_sum
+            average_order = combined_sum / combined_count
+        else:
+            average_order = 0.0
 
         return Response({
-            "todays_sales": str(round(todays_sales, 2)),
+            "todays_sales":    str(round(todays_sales, 2)),
             "this_week_sales": str(round(this_week_sales, 2)),
-            "pending_orders": pending_orders,
-            "average_order": str(round(average_order, 2)),
+            "pending_orders":  pending_orders,
+            "average_order":   str(round(average_order, 2)),
         })

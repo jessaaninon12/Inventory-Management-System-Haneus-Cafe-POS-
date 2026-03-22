@@ -63,6 +63,21 @@ class SaleComputeTotalsController(APIView):
         return Response(result)
 
 
+class SaleLatestCustomerNumberController(APIView):
+    """
+    GET /api/sales/latest-customer-number/
+    Returns the customer number that will be assigned to the next sale.
+    Used by the POS frontend to display the customer number in the payment modal
+    before the sale is completed.
+    """
+
+    @extend_schema(tags=["POS Sales"], responses={200: None})
+    def get(self, request):
+        service = _get_service()
+        customer_number = service.get_next_customer_number()
+        return Response({"customer_number": customer_number})
+
+
 class SaleListCreateController(APIView):
     """
     GET  /api/sales/view/    → list all sales
@@ -81,6 +96,30 @@ class SaleListCreateController(APIView):
         responses={201: SaleResponseSchema, 400: ErrorSchema},
     )
     def post(self, request):
+        # Safely coerce numeric fields to float (guards against None / empty string → 500)
+        def _float(val, default=0.0):
+            try:
+                return float(val) if val not in (None, "") else default
+            except (TypeError, ValueError):
+                return default
+
+        payment_method = request.data.get("payment_method", "Cash")
+        amount_tendered = _float(request.data.get("amount_tendered"), 0.0)
+        total = _float(request.data.get("total"), 0.0)
+
+        # Validate cash payment amounts before touching the service layer
+        if payment_method == "Cash":
+            if amount_tendered <= 0:
+                return Response(
+                    {"errors": "Invalid amount"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if amount_tendered < total:
+                return Response(
+                    {"errors": "Insufficient payment"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         service = _get_service()
         try:
             dto = CreateSaleDTO(
@@ -89,13 +128,13 @@ class SaleListCreateController(APIView):
                 table_number=request.data.get("table_number", ""),
                 order_type=request.data.get("order_type", "Dine In"),
                 cashier_name=request.data.get("cashier_name", ""),
-                payment_method=request.data.get("payment_method", "Cash"),
-                subtotal=request.data.get("subtotal", 0),
-                discount=request.data.get("discount", 0),
-                tax=request.data.get("tax", 0),
-                total=request.data.get("total", 0),
-                amount_tendered=request.data.get("amount_tendered", 0),
-                change_amount=request.data.get("change_amount", 0),
+                payment_method=payment_method,
+                subtotal=_float(request.data.get("subtotal")),
+                discount=_float(request.data.get("discount")),
+                tax=_float(request.data.get("tax")),
+                total=total,
+                amount_tendered=amount_tendered,
+                change_amount=_float(request.data.get("change_amount")),
                 status=request.data.get("status", "Completed"),
                 items=request.data.get("items", []),
             )

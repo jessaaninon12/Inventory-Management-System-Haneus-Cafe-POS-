@@ -225,6 +225,7 @@ signupForm.addEventListener('submit', async (e) => {
       setTimeout(() => { window.location.href = 'login.html'; }, 2000);
     } else {
       const msg =
+        (Array.isArray(data.errors) ? data.errors[0] : data.errors) ||
         data.username?.[0]         ||
         data.email?.[0]            ||
         data.password?.[0]         ||

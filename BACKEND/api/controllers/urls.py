@@ -56,6 +56,7 @@ from api.controllers.dashboard_controller import (
 )
 from api.controllers.sales_analytics_controller import SalesAnalyticsController
 from api.controllers.sale_controller import (
+    SaleLatestCustomerNumberController,
     SaleListCreateController,
     SaleDetailController,
     SaleComputeTotalsController,
@@ -95,6 +96,7 @@ urlpatterns = [
     path("orders/<int:pk>/complete/", OrderCompleteController.as_view(), name="order-complete"),
 
     # ── POS Sales ─────────────────────────────────────────────────
+    path("sales/latest-customer-number/", SaleLatestCustomerNumberController.as_view(), name="sale-latest-customer-number"),
     path("sales/create/", SaleListCreateController.as_view(), name="sale-create"),
     path("sales/view/", SaleListCreateController.as_view(), name="sale-view-list"),
     path("sales/view/<int:pk>/", SaleDetailController.as_view(), name="sale-view-detail"),

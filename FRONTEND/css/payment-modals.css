@@ -1,0 +1,144 @@
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+   PAYMENT MODALS — Cash + GCash
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════ */
+
+/* Base overlay */
+.payment-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(74, 47, 33, 0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 99998;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: paymentFadeIn 0.3s ease;
+}
+
+.payment-modal-overlay.open {
+  display: flex;
+}
+
+@keyframes paymentFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Modal card */
+.payment-modal {
+  position: relative;
+  z-index: 1001;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  max-width: 400px;
+  width: 90%;
+  overflow: hidden;
+  animation: paymentCardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: auto;
+}
+
+@keyframes paymentCardIn {
+  from {
+    transform: scale(0.85) translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Content area */
+.payment-modal-content {
+  padding: 2rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Input styling */
+.payment-modal-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.payment-modal-input:focus {
+  outline: none;
+  border-color: #c47b42;
+  box-shadow: 0 0 0 3px rgba(196, 123, 66, 0.1);
+}
+
+.payment-modal-input::placeholder {
+  color: #999;
+}
+
+/* Action buttons */
+.payment-modal-actions {
+  display: flex;
+  gap: 12px;
+  padding: 1rem 2rem;
+  background: #fafafa;
+}
+
+.payment-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.2s;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.payment-btn-secondary {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.payment-btn-secondary:hover {
+  background: #e0e0e0;
+}
+
+.payment-btn-primary {
+  background: #c47b42;
+  color: white;
+  box-shadow: 0 4px 12px rgba(196, 123, 66, 0.2);
+}
+
+.payment-btn-primary:hover {
+  background: #a35f2e;
+  box-shadow: 0 6px 16px rgba(196, 123, 66, 0.3);
+}
+
+.payment-btn:active {
+  transform: scale(0.98);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .payment-modal {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .payment-modal-content {
+    padding: 1.5rem;
+  }
+
+  .payment-modal-actions {
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+  }
+
+  .payment-btn {
+    width: 100%;
+  }
+}

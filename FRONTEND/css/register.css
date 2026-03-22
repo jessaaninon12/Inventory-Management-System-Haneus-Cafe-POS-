@@ -56,6 +56,26 @@ h1 {
   margin-bottom: 1.2rem;
 }
 
+.login-link {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.8);
+  text-align: center;
+  margin-bottom: 1.4rem;
+  margin-top: -0.8rem;
+}
+
+.login-link a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.login-link a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 /* ── Step Indicators ─────────────────────────────────────── */
 .step-indicators {
   display: flex;

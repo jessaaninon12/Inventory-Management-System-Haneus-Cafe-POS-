@@ -397,27 +397,137 @@ function resetCashTendered() {
 async function posCheckout() {
     if (posCart.length === 0) { posToast("Cart is empty", "error"); return; }
 
-    const customerName  = document.getElementById("pos-customer-name")?.value.trim() || "Walk-in";
-    const tableNumber   = document.getElementById("pos-table-number")?.value || "";
     const paymentMethod = document.getElementById("pos-payment-method")?.value || "Cash";
-    const orderType     = document.querySelector(".pos-order-type-btn.active")?.dataset.type || "Dine In";
-    const discountRate  = parseFloat(document.getElementById("pos-discount-select")?.value || "0");
-    const cashierName   = _getCashierName();
 
-    const { subtotal, discount, tax, total } = _calcTotals();
+    // Store checkout context for payment modals
+    _posCheckoutContext = {
+        customerName: document.getElementById("pos-customer-name")?.value.trim() || "Walk-in",
+        tableNumber:  document.getElementById("pos-table-number")?.value || "",
+        orderType:    document.querySelector(".pos-order-type-btn.active")?.dataset.type || "Dine In",
+        cashierName:  _getCashierName(),
+        ...(_calcTotals())
+    };
 
-    // Validate cash tendered when payment is Cash
+    // Show appropriate payment modal based on method
     if (paymentMethod === "Cash") {
-        const tendered = parseFloat(document.getElementById("pos-cash-tendered")?.value) || 0;
-        if (tendered < total) {
-            posToast("Cash tendered is less than total amount", "error");
-            return;
+        await _generateCustomerNumber();
+        showCashModal(_posCheckoutContext);
+    } else if (paymentMethod === "GCash") {
+        await _generateCustomerNumber();
+        showGCashModal(_posCheckoutContext);
+    } else {
+        // Card, Maya, etc. — treat like GCash (no input needed)
+        await _generateCustomerNumber();
+        await _completeSale(paymentMethod, _posCheckoutContext);
+    }
+}
+
+let _posCheckoutContext = {};
+let _lastGeneratedCustomerNumber = "CUST-00001";
+
+// ── Customer Number Generation ─────────────────────────────────
+
+async function _generateCustomerNumber() {
+    try {
+        // Get latest customer number from orders
+        const res = await fetch(`${POS_API}/sales/latest-customer-number/`);
+        if (res.ok) {
+            const data = await res.json();
+            const last = data.customer_number || "CUST-00000";
+            const num = parseInt(last.replace("CUST-", "")) || 0;
+            _lastGeneratedCustomerNumber = "CUST-" + String(num + 1).padStart(5, "0");
         }
+    } catch (err) {
+        console.warn("Could not fetch latest customer number, using local increment:", err);
+        const num = parseInt(_lastGeneratedCustomerNumber.replace("CUST-", "")) || 1;
+        _lastGeneratedCustomerNumber = "CUST-" + String(num + 1).padStart(5, "0");
+    }
+}
+
+// ── Cash Payment Modal ────────────────────────────────────
+
+function showCashModal(ctx) {
+    const modal = document.getElementById("cash-payment-modal");
+    if (!modal) return;
+
+    // Set order and customer number
+    const orderNum = document.getElementById("cash-modal-order-num");
+    if (orderNum) orderNum.textContent = "#00001";  // Placeholder
+
+    const custNum = document.getElementById("cash-modal-customer-num");
+    if (custNum) custNum.textContent = _lastGeneratedCustomerNumber;
+
+    // Reset input
+    const amountInput = document.getElementById("cash-modal-amount");
+    if (amountInput) amountInput.value = "";
+
+    // Show modal
+    modal.classList.add("open");
+
+    // Focus input
+    setTimeout(() => amountInput?.focus(), 100);
+}
+
+function closeCashModal(e) {
+    if (e && e.target !== document.getElementById("cash-payment-modal")) return;
+    document.getElementById("cash-payment-modal")?.classList.remove("open");
+}
+
+function submitCashPayment() {
+    const amountInput = document.getElementById("cash-modal-amount");
+    const amount = parseFloat(amountInput?.value || 0);
+    const total = _posCheckoutContext.total || 0;
+
+    if (amount < total) {
+        posToast("⚠ Insufficient payment", "error");
+        return;
     }
 
-    const amountTendered = paymentMethod === "Cash"
-        ? parseFloat(document.getElementById("pos-cash-tendered")?.value) || total
-        : total;
+    closeCashModal();
+    _completeSale("Cash", _posCheckoutContext, amount);
+}
+
+// ── GCash Payment Modal ────────────────────────────────────
+
+function showGCashModal(ctx) {
+    const modal = document.getElementById("gcash-payment-modal");
+    if (!modal) return;
+
+    // Set order and customer number
+    const orderNum = document.getElementById("gcash-modal-order-num");
+    if (orderNum) orderNum.textContent = "#00001";  // Placeholder
+
+    const custNum = document.getElementById("gcash-modal-customer-num");
+    if (custNum) custNum.textContent = _lastGeneratedCustomerNumber;
+
+    // Set amount
+    const amountEl = document.getElementById("gcash-modal-amount");
+    if (amountEl) amountEl.textContent = formatPOS(_posCheckoutContext.total || 0);
+
+    // Generate QR code (placeholder for now — would integrate with QR library)
+    const qrContainer = document.getElementById("gcash-modal-qr");
+    if (qrContainer) {
+        qrContainer.innerHTML = '<div style="padding:2rem;text-align:center;font-size:0.9rem;color:var(--mocha);">QR Code Placeholder<br/>(Integration with QR library needed)</div>';
+    }
+
+    // Show modal
+    modal.classList.add("open");
+}
+
+function closeGCashModal(e) {
+    if (e && e.target !== document.getElementById("gcash-payment-modal")) return;
+    document.getElementById("gcash-payment-modal")?.classList.remove("open");
+}
+
+function submitGCashPayment() {
+    closeGCashModal();
+    _completeSale("GCash", _posCheckoutContext, _posCheckoutContext.total);
+}
+
+// ── Complete Sale (unified function) ─────────────────────────────
+
+async function _completeSale(paymentMethod, ctx, amountTendered = ctx.total) {
+    const { subtotal, discount, tax, total, customerName, tableNumber, orderType, cashierName } = ctx;
     const changeAmount = Math.max(amountTendered - total, 0);
 
     // date-based sale_id; receipt_number generated by backend
@@ -430,6 +540,7 @@ async function posCheckout() {
     const payload = {
         sale_id:         saleId,
         customer_name:   customerName,
+        customer_number: _lastGeneratedCustomerNumber,
         table_number:    tableNumber,
         order_type:      orderType,
         cashier_name:    cashierName,
@@ -542,8 +653,43 @@ function closeReceiptModal(e) {
     document.getElementById("receipt-modal-overlay")?.classList.remove("open");
 }
 
-function printReceipt() {
-    window.print();
+async function downloadReceiptPNG() {
+    const element = document.getElementById("receipt-to-download");
+    if (!element) {
+        posToast("Receipt container not found", "error");
+        return;
+    }
+
+    try {
+        // Get receipt number for filename
+        const receiptNum = document.getElementById("rm-receipt-num")?.textContent || "Receipt";
+        const fileName = `${receiptNum.replace(/\s+/g, "-")}.png`;
+
+        // Render receipt to canvas with HD quality settings
+        const canvas = await html2canvas(element, {
+            scale: 3,              // HD quality (3x scaling)
+            useCORS: true,
+            backgroundColor: "#ffffff",
+            logging: false,
+            allowTaint: true
+        });
+
+        // Convert canvas to PNG blob and download
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            posToast("Receipt downloaded successfully!", "success");
+        }, "image/png");
+    } catch (err) {
+        console.error("Receipt download failed:", err);
+        posToast("Failed to download receipt: " + err.message, "error");
+    }
 }
 
 // ── Order History ─────────────────────────────────────────────────
@@ -645,7 +791,43 @@ function posToast(message, type = "success") {
     }, 3200);
 }
 
-// ── Modal Escape Key Handler ────────────────────────────────────
+// ── Payment Modal Event Listeners ─────────────────────────────────
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Cash modal: submit on Enter key
+    const cashInput = document.getElementById("cash-modal-amount");
+    if (cashInput) {
+        cashInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") submitCashPayment();
+        });
+    }
+
+    // Cash modal: OK button
+    const cashOkBtn = document.getElementById("cash-modal-ok-btn");
+    if (cashOkBtn) {
+        cashOkBtn.addEventListener("click", submitCashPayment);
+    }
+
+    // Cash modal: Cancel button
+    const cashCancelBtn = document.getElementById("cash-modal-cancel-btn");
+    if (cashCancelBtn) {
+        cashCancelBtn.addEventListener("click", () => closeCashModal());
+    }
+
+    // GCash modal: Confirm button
+    const gcashConfirmBtn = document.getElementById("gcash-modal-confirm-btn");
+    if (gcashConfirmBtn) {
+        gcashConfirmBtn.addEventListener("click", submitGCashPayment);
+    }
+
+    // GCash modal: Cancel button
+    const gcashCancelBtn = document.getElementById("gcash-modal-cancel-btn");
+    if (gcashCancelBtn) {
+        gcashCancelBtn.addEventListener("click", () => closeGCashModal());
+    }
+});
+
+// ── Modal Escape Key Handler ─────────────────────────────────────
 // (Sidebar toggle is handled by sidebar-toggle.js which is loaded
 //  separately on dashboard.html — no duplication needed here.)
 
@@ -653,5 +835,7 @@ document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
         document.getElementById("receipt-modal-overlay")?.classList.remove("open");
         document.getElementById("order-history-overlay")?.classList.remove("open");
+        document.getElementById("cash-payment-modal")?.classList.remove("open");
+        document.getElementById("gcash-payment-modal")?.classList.remove("open");
     }
 });

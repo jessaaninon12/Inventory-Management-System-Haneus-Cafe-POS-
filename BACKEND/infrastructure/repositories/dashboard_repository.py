@@ -59,8 +59,8 @@ class DashboardRepository(DashboardRepositoryInterface):
         return float(order_result["total"]) + float(sale_result["total"])
 
     def get_total_sales_returns(self):
-        """Sum of (quantity * unit_price) across all cancelled orders."""
-        result = (
+        """Sum of (quantity * unit_price) across all cancelled orders + cancelled POS sales."""
+        order_result = (
             OrderItemModel.objects
             .filter(order__status="Cancelled")
             .aggregate(
@@ -70,7 +70,17 @@ class DashboardRepository(DashboardRepositoryInterface):
                 )
             )
         )
-        return float(result["total"])
+        sale_result = (
+            SaleModel.objects
+            .filter(status="Cancelled")
+            .aggregate(
+                total=Coalesce(
+                    Sum("total"),
+                    Value(0, output_field=DecimalField()),
+                )
+            )
+        )
+        return float(order_result["total"]) + float(sale_result["total"])
 
     def get_total_products_count(self):
         return ProductModel.objects.count()
@@ -82,8 +92,8 @@ class DashboardRepository(DashboardRepositoryInterface):
         return revenue - expenses
 
     def get_total_expenses(self):
-        """Sum of (quantity * product.cost) for completed order items."""
-        result = (
+        """COGS from completed order items + completed POS sale items."""
+        order_result = (
             OrderItemModel.objects
             .filter(order__status="Completed", product__isnull=False)
             .aggregate(
@@ -93,7 +103,17 @@ class DashboardRepository(DashboardRepositoryInterface):
                 )
             )
         )
-        return float(result["total"])
+        sale_result = (
+            SaleItemModel.objects
+            .filter(sale__status="Completed")
+            .aggregate(
+                total=Coalesce(
+                    Sum(F("quantity") * F("cost_price")),
+                    Value(0, output_field=DecimalField()),
+                )
+            )
+        )
+        return float(order_result["total"]) + float(sale_result["total"])
 
     def get_total_orders_today(self):
         today = date.today()
@@ -108,8 +128,11 @@ class DashboardRepository(DashboardRepositoryInterface):
     # ------------------------------------------------------------------
 
     def get_monthly_sales(self, year):
-        """Return a list of 12 floats — one per month — for the given year."""
-        qs = (
+        """Return a list of 12 floats — one per month — for the given year.
+        Combines legacy orders and POS sales.
+        """
+        # Legacy orders
+        order_qs = (
             OrderItemModel.objects
             .filter(order__status="Completed", order__date__year=year)
             .annotate(month=ExtractMonth("order__date"))
@@ -123,8 +146,25 @@ class DashboardRepository(DashboardRepositoryInterface):
             .order_by("month")
         )
         monthly = [0.0] * 12
-        for row in qs:
+        for row in order_qs:
             monthly[row["month"] - 1] = float(row["total"])
+
+        # POS sales
+        sale_qs = (
+            SaleModel.objects
+            .filter(status="Completed", created_at__year=year)
+            .annotate(month=ExtractMonth("created_at"))
+            .values("month")
+            .annotate(
+                total=Coalesce(
+                    Sum("total"),
+                    Value(0, output_field=DecimalField()),
+                )
+            )
+            .order_by("month")
+        )
+        for row in sale_qs:
+            monthly[row["month"] - 1] += float(row["total"])
         return monthly
 
     # ------------------------------------------------------------------
@@ -245,29 +285,46 @@ class DashboardRepository(DashboardRepositoryInterface):
     # ------------------------------------------------------------------
 
     def get_sales_for_period(self, start, end):
-        """Sum of completed order-item revenue between start and end."""
-        result = (
+        """Sum of completed revenue (orders + POS sales) between start and end."""
+        order_result = (
             OrderItemModel.objects
             .filter(order__status="Completed", order__date__gte=start, order__date__lt=end)
             .aggregate(total=Coalesce(Sum(F("quantity") * F("unit_price")), Value(0, output_field=DecimalField())))
         )
-        return float(result["total"])
+        sale_result = (
+            SaleModel.objects
+            .filter(status="Completed", created_at__gte=start, created_at__lt=end)
+            .aggregate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+        )
+        return float(order_result["total"]) + float(sale_result["total"])
 
     def get_expenses_for_period(self, start, end):
-        result = (
+        """Sum of COGS (order items + POS sale items) between start and end."""
+        order_result = (
             OrderItemModel.objects
             .filter(order__status="Completed", order__date__gte=start, order__date__lt=end, product__isnull=False)
             .aggregate(total=Coalesce(Sum(F("quantity") * F("product__cost")), Value(0, output_field=DecimalField())))
         )
-        return float(result["total"])
+        sale_result = (
+            SaleItemModel.objects
+            .filter(sale__status="Completed", sale__created_at__gte=start, sale__created_at__lt=end)
+            .aggregate(total=Coalesce(Sum(F("quantity") * F("cost_price")), Value(0, output_field=DecimalField())))
+        )
+        return float(order_result["total"]) + float(sale_result["total"])
 
     def get_returns_for_period(self, start, end):
-        result = (
+        """Sum of cancelled revenue (order items + POS sales) between start and end."""
+        order_result = (
             OrderItemModel.objects
             .filter(order__status="Cancelled", order__date__gte=start, order__date__lt=end)
             .aggregate(total=Coalesce(Sum(F("quantity") * F("unit_price")), Value(0, output_field=DecimalField())))
         )
-        return float(result["total"])
+        sale_result = (
+            SaleModel.objects
+            .filter(status="Cancelled", created_at__gte=start, created_at__lt=end)
+            .aggregate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+        )
+        return float(order_result["total"]) + float(sale_result["total"])
 
     # ------------------------------------------------------------------
     # Chart data by period
@@ -281,7 +338,7 @@ class DashboardRepository(DashboardRepositoryInterface):
         if period == "1D":
             # 24 hourly buckets for today
             labels = [f"{h:02d}:00" for h in range(24)]
-            qs = (
+            order_qs = (
                 OrderItemModel.objects
                 .filter(order__status="Completed", order__date__gte=today, order__date__lt=today + timedelta(days=1))
                 .annotate(hour=ExtractHour("order__date"))
@@ -290,8 +347,19 @@ class DashboardRepository(DashboardRepositoryInterface):
                 .order_by("hour")
             )
             values = [0.0] * 24
-            for row in qs:
+            for row in order_qs:
                 values[row["hour"]] = float(row["total"])
+            # Add POS sales
+            pos_qs = (
+                SaleModel.objects
+                .filter(status="Completed", created_at__gte=today, created_at__lt=today + timedelta(days=1))
+                .annotate(hour=ExtractHour("created_at"))
+                .values("hour")
+                .annotate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+                .order_by("hour")
+            )
+            for row in pos_qs:
+                values[row["hour"]] += float(row["total"])
             return {"labels": labels, "values": values}
 
         elif period == "1W":
@@ -299,7 +367,7 @@ class DashboardRepository(DashboardRepositoryInterface):
             day_of_week = today.weekday()  # 0=Mon
             monday = today - timedelta(days=day_of_week)
             labels = [(monday + timedelta(days=i)).strftime("%a") for i in range(7)]
-            qs = (
+            order_qs = (
                 OrderItemModel.objects
                 .filter(order__status="Completed", order__date__gte=monday, order__date__lt=monday + timedelta(days=7))
                 .annotate(day=TruncDate("order__date"))
@@ -308,10 +376,23 @@ class DashboardRepository(DashboardRepositoryInterface):
                 .order_by("day")
             )
             values = [0.0] * 7
-            for row in qs:
+            for row in order_qs:
                 idx = (row["day"] - monday.date()).days
                 if 0 <= idx < 7:
                     values[idx] = float(row["total"])
+            # Add POS sales
+            pos_qs = (
+                SaleModel.objects
+                .filter(status="Completed", created_at__gte=monday, created_at__lt=monday + timedelta(days=7))
+                .annotate(day=TruncDate("created_at"))
+                .values("day")
+                .annotate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+                .order_by("day")
+            )
+            for row in pos_qs:
+                idx = (row["day"] - monday.date()).days
+                if 0 <= idx < 7:
+                    values[idx] += float(row["total"])
             return {"labels": labels, "values": values}
 
         elif period == "1M":
@@ -323,7 +404,7 @@ class DashboardRepository(DashboardRepositoryInterface):
                 next_month = first.replace(month=first.month + 1)
             days_in_month = (next_month - first).days
             labels = [str(d + 1) for d in range(days_in_month)]
-            qs = (
+            order_qs = (
                 OrderItemModel.objects
                 .filter(order__status="Completed", order__date__gte=first, order__date__lt=next_month)
                 .annotate(day=TruncDate("order__date"))
@@ -332,9 +413,21 @@ class DashboardRepository(DashboardRepositoryInterface):
                 .order_by("day")
             )
             values = [0.0] * days_in_month
-            for row in qs:
+            for row in order_qs:
                 idx = row["day"].day - 1
                 values[idx] = float(row["total"])
+            # Add POS sales
+            pos_qs = (
+                SaleModel.objects
+                .filter(status="Completed", created_at__gte=first, created_at__lt=next_month)
+                .annotate(day=TruncDate("created_at"))
+                .values("day")
+                .annotate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+                .order_by("day")
+            )
+            for row in pos_qs:
+                idx = row["day"].day - 1
+                values[idx] += float(row["total"])
             return {"labels": labels, "values": values}
 
         elif period == "3M":
@@ -346,7 +439,7 @@ class DashboardRepository(DashboardRepositoryInterface):
                 w_start = start + timedelta(weeks=i)
                 boundaries.append(w_start)
                 labels.append(w_start.strftime("%b %d"))
-            qs = (
+            order_qs = (
                 OrderItemModel.objects
                 .filter(order__status="Completed", order__date__gte=start, order__date__lt=today + timedelta(days=1))
                 .annotate(week=TruncWeek("order__date"))
@@ -355,7 +448,25 @@ class DashboardRepository(DashboardRepositoryInterface):
                 .order_by("week")
             )
             values = [0.0] * 12
-            for row in qs:
+            for row in order_qs:
+                week_date = row["week"]
+                if hasattr(week_date, 'date'):
+                    week_date = week_date.date()
+                for idx in range(11, -1, -1):
+                    b = boundaries[idx].date() if hasattr(boundaries[idx], 'date') else boundaries[idx]
+                    if week_date >= b:
+                        values[idx] += float(row["total"])
+                        break
+            # Add POS sales
+            pos_qs = (
+                SaleModel.objects
+                .filter(status="Completed", created_at__gte=start, created_at__lt=today + timedelta(days=1))
+                .annotate(week=TruncWeek("created_at"))
+                .values("week")
+                .annotate(total=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+                .order_by("week")
+            )
+            for row in pos_qs:
                 week_date = row["week"]
                 if hasattr(week_date, 'date'):
                     week_date = week_date.date()
@@ -382,12 +493,17 @@ class DashboardRepository(DashboardRepositoryInterface):
                 else:
                     month_end = datetime(y, m + 1, 1, tzinfo=now.tzinfo)
                 labels.append(month_start.strftime("%b"))
-                total = (
+                order_total = (
                     OrderItemModel.objects
                     .filter(order__status="Completed", order__date__gte=month_start, order__date__lt=month_end)
                     .aggregate(t=Coalesce(Sum(F("quantity") * F("unit_price")), Value(0, output_field=DecimalField())))
                 )
-                values.append(float(total["t"]))
+                sale_total = (
+                    SaleModel.objects
+                    .filter(status="Completed", created_at__gte=month_start, created_at__lt=month_end)
+                    .aggregate(t=Coalesce(Sum("total"), Value(0, output_field=DecimalField())))
+                )
+                values.append(float(order_total["t"]) + float(sale_total["t"]))
             return {"labels": labels, "values": values}
 
         else:  # 1Y default

@@ -7,58 +7,59 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/supplier.css">
 </head>
 <body>
 
 <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-<div class="layout">
+<div class="app-container">
 
-  <!-- ── Sidebar ───────────────────────────────────────────── -->
   <aside id="main-sidebar">
     <div class="sidebar-inner">
       <div class="sidebar-logo-row">
-        <div class="logo">Haneus Cafe</div>
+        <h2 class="sidebar-title">Haneus Cafe</h2>
         <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
       </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Main</div>
-        <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-      </div>
+      <nav>
+        <div class="sidebar-nav-section" data-role="all">
+          <p class="sidebar-section-title">Main</p>
+          <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Inventory</div>
-        <a href="products.html" class="nav-link"><i data-lucide="box"></i> Products</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="admin">
+          <p class="sidebar-section-title">Inventory</p>
+          <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Stock</div>
-        <a href="managestock.html" class="nav-link"><i data-lucide="package"></i> Manage Stock</a>
-        <a href="supplier.html"    class="nav-link sidebar-active"><i data-lucide="truck"></i> Supplier</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="all">
+          <p class="sidebar-section-title">Stock</p>
+          <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+          <a href="supplier.html" class="sidebar-link sidebar-active" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Sales</div>
-        <a href="sales.html" class="nav-link"><i data-lucide="dollar-sign"></i> Sales</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="admin">
+          <p class="sidebar-section-title">Sales</p>
+          <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+        </div>
 
-      <div class="nav-group admin-only">
-        <div class="nav-title">Users</div>
-        <a href="UserManagement.html" class="nav-link" style="font-size:14px;"><i data-lucide="shield-user"></i> User Management</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="admin">
+          <p class="sidebar-section-title">Users</p>
+          <a href="UserManagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Settings</div>
-        <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="all">
+          <p class="sidebar-section-title">Settings</p>
+          <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+          <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+        </div>
+      </nav>
     </div>
   </aside>
 
-  <!-- ── Main Content ──────────────────────────────────────── -->
-  <main>
+  <main class="main-wrapper">
 
     <div class="page-header">
       <div class="page-header-left">
@@ -161,8 +162,9 @@
   </div>
 </div>
 
-<script src="js/logout-modal.js"></script>
-<script src="js/supplier.js"></script>
-<script src="js/sidebar-toggle.js"></script>
+  <script src="js/role-control.js"></script>
+  <script src="js/logout-modal.js"></script>
+  <script src="js/supplier.js"></script>
+  <script src="js/sidebar-toggle.js"></script>
 </body>
 </html>

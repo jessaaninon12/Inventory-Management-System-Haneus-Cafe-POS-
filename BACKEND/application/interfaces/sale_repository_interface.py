@@ -36,3 +36,8 @@ class SaleRepositoryInterface(ABC):
     def get_today_count(self):
         """Return the number of sales created today (used for receipt numbering)."""
         pass
+
+    @abstractmethod
+    def get_latest_customer_number(self):
+        """Return the numeric part of the latest customer number, or 0 if none exist."""
+        pass
