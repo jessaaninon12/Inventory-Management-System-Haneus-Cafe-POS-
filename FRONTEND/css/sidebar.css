@@ -23,9 +23,13 @@
   left: 0;
   height: 100vh;
   z-index: 1001;
-  transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  transition: width 0.28s cubic-bezier(0.4,0,0.2,1),
+              min-width 0.28s cubic-bezier(0.4,0,0.2,1),
+              max-width 0.28s cubic-bezier(0.4,0,0.2,1),
+              transform 0.28s cubic-bezier(0.4,0,0.2,1);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Sidebar scrollable content */
@@ -140,21 +144,22 @@ nav {
   color: #FEA54E;
 }
 
-/* ── Main Content Area ─────────────────────────────────────────── */
+/* ── Main Content Area ──────────────────────────────────────────────── */
 .main-wrapper {
   margin-left: 250px;
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  overflow: hidden;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
 }
 
-/* ── Sidebar Toggle Button ─────────────────────────────────────── */
+
+/* ── Sidebar Toggle Button — HIDDEN on desktop, visible on mobile only ─── */
 .sidebar-toggle-btn {
   width: 38px;
   height: 38px;
-  display: inline-flex;
+  display: none;           /* hidden on desktop — sidebar always visible */
   align-items: center;
   justify-content: center;
   background: var(--cream);
@@ -176,6 +181,13 @@ nav {
   width: 18px;
   height: 18px;
 }
+
+/* Show toggle only on mobile (<768px) */
+@media (max-width: 767px) {
+  .sidebar-toggle-btn { display: inline-flex; }
+}
+
+
 
 /* ── Sidebar Overlay (Mobile) ──────────────────────────────────── */
 .sidebar-overlay {
@@ -208,77 +220,99 @@ nav {
   }
 
   .main-wrapper {
-    margin-left: 0;
+    margin-left: 0 !important;
   }
-}
 
-/* ── Sidebar Collapse (Optional Desktop) ──────────────────────── */
-#main-sidebar.sidebar-collapsed {
-  width: 60px;
-  min-width: 60px;
-  max-width: 60px;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-inner {
-  padding: 1rem 0;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-logo-row {
-  justify-content: center;
-  padding: 0 8px;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-title {
-  display: none;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-section-title {
-  display: none;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-link {
-  justify-content: center;
-  padding: 0.65rem 0;
-  font-size: 0;
-  line-height: 0;
-  overflow: hidden;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-link svg {
-  margin-right: 0;
-}
-
-#main-sidebar.sidebar-collapsed .sidebar-nav-section {
-  margin-bottom: 0.25rem;
-}
-
-@media (max-width: 767px) {
+  /* On mobile, never apply desktop-collapse styles */
   #main-sidebar.sidebar-collapsed {
-    width: 250px;
-    min-width: 250px;
-    max-width: 250px;
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    overflow: hidden;
   }
-
-  #main-sidebar.sidebar-collapsed .sidebar-inner {
-    padding: 1.5rem;
-  }
-
-  #main-sidebar.sidebar-collapsed .sidebar-title {
-    display: block;
-  }
-
-  #main-sidebar.sidebar-collapsed .sidebar-section-title {
-    display: block;
-  }
-
+  #main-sidebar.sidebar-collapsed .sidebar-title { display: block !important; }
+  #main-sidebar.sidebar-collapsed .sidebar-section-title { display: block !important; }
   #main-sidebar.sidebar-collapsed .sidebar-link {
-    justify-content: flex-start;
-    padding: 0.625rem 0.75rem;
-    font-size: inherit;
-    line-height: inherit;
+    justify-content: flex-start !important;
+    padding: 0.625rem 0.75rem !important;
+    gap: 0.75rem !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    overflow: visible !important;
   }
-
   #main-sidebar.sidebar-collapsed .sidebar-link svg {
-    margin-right: 0.75rem;
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .main-wrapper--collapsed {
+    margin-left: 0 !important;
   }
 }
+
+
+/* ══════════════════════════════════════════════════════════════════
+   DESKTOP SIDEBAR COLLAPSE — Icon-only mode (≥ 768px)
+   Applied by JS: sidebar-toggle.js adds .sidebar-collapsed to #main-sidebar
+   and .main-wrapper--collapsed to .main-wrapper
+═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) {
+  /* Collapsed width — icon-only 64px rail */
+  #main-sidebar.sidebar-collapsed {
+    width: 64px;
+    min-width: 64px;
+    max-width: 64px;
+    overflow: hidden;
+  }
+
+  /* Less horizontal padding so icons fit in 64px */
+  #main-sidebar.sidebar-collapsed .sidebar-inner {
+    padding: 1.5rem 0;
+  }
+
+  /* Center the close/expand button */
+  #main-sidebar.sidebar-collapsed .sidebar-logo-row {
+    justify-content: center;
+    padding: 0 4px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* Hide the brand text */
+  #main-sidebar.sidebar-collapsed .sidebar-title {
+    display: none;
+  }
+
+  /* Reduce gap between nav sections */
+  #main-sidebar.sidebar-collapsed .sidebar-nav-section {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Hide section labels */
+  #main-sidebar.sidebar-collapsed .sidebar-section-title {
+    display: none;
+  }
+
+  /* Icon-only links — centered, text hidden */
+  #main-sidebar.sidebar-collapsed .sidebar-link {
+    justify-content: center;
+    padding: 0.65rem 0;
+    gap: 0;
+    font-size: 0;    /* hides text nodes */
+    line-height: 0;
+    overflow: hidden;
+  }
+
+  /* Keep icons at their explicit pixel size */
+  #main-sidebar.sidebar-collapsed .sidebar-link svg {
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0;
+    font-size: initial;
+    line-height: initial;
+  }
+
+  /* Shift main content area to match collapsed sidebar width */
+  .main-wrapper--collapsed {
+    margin-left: 64px !important;
+  }
+}
+

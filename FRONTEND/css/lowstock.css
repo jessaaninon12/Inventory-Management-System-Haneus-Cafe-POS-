@@ -64,13 +64,17 @@ aside.sidebar-icon-rail .nav-link svg { margin-right: 0; width: 20px; height: 20
   backdrop-filter:blur(3px); z-index:999; cursor:pointer; }
 @media (max-width:767px) { .sidebar-overlay.active { display:block; } }
 .sidebar-toggle-btn {
-  width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; display:none; align-items:center; justify-content:center;
   background:var(--cream); border:1px solid var(--latte); border-radius:0.5rem;
   cursor:pointer; color:var(--mocha); flex-shrink:0;
   transition:background 0.15s; margin-right:0.75rem;
 }
 .sidebar-toggle-btn:hover { background:var(--latte); color:var(--primary); }
 .sidebar-toggle-btn svg { width:18px; height:18px; }
+/* Show toggle only on mobile (< 768px) */
+@media (max-width: 767px) {
+  .sidebar-toggle-btn { display: inline-flex; }
+}
 
 .sidebar-logo-row {
   display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem;

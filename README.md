@@ -1,20 +1,574 @@
-# Inventory Management System – Haneus Cafe POS
+# Haneus Cafe POS — Inventory Management System
 
-A Point of Sale and Inventory Management application designed for Haneus Cafe. It supports two user roles — **Admin** and **Staff** — each with their own set of features and access permissions. Admins can manage users, products, inventory, orders, and view analytics. Staff can access products, stock management, and the dashboard.
+> Point of Sale + Inventory Management for Haneus Cafe.
+> Supports **Admin** and **Staff** roles with Clean Architecture backend (Django) and a Vanilla JS frontend.
 
-The system includes a fully embedded Point of Sale interface inside the admin dashboard, a receipt generation and print system, order history viewer, exclusive 12% VAT calculation with discount support, and automatic dashboard metric updates from every completed POS sale.
+---
+
+## Project Structure
+
+```
+Inventory-Management-System-Haneus-Cafe-POS-/
+├── README.md
+├── AGENTS.md                          # AI agent knowledge base (git-ignored)
+├── index.html                         # Root redirect page
+├── .env.example                       # Environment variable template
+├── .gitignore
+├── metadata.json
+├── FRONTEND/
+│   ├── dashboard.html                 # Dashboard + embedded POS toggle
+│   ├── login.html                     # Login page
+│   ├── register.html                  # Registration page
+│   ├── products.html                  # Product catalog management
+│   ├── managestock.html               # Stock adjustment and tracking
+│   ├── lowstock.html                  # Dedicated low-stock view
+│   ├── sales.html                     # Sales records and analytics
+│   ├── supplier.html                  # Supplier management
+│   ├── usermanagement.html            # Admin user management
+│   ├── profile.html                   # User profile and settings
+│   ├── createproduct.html             # Standalone product creation
+│   ├── user.html                      # User detail view
+│   ├── css/
+│   │   ├── sidebar.css                # SHARED — all-page sidebar layout
+│   │   ├── dashboard.css              # Dashboard + POS layout
+│   │   ├── payment-modals.css         # Cash / GCash payment modal
+│   │   ├── products.css               # Product card grid
+│   │   ├── managestock.css            # Stock management table
+│   │   ├── sales.css                  # Sales table and summary cards
+│   │   ├── supplier.css               # Supplier card grid
+│   │   ├── usermanagement.css         # User management table
+│   │   ├── profile.css                # Profile card
+│   │   ├── login.css                  # Login form
+│   │   ├── register.css               # Registration form
+│   │   ├── lowstock.css               # Low stock page
+│   │   └── user.css
+│   ├── js/
+│   │   ├── sidebar-toggle.js          # SHARED — desktop collapse + mobile overlay
+│   │   ├── role-control.js            # SHARED — role-based sidebar visibility
+│   │   ├── logout-modal.js            # SHARED — logout confirmation
+│   │   ├── pos.js                     # POS engine: cart, VAT, receipt
+│   │   ├── dashboard.js               # Dashboard data + charts
+│   │   ├── products.js                # Product CRUD
+│   │   ├── managestock.js             # Stock adjustment UI
+│   │   ├── sales.js                   # Sales table + analytics
+│   │   ├── supplier.js                # Supplier CRUD
+│   │   ├── usermanagement.js          # User CRUD
+│   │   ├── profile.js                 # Profile form + password change
+│   │   ├── login.js                   # Login POST + localStorage
+│   │   ├── register.js                # Registration POST
+│   │   └── lowstock.js
+│   └── images/
+└── BACKEND/
+    ├── manage.py                      # Django management entrypoint
+    ├── requirements.txt               # Python dependencies
+    ├── setup_db.py                    # Interactive DB setup wizard
+    ├── .env                           # Generated; never committed
+    ├── .env.example
+    ├── config/
+    │   ├── settings.py                # All Django settings (DB, CORS, REST, Spectacular)
+    │   ├── urls.py                    # Root URL config (mounts /api/)
+    │   ├── asgi.py
+    │   └── wsgi.py
+    ├── domain/                        # Pure business logic, zero framework deps
+    │   └── entities/
+    │       ├── sale.py                # Sale + SaleItem; compute_totals(); validate()
+    │       ├── product.py             # Product entity
+    │       ├── order.py               # Order entity
+    │       ├── inventory.py           # InventoryItem + InventoryTransaction entities
+    │       └── user.py                # User entity
+    ├── application/                   # Use-cases, DTOs, repository interfaces
+    │   ├── dtos/
+    │   │   ├── sale_dto.py            # CreateSaleDTO, UpdateSaleDTO, SaleDTO
+    │   │   ├── dashboard_dto.py       # DashboardDTO
+    │   │   ├── product_dto.py         # CreateProductDTO, UpdateProductDTO, ProductDTO
+    │   │   ├── order_dto.py           # CreateOrderDTO, OrderDTO
+    │   │   ├── inventory_dto.py       # CreateTransactionDTO, InventoryItemDTO
+    │   │   └── user_dto.py            # CreateUserDTO, LoginDTO, UserDTO
+    │   ├── interfaces/                # Abstract repository contracts
+    │   │   ├── sale_repository_interface.py
+    │   │   ├── dashboard_repository_interface.py
+    │   │   ├── product_repository_interface.py
+    │   │   ├── order_repository_interface.py
+    │   │   ├── inventory_repository_interface.py
+    │   │   └── user_repository_interface.py
+    │   └── services/
+    │       ├── sale_service.py        # create_sale, compute_totals, receipt/customer number gen
+    │       ├── dashboard_service.py   # get_dashboard, get_chart_data, pct_change
+    │       ├── product_service.py     # CRUD + low_stock_products
+    │       ├── order_service.py       # create_order, cancel, complete
+    │       ├── inventory_service.py   # adjust_stock, get_product_history
+    │       └── user_service.py        # register, login, update_profile, change_password
+    ├── infrastructure/                # ORM models, repositories, migrations
+    │   ├── data/
+    │   │   ├── models.py              # All ORM models: Product, Order, Sale, User roles, Inventory
+    │   │   ├── db_context.py
+    │   │   └── db_init.py             # Auto-creates DB on first run
+    │   ├── repositories/
+    │   │   ├── sale_repository.py     # SaleModel CRUD + get_today_count + get_latest_customer_number
+    │   │   ├── dashboard_repository.py# Combines OrderModel + SaleModel for all metrics
+    │   │   ├── product_repository.py  # ProductModel CRUD + low_stock
+    │   │   ├── order_repository.py    # OrderModel CRUD
+    │   │   ├── inventory_repository.py# InventoryTransactionModel + stock adjustment
+    │   │   └── user_repository.py     # User CRUD with Django’s AbstractUser
+    │   └── migrations/               # 7 sequential migrations
+    └── api/                           # HTTP layer only
+        ├── models.py                  # auth app: User (AbstractUser) + Product + Sale (legacy)
+        ├── views.py                   # Legacy CRUD views (ProductListCreateView, etc.)
+        ├── urls.py                    # Legacy URL patterns under /api/products/ /api/sales/
+        ├── views_docs.py              # ScalarView for OpenAPI UI
+        ├── schema_serializers.py      # drf-spectacular OpenAPI schema definitions
+        ├── product_serializers.py     # ProductSerializer, SaleSerializer (DRF)
+        ├── user_serializers.py        # UserSerializer
+        ├── migrations/               # Auth migrations (User model)
+        └── controllers/
+            ├── urls.py                # Clean Architecture URL routing
+            ├── dashboard_controller.py
+            ├── product_controller.py  # v1 + v2 product endpoints
+            ├── sale_controller.py     # POS checkout + history endpoints
+            ├── sales_analytics_controller.py
+            ├── order_controller.py
+            ├── inventory_controller.py
+            └── user_controller.py     # Auth, Profile, Admin/Staff user management
+```
 
 ---
 
 ## Tech Stack
 
-- **Backend:** Python 3, Django 4.2, Django REST Framework
-- **Architecture:** Clean Architecture — Domain / Application / Infrastructure / API layers
-- **Frontend:** HTML5, CSS3, Vanilla JavaScript
-- **Database:** SQL Server (SSMS 19) **or** MySQL (XAMPP)
-- **API Documentation:** OpenAPI 3.0 via drf-spectacular, Scalar UI
-- **Icons:** Lucide
+- **Backend:** Python 3.9, Django 4.2, Django REST Framework 3.16, drf-spectacular 0.29
+- **Architecture:** Clean Architecture — Domain / Application / Infrastructure / API
+- **Frontend:** HTML5, CSS3, Vanilla JavaScript (no frameworks)
+- **Database:** MySQL via XAMPP **or** SQL Server (SSMS 19) via ODBC
+- **API Docs:** OpenAPI 3.0 (drf-spectacular) + Scalar UI
+- **Icons:** Lucide (CDN)
 - **Fonts:** Google Fonts – Inter
+
+---
+
+## Startup & Database Setup
+
+### 1. Prerequisites
+
+- Python 3.9+
+- MySQL running via XAMPP **or** SQL Server via SSMS 19
+- pip
+
+### 2. Enter backend and create virtual environment
+
+```bash
+cd BACKEND
+python -m venv venv
+venv\Scripts\activate        # Windows PowerShell
+# source venv/bin/activate   # macOS/Linux
+```
+
+### 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+
+# MySQL (XAMPP):
+pip install mysqlclient
+
+# SQL Server:
+pip install mssql-django pyodbc
+```
+
+### 4. Configure the database (interactive wizard)
+
+```bash
+python setup_db.py
+```
+
+Choose **A** for MySQL / **B** for SQL Server. The script writes `.env` and creates the database automatically.
+
+### 5. Run migrations
+
+```bash
+python manage.py makemigrations api
+python manage.py makemigrations infrastructure
+python manage.py migrate
+```
+
+EF-style aliases:
+
+```bash
+python manage.py add_migration     # alias for makemigrations
+python manage.py update_database   # alias for migrate
+```
+
+### 6. Start the server
+
+```bash
+python manage.py runserver
+```
+
+---
+
+## Available Ports & URLs
+
+| URL | Description |
+|---|---|
+| `http://127.0.0.1:8000` | Django development server |
+| `http://localhost:8000` | Same as above (local alias) |
+| `http://localhost:8000/api/scaler/v1` | **Scalar API Docs v1** (canonical) |
+| `http://localhost:8000/api/docs/` | Scalar API Docs (legacy alias) |
+| `http://localhost:8000/api/schema/` | Raw OpenAPI 3.0 JSON schema |
+| `http://localhost:8000/api/redoc/` | ReDoc API documentation |
+| `http://localhost:8000/admin/` | Django admin panel |
+| `http://localhost:8000/api/` | API root (all endpoints listed in section below) |
+| FRONTEND (open directly) | Open `FRONTEND/login.html` in browser or serve via VS Code Live Server |
+
+**Database default ports:**
+- MySQL (XAMPP): `3306`
+- SQL Server: `1433`
+
+---
+
+## Full API Endpoint Reference
+
+### Auth
+| Method | URL | Description |
+|---|---|---|
+| POST | `/api/auth/register/` | Register new user |
+| POST | `/api/auth/login/` | Authenticate, return UserDTO |
+| GET | `/api/auth/check-username/?username=` | Username availability check |
+
+### Profile
+| Method | URL | Description |
+|---|---|---|
+| GET | `/api/profile/<pk>/` | Get user profile |
+| PUT | `/api/profile/<pk>/` | Update profile fields |
+| PUT | `/api/profile/<pk>/password/` | Change password |
+
+### Dashboard
+| Method | URL | Description |
+|---|---|---|
+| GET | `/api/dashboard/` | Full dashboard aggregate |
+| GET | `/api/dashboard/chart/?period=1Y` | Chart data (1D/1W/1M/3M/6M/1Y) |
+
+### Products
+| Method | URL | Description |
+|---|---|---|
+| GET/POST | `/api/products/` | List / create |
+| GET/PUT/DELETE | `/api/products/<pk>/` | Retrieve / update / delete |
+| GET | `/api/products/low-stock/` | Products at or below threshold |
+| GET | `/api/products/view/` | v2 list |
+| GET | `/api/products/view/<pk>/` | v2 retrieve |
+| POST | `/api/products/create/` | v2 create |
+| PUT | `/api/products/edit/<pk>/` | v2 full update |
+| PATCH | `/api/products/partialedit/<pk>/` | v2 partial update |
+| DELETE | `/api/products/delete/<pk>/` | v2 delete |
+
+### POS Sales
+| Method | URL | Description |
+|---|---|---|
+| POST | `/api/sales/create/` | Create sale + receipt + deduct stock |
+| GET | `/api/sales/view/` | List all sales |
+| GET | `/api/sales/view/<pk>/` | Single sale with items |
+| PUT | `/api/sales/edit/<pk>/` | Full update |
+| PATCH | `/api/sales/partialedit/<pk>/` | Partial update (status change) |
+| DELETE | `/api/sales/delete/<pk>/` | Delete (HTTP 204) |
+| POST | `/api/sales/compute-totals/` | Compute VAT+totals without saving |
+| GET | `/api/sales/latest-customer-number/` | Next customer number preview |
+| GET | `/api/sales/analytics/` | Summary cards (today, week, pending, avg) |
+
+### Orders (Legacy)
+| Method | URL | Description |
+|---|---|---|
+| GET/POST | `/api/orders/` | List / create orders |
+| GET/PUT/DELETE | `/api/orders/<pk>/` | Order detail |
+| POST | `/api/orders/<pk>/cancel/` | Cancel order |
+| POST | `/api/orders/<pk>/complete/` | Mark complete |
+
+### Inventory
+| Method | URL | Description |
+|---|---|---|
+| GET | `/api/inventory/` | Full inventory summary |
+| GET | `/api/inventory/low-stock/` | Low-stock items |
+| POST | `/api/inventory/adjust/` | Record stock adjustment |
+| GET | `/api/inventory/<product_id>/history/` | Transaction history |
+
+### Users – Admin
+| Method | URL | Description |
+|---|---|---|
+| GET | `/api/users/admin/view/` | List admins |
+| GET | `/api/users/admin/view/<pk>/` | Admin detail |
+| POST | `/api/users/admin/create/` | Create admin |
+| PUT | `/api/users/admin/edit/<pk>/` | Full update |
+| PATCH | `/api/users/admin/partialedit/<pk>/` | Partial update |
+| DELETE | `/api/users/admin/delete/<pk>/` | Delete admin |
+
+### Users – Staff
+| Method | URL | Description |
+|---|---|---|
+| GET | `/api/users/staff/view/` | List staff |
+| GET | `/api/users/staff/view/<pk>/` | Staff detail |
+| POST | `/api/users/staff/create/` | Create staff |
+| PUT | `/api/users/staff/edit/<pk>/` | Full update |
+| PATCH | `/api/users/staff/partialedit/<pk>/` | Partial update |
+| DELETE | `/api/users/staff/delete/<pk>/` | Delete staff |
+
+### Uploads
+| Method | URL | Description |
+|---|---|---|
+| POST | `/api/upload/` | Upload image; returns served URL |
+
+---
+
+## Backend Logic, Formulas & Line Numbers
+
+### POS Calculation Engine
+
+| Formula | File | Line |
+|---|---|---|
+| `subtotal = Σ(qty × unit_price)` | `domain/entities/sale.py` | `compute_totals()` |
+| `discount = subtotal × discount_rate` | `domain/entities/sale.py` | `compute_totals()` |
+| `taxable = subtotal − discount` | `domain/entities/sale.py` | `compute_totals()` |
+| `vat = taxable × 0.12` (exclusive 12%) | `domain/entities/sale.py` | `compute_totals()` |
+| `total = taxable + vat` | `domain/entities/sale.py` | `compute_totals()` |
+| `change = cash_tendered − total` | `domain/entities/sale.py` | `compute_totals()` |
+| `cogs = Σ(qty × cost_price)` | `domain/entities/sale.py` | `compute_totals()` |
+| `gross_profit = subtotal − cogs` | `domain/entities/sale.py` | `compute_totals()` |
+
+Also exposed via API at `POST /api/sales/compute-totals/` — `application/services/sale_service.py` line 144.
+
+### Receipt & Customer Number Generation
+
+| Logic | File | Line |
+|---|---|---|
+| `receipt_number = REC-YYYYMMDD-XXXX` | `application/services/sale_service.py` | 18–26 |
+| `customer_number = CUST-XXXXXX` (ascending) | `application/services/sale_service.py` | 29–38 |
+| `today_count` from `SaleRepository.get_today_count()` | `infrastructure/repositories/sale_repository.py` | — |
+| `latest_customer` from `SaleRepository.get_latest_customer_number()` | `infrastructure/repositories/sale_repository.py` | — |
+
+### Dashboard Aggregation Logic
+
+| Metric | Logic | File | Line |
+|---|---|---|---|
+| `profit` | `total_sales − total_expenses` | `application/services/dashboard_service.py` | 32 |
+| `profit_change_pct` | `(current − previous) / abs(previous) × 100` | `application/services/dashboard_service.py` | 14–18 |
+| `this_week_profit` | `this_week_sales − this_week_expenses` | `application/services/dashboard_service.py` | 54 |
+| week-over-week % | calls `_pct_change()` | `application/services/dashboard_service.py` | 69–71 |
+
+### Sales Analytics Controller
+
+| Metric | Logic | File | Line |
+|---|---|---|---|
+| Today’s sales | `legacy_orders_today + pos_sales_today` | `api/controllers/sales_analytics_controller.py` | 31–50 |
+| This week’s sales | Mon–Sun window, both sources | `api/controllers/sales_analytics_controller.py` | 52–81 |
+| Pending orders | legacy + POS count | `api/controllers/sales_analytics_controller.py` | 83–88 |
+| Average order | weighted average across both | `api/controllers/sales_analytics_controller.py` | 90–124 |
+
+### Stock Status Logic
+
+| Condition | Status | File | Line |
+|---|---|---|---|
+| `stock ≤ 0` | Out of Stock | `api/models.py` | 60 |
+| `0 < stock ≤ low_stock_threshold` | Low Stock | `api/models.py` | 62 |
+| `stock > low_stock_threshold` | In Stock | `api/models.py` | 63 |
+
+### Cash Payment Validation
+
+| Rule | File | Line |
+|---|---|---|
+| `amount_tendered ≤ 0` → 400 error | `api/controllers/sale_controller.py` | 111–116 |
+| `amount_tendered < total` → 400 error | `api/controllers/sale_controller.py` | 117–121 |
+
+---
+
+## Frontend Logic, Formulas & Line Numbers
+
+### POS Engine (`FRONTEND/js/pos.js`)
+
+| Function | Purpose |
+|---|---|
+| `_calcTotals()` | Recalculates subtotal, discount, VAT, total, change in real time |
+| `addToCart(product)` | Adds product to cart array; updates UI |
+| `updateCartUI()` | Renders the receipt panel item list |
+| `placeOrder()` | Calls `POST /api/sales/create/`; shows receipt modal on success |
+| `openOrderHistory()` | Fetches `GET /api/sales/view/`; renders rows in history panel |
+| `downloadReceiptPNG()` | Calls `html2canvas` to capture receipt DOM and download as PNG |
+| `switchView(mode)` | Toggles between Dashboard and POS sections |
+
+Formulas (mirrors backend):
+
+```
+subtotal       = Σ (item.price × item.qty)
+discountAmount = subtotal × discountRate          (0 or 0.20 for PWD/Senior)
+taxable        = subtotal − discountAmount
+vat            = taxable × 0.12
+total          = taxable + vat
+change         = cash_tendered − total
+```
+
+### Sidebar Toggle (`FRONTEND/js/sidebar-toggle.js`)
+
+| Function | Purpose | Line |
+|---|---|---|
+| `applyDesktopCollapse(collapsed)` | Add/remove `.sidebar-collapsed` + `.main-wrapper--collapsed`; saves to localStorage | 65–75 |
+| `updateCloseBtnIcon()` | Sets `panel-left-open` (collapsed) or `panel-left-close` (expanded) | 44–51 |
+| `updateToggleBtnIcon(isOpen)` | Sets `panel-left-close` or `panel-left` on mobile toggle | 54–61 |
+| `openMobile()` / `closeMobile()` | Adds/removes `.sidebar-open` + `.active` on overlay | 90–99 |
+| Restore on load | Reads `localStorage['haneuscafe_sidebar_collapsed']`; applies immediately (no animation flash) | 78–86 |
+| Resize handler | Cleans mobile state on ≥768px; restores desktop collapse from storage | 141–155 |
+
+### Role Control (`FRONTEND/js/role-control.js`)
+
+| Logic | File | Line |
+|---|---|---|
+| Reads `user.user_type` from `localStorage` | `role-control.js` | 20–26 |
+| Hides/shows elements with `data-role="admin"` | `role-control.js` | 33–36 |
+| Normalise: `"Admin"` → `"admin"`, `"Staff"` → `"staff"` | `role-control.js` | 30 |
+
+### Dashboard (`FRONTEND/js/dashboard.js`)
+
+| Feature | API call |
+|---|---|
+| Summary cards (sales, returns, products, profit) | `GET /api/dashboard/` |
+| Bar chart | `GET /api/dashboard/chart/?period=1Y` |
+| Low-stock list | `GET /api/products/low-stock/` |
+| Notification bell | `GET /api/products/low-stock/` (badge count) |
+| Recent sales | `GET /api/dashboard/` (recent_sales field) |
+
+---
+
+## Frontend Logic in CSS — sidebar.css
+
+| Rule | File | Line |
+|---|---|---|
+| `.sidebar-collapsed` — 64px icon rail | `css/sidebar.css` | `@media (min-width: 768px)` block |
+| `.main-wrapper--collapsed` — `margin-left: 64px` | `css/sidebar.css` | `@media (min-width: 768px)` block |
+| Mobile: `.sidebar-open` — `translateX(0)` | `css/sidebar.css` | `@media (max-width: 767px)` block |
+| `font-size: 0` hides text, keeps SVG icons | `css/sidebar.css` | `.sidebar-collapsed .sidebar-link` |
+| Desktop collapse persisted in localStorage key `haneuscafe_sidebar_collapsed` | `js/sidebar-toggle.js` | 29 |
+
+---
+
+## Database Tables
+
+| Table | ORM Model | Description |
+|---|---|---|
+| `users` | `api.models.User` (AbstractUser) | All users (Admin + Staff) |
+| `useradmin` | `infrastructure.data.models.UserAdminModel` | Admin role mapping |
+| `userstaff` | `infrastructure.data.models.UserStaffModel` | Staff role mapping |
+| `products` | `infrastructure.data.models.ProductModel` | Product catalog |
+| `orders` | `infrastructure.data.models.OrderModel` | Legacy order records |
+| `order_items` | `infrastructure.data.models.OrderItemModel` | Line items per order |
+| `sales` | `infrastructure.data.models.SaleModel` | POS transactions |
+| `sale_items` | `infrastructure.data.models.SaleItemModel` | Line items per POS sale |
+| `inventory_transactions` | `infrastructure.data.models.InventoryTransactionModel` | Stock adjustment log |
+
+---
+
+## POS Formulas — Full Reference
+
+```
+Subtotal       = Σ (quantity × unit_price)
+Discount       = Subtotal × discount_rate
+Taxable        = Subtotal − Discount
+VAT (12%)      = Taxable × 0.12          [exclusive VAT — added on top]
+Total          = Taxable + VAT
+Change         = amountTendered − Total   [cash payments only]
+
+COGS           = Σ (quantity × cost_price)
+Gross Profit   = Subtotal − COGS
+Net Sales      = Total Sales − Sales Returns
+Avg Order      = (legacy_avg × legacy_count + pos_sum) ÷ combined_count
+Avg Daily Sales= Total Sales ÷ Days in Period
+
+Stock Status:
+  stock ≤ 0                         → Out of Stock
+  0 < stock ≤ low_stock_threshold   → Low Stock
+  stock > low_stock_threshold       → In Stock
+
+Receipt #:     REC-YYYYMMDD-XXXX   (today_count + 1, zero-padded 4 digits)
+Customer #:    CUST-XXXXXX         (latest_num + 1, zero-padded 6 digits)
+```
+
+---
+
+## System Flow
+
+### Login Flow
+1. User submits `login.html` form
+2. `login.js` POSTs `{ username, password }` to `POST /api/auth/login/`
+3. Backend `LoginController` → `UserService.login()` → `UserRepository`
+4. Response: `{ success: true, user: UserDTO }` with `user_type: "Admin" | "Staff"`
+5. `login.js` saves `user` to `localStorage`; redirects to `dashboard.html`
+
+### POS Checkout Flow
+1. User clicks **Point of Sale** toggle in dashboard header
+2. `pos.js` fetches `GET /api/products/` to build product grid
+3. User adds items; `_calcTotals()` updates receipt panel live
+4. User selects payment method, enters tendered amount
+5. Click **Place Order** → `POST /api/sales/create/` with cart payload
+6. Backend: `SaleListCreateController` → `SaleService.create_sale()` → generates `receipt_number`, `customer_number`, deducts stock, persists
+7. Frontend receives response → `receiptModal` shown with all receipt fields
+8. User clicks **Download Receipt** → `html2canvas` captures modal; saves PNG
+9. Cart resets; product grid refreshes
+
+### Sidebar Toggle Flow
+
+**Desktop:**
+- Page loads → `sidebar-toggle.js` reads `localStorage['haneuscafe_sidebar_collapsed']`
+- If `'1'`: immediately adds `.sidebar-collapsed` to `#main-sidebar` + `.main-wrapper--collapsed` to wrapper
+- `sidebar-close-btn` click → `applyDesktopCollapse(!current)` → animates width 250px↔4px or back
+
+**Mobile:**
+- `sidebar-toggle-btn` (visible only on `<768px`) click → `openMobile()` adds `.sidebar-open`
+- `sidebar-close-btn` click or overlay click → `closeMobile()` removes `.sidebar-open`
+
+### Role-Based Access Flow
+1. `role-control.js` runs on every `DOMContentLoaded`
+2. Reads `localStorage.user.user_type` (`"Admin"` or `"Staff"`)
+3. `document.querySelectorAll('[data-role]')` → each element shown/hidden based on role
+4. `data-role="all"` = always visible; `data-role="admin"` = Admin only
+
+---
+
+## User Roles
+
+**Admin** — Full access: dashboard, products, stock, suppliers, sales analytics, user management, profile.
+
+**Staff** — Limited: dashboard (view only), manage stock, profile. Cannot access: products, sales, user management, suppliers.
+
+Role is enforced:
+- **Frontend:** `role-control.js` hides `data-role="admin"` elements for Staff
+- **Backend:** controller-level type checks on `/api/users/admin/*` and `/api/users/staff/*` endpoints
+
+---
+
+## Username Uniqueness Check
+
+Registration form: on blur, calls `GET /api/auth/check-username/?username=<value>`.
+Response: `{ "available": true }` or `{ "available": false, "error": "Username already used" }`.
+Also enforced at the DB level (`username` is `UNIQUE` via Django’s AbstractUser).
+
+---
+
+## Sidebar — Shared Component
+
+All pages include:
+1. `css/sidebar.css` (shared layout)
+2. `<aside id="main-sidebar">` with identical HTML structure
+3. `<div id="sidebar-overlay">` for mobile backdrop
+4. `<button id="sidebar-toggle-btn">` in each page’s header
+5. `js/sidebar-toggle.js` (shared toggle script) — loaded last before `</body>`
+
+Expanded width: **250px**. Collapsed width: **64px** (icon-only rail).
+Collapse state persisted in `localStorage` key `haneuscafe_sidebar_collapsed`.
+
+---
+
+## Recent Updates
+
+- **Sidebar Toggler (Desktop):** Added `.sidebar-collapsed` mode (64px icon-only rail).
+  Clicking the `sidebar-close-btn` inside the sidebar collapses/expands. State persists across pages via `localStorage`.
+- **Sidebar Toggler (Mobile):** `sidebar-toggle-btn` in header slides sidebar in as overlay; close button + backdrop click dismisses it.
+- **Profile Page:** Normalized sidebar class names to match all other pages (`sidebar-nav-section`, `sidebar-section-title`, `sidebar-link`, `sidebar-title`).
+- **Anti-shift Fix:** `margin-left` on `.main-wrapper` transitions smoothly (0.28s). Mobile override (`margin-left: 0`) prevents shift.
+- **Role-based Visibility:** Unchanged — `data-role` attributes work across all pages regardless of sidebar state.
 
 ---
 

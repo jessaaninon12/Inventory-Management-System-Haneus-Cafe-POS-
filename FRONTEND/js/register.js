@@ -66,14 +66,15 @@ let currentStep = 0;
 
 function goToStep(n) {
   currentStep = n;
-  // Step 0: use 'none' (not translateX(0%)) so no CSS containing block is created.
-  // Any non-none transform value turns this element into a containing block for
-  // position:fixed children, trapping the dropdown inside overflow:hidden.
+  // Step 0: use 'none' so no CSS containing block traps position:fixed dropdown.
   // Step 1+: translateX(-50%) per step (track is 200% wide).
   wizardTrack.style.transform = n === 0 ? 'none' : `translateX(-${n * 50}%)`;
   dot1.classList.toggle('active', n === 0);
   dot2.classList.toggle('active', n === 1);
   hideError();
+  // Sync immediately so step-nav buttons are never clipped,
+  // then re-sync after transition for final settled height.
+  syncWrapperHeight();
   setTimeout(syncWrapperHeight, 450);
 }
 
@@ -162,6 +163,7 @@ setupToggle('togglePw2', 'togglePw2Icon', 'confirmPassword');
     hint.className  = 'field-hint';
     hint.textContent = '';
     input.classList.remove('username-error', 'username-ok');
+    syncWrapperHeight();
   });
 
   // Check on blur
@@ -181,8 +183,9 @@ setupToggle('togglePw2', 'togglePw2Icon', 'confirmPassword');
         input.classList.add('username-ok');
       }
     } catch {
-      /* silent — server will validate on submit */
+      /* silent \u2014 server will validate on submit */
     }
+    syncWrapperHeight(); // recalculate height after hint appears
   });
 }());
 

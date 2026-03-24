@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --primary: #c47b42;
   --primary-dark: #a35f2e;
   --espresso: #4a2f21;
@@ -62,13 +62,17 @@ aside.sidebar-icon-rail .nav-link svg { margin-right: 0; width: 20px; height: 20
 .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(74,47,33,0.45);
   backdrop-filter:blur(3px); z-index:999; cursor:pointer; }
 @media (max-width:767px) { .sidebar-overlay.active { display:block; } }
+/* Toggle button — hidden on desktop, shown on mobile only */
 .sidebar-toggle-btn {
-  width:36px; height:36px; display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; display:none; align-items:center; justify-content:center;
   background:var(--cream); border:1px solid var(--latte); border-radius:0.5rem;
   cursor:pointer; color:var(--mocha); flex-shrink:0; transition:background 0.15s; margin-right:0.75rem;
 }
 .sidebar-toggle-btn:hover { background:var(--latte); color:var(--primary); }
 .sidebar-toggle-btn svg { width:18px; height:18px; }
+@media (max-width: 767px) {
+  .sidebar-toggle-btn { display: inline-flex; }
+}
 
 .sidebar-inner { padding: 1.5rem; }
 
@@ -556,10 +560,6 @@ th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
   .ls-modal-card { max-height: 70vh; border-radius: 0.875rem 0.875rem 0 0; }
 }
 
-/* Hide header toggle btn on desktop */
-@media (min-width: 768px) {
-  #sidebar-toggle-btn { display: none; }
-}
 
 @media (max-width: 768px) {
   main { padding: 1rem; }
