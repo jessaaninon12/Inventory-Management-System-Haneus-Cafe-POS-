@@ -24,30 +24,14 @@
 
     <form id="loginForm">
 
-      <!-- 1. Account Type (details/summary dropdown) -->
-      <div class="input-group login-drop-wrap" id="userTypeGroup">
-        <i class="fa-solid fa-user-tag drop-icon"></i>
-        <details class="custom-dropdown" id="userTypeDropdown">
-          <summary>
-            <span id="userTypeDisplay">Account Type</span>
-            <i class="fa-solid fa-chevron-down drop-chevron" id="dropChevron"></i>
-          </summary>
-          <ul class="dropdown-menu">
-            <li data-value="Admin"><i class="fa-solid fa-crown"></i> Admin</li>
-            <li data-value="Staff"><i class="fa-solid fa-user"></i> Staff</li>
-          </ul>
-        </details>
-        <input type="hidden" id="userType" name="userType" value="">
-      </div>
-
-      <!-- 2. Username -->
+      <!-- Username -->
       <div class="input-group float-group">
         <i class="fa-regular fa-user"></i>
         <input type="text" id="username" name="username" placeholder=" " autocomplete="username" required>
         <label for="username">Username</label>
       </div>
 
-      <!-- 3. Password -->
+      <!-- Password -->
       <div class="input-group float-group">
         <i class="fa-solid fa-lock"></i>
         <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password" required>
@@ -57,8 +41,12 @@
         </button>
       </div>
 
-      <div class="options">
-        <label><input type="checkbox" name="rememberMe"> Remember me</label>
+      <!-- Options row: Remember me + Forgot Password -->
+      <div class="options-row">
+        <label class="remember-label">
+          <input type="checkbox" name="rememberMe"> Remember me
+        </label>
+        <button type="button" id="forgotPwBtn" class="forgot-link">Forgot Password?</button>
       </div>
 
       <div id="errorMsg" class="error-msg" style="display:none;"></div>
@@ -90,6 +78,23 @@
       <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none"
         stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
     </svg>
+  </div>
+</div>
+
+<!-- ── Forgot Password Modal ───────────────────────────────── -->
+<div id="forgotPasswordModal" class="login-overlay" style="display:none;">
+  <div class="login-overlay-card" style="max-width: 380px; padding: 2rem;">
+    <h3 style="margin-bottom: 1rem;">Reset Password</h3>
+    <p style="font-size:0.9rem; margin-bottom:1.5rem;">Enter your email or username and we'll send you a reset link.</p>
+    <div class="input-group" style="margin-bottom: 1.5rem;">
+      <i class="fa-regular fa-envelope"></i>
+      <input type="text" id="resetIdentifier" placeholder="Email or username">
+    </div>
+    <div class="login-btns" style="display: flex; gap: 1rem;">
+      <button class="btn-lo-cancel" id="closeForgotModal">Cancel</button>
+      <button class="btn-lo-confirm" id="sendResetLink">Send Reset Link</button>
+    </div>
+    <div id="resetFeedback" class="error-msg" style="margin-top: 1rem; display:none;"></div>
   </div>
 </div>
 

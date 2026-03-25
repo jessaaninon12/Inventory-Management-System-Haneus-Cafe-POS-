@@ -1,39 +1,5 @@
 const API_BASE = 'http://localhost:8000';
 
-// ── Details/summary dropdown ──────────────────────────────
-const dropdown     = document.getElementById('userTypeDropdown');
-const display      = document.getElementById('userTypeDisplay');
-const hiddenInput  = document.getElementById('userType');
-
-// Position dropdown menu fixed so it escapes any overflow:hidden/auto ancestor
-function positionDropdownMenu() {
-  const menu = dropdown.querySelector('.dropdown-menu');
-  if (!menu) return;
-  const rect = dropdown.getBoundingClientRect();
-  menu.style.top   = (rect.bottom + 4) + 'px';
-  menu.style.left  = rect.left + 'px';
-  menu.style.width = rect.width + 'px';
-}
-
-dropdown.addEventListener('toggle', () => {
-  if (dropdown.open) positionDropdownMenu();
-});
-window.addEventListener('resize', () => { if (dropdown.open) positionDropdownMenu(); });
-
-document.querySelectorAll('#userTypeDropdown .dropdown-menu li').forEach(item => {
-  item.addEventListener('click', () => {
-    hiddenInput.value  = item.dataset.value;
-    display.textContent = item.textContent.trim();
-    dropdown.removeAttribute('open');
-    dropdown.classList.add('selected');
-  });
-});
-
-// Close on outside click
-document.addEventListener('click', (e) => {
-  if (!dropdown.contains(e.target)) dropdown.removeAttribute('open');
-});
-
 // ── Password visibility toggle ────────────────────────────────
 document.getElementById('togglePw').addEventListener('click', () => {
   const pwInput = document.getElementById('password');
@@ -54,10 +20,9 @@ loginForm.addEventListener('submit', async (e) => {
 
   const username  = document.getElementById('username').value.trim();
   const password  = document.getElementById('password').value;
-  const user_type = hiddenInput.value;
 
-  if (!user_type) {
-    errorMsg.textContent = 'Please select an account type.';
+  if (!username || !password) {
+    errorMsg.textContent = 'Please enter both username and password.';
     errorMsg.style.display = 'block';
     return;
   }
@@ -69,7 +34,7 @@ loginForm.addEventListener('submit', async (e) => {
     const res  = await fetch(`${API_BASE}/api/auth/login/`, {
       method : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body   : JSON.stringify({ username, password, user_type }),
+      body   : JSON.stringify({ username, password }),
     });
     const data = await res.json();
 
@@ -78,14 +43,24 @@ loginForm.addEventListener('submit', async (e) => {
 
       // Show full-page success overlay with spinner
       document.getElementById('welcomeMsg').textContent =
-        `${data.user.user_type} Welcome, ${data.user.username}!`;
+        `Welcome, ${data.user.user_type} ${data.user.username}!`;
       document.getElementById('loginSuccessOverlay').style.display = 'flex';
       loginForm.closest('.right').style.visibility = 'hidden';
 
-      // Redirect after 2 s (spinner plays for 2 s)
-      setTimeout(() => { window.location.href = 'dashboard.html'; }, 2000);
+      // Redirect after 2 s based on role
+      setTimeout(() => {
+        const role = data.user.user_type;
+        if (role === 'Admin') {
+          window.location.href = 'dashboard.html';
+        } else if (role === 'Staff') {
+          window.location.href = 'staffdashboard.html';
+        } else {
+          // Fallback to dashboard (should not happen)
+          window.location.href = 'dashboard.html';
+        }
+      }, 2000);
     } else {
-      errorMsg.textContent = data.error || 'Invalid username, password, or account type.';
+      errorMsg.textContent = data.error || 'Invalid username or password.';
       errorMsg.style.display = 'block';
       loginBtn.disabled    = false;
       loginBtn.textContent = 'Login';
@@ -95,5 +70,77 @@ loginForm.addEventListener('submit', async (e) => {
     errorMsg.style.display = 'block';
     loginBtn.disabled    = false;
     loginBtn.textContent = 'Login';
+  }
+});
+
+// ── Forgot Password Modal ─────────────────────────────────────
+const forgotModal = document.getElementById('forgotPasswordModal');
+const forgotBtn   = document.getElementById('forgotPwBtn');
+const closeForgot = document.getElementById('closeForgotModal');
+const sendBtn     = document.getElementById('sendResetLink');
+const resetInput  = document.getElementById('resetIdentifier');
+const resetFeedback = document.getElementById('resetFeedback');
+
+function closeForgotModal() {
+  forgotModal.style.display = 'none';
+  resetInput.value = '';
+  resetFeedback.style.display = 'none';
+}
+
+function showResetFeedback(msg, isError = true) {
+  resetFeedback.textContent = msg;
+  resetFeedback.style.display = 'block';
+  resetFeedback.style.background = isError ? 'rgba(220,53,69,0.18)' : 'rgba(40,167,69,0.18)';
+  resetFeedback.style.borderColor = isError ? 'rgba(220,53,69,0.4)' : 'rgba(40,167,69,0.4)';
+  resetFeedback.style.color = isError ? '#ffe0e3' : '#e0ffe3';
+  setTimeout(() => { resetFeedback.style.display = 'none'; }, 4000);
+}
+
+forgotBtn.addEventListener('click', () => {
+  forgotModal.style.display = 'flex';
+  resetInput.focus();
+});
+
+closeForgot.addEventListener('click', closeForgotModal);
+forgotModal.addEventListener('click', (e) => {
+  if (e.target === forgotModal) closeForgotModal();
+});
+
+sendBtn.addEventListener('click', async () => {
+  const identifier = resetInput.value.trim();
+  if (!identifier) {
+    showResetFeedback('Please enter your email or username.', true);
+    return;
+  }
+
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending...';
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/forgot-password/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      showResetFeedback(data.message || 'Reset link sent! Check your email.', false);
+      closeForgotModal();
+    } else {
+      showResetFeedback(data.error || 'Failed to send reset link.', true);
+    }
+  } catch {
+    showResetFeedback('Network error. Could not send request.', true);
+  } finally {
+    sendBtn.disabled = false;
+    sendBtn.textContent = 'Send Reset Link';s
+  }
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && forgotModal.style.display === 'flex') {
+    closeForgotModal();
   }
 });

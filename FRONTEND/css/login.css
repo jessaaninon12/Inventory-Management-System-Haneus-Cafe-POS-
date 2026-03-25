@@ -502,3 +502,67 @@ body{
   .left h1{ transform:none; left:20px; bottom:20px; font-size:60px; }
   .right{ padding:40px 30px; overflow-y:auto; }
 }
+
+
+/* Options row – Remember me + Forgot Password */
+.options-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 20px;
+  gap: 8px;
+}
+.remember-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.forgot-link {
+  background: none;
+  border: none;
+  color: #ffd9a8;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+  transition: color 0.2s;
+}
+.forgot-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Modal buttons (reuse existing login button styles) */
+.btn-lo-cancel, .btn-lo-confirm {
+  padding: 0.7rem 1.6rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  font-family: 'Inter', system-ui, sans-serif;
+  border: none;
+  flex: 1;
+}
+.btn-lo-cancel {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+.btn-lo-cancel:hover {
+  background: rgba(255,255,255,0.25);
+  transform: translateY(-1px);
+}
+.btn-lo-confirm {
+  background: #c47b42;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(196,123,66,0.3);
+}
+.btn-lo-confirm:hover {
+  background: #a35f2e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(163,95,46,0.35);
+}
