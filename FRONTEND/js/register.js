@@ -66,14 +66,15 @@ let currentStep = 0;
 
 function goToStep(n) {
   currentStep = n;
-  // Step 0: use 'none' (not translateX(0%)) so no CSS containing block is created.
-  // Any non-none transform value turns this element into a containing block for
-  // position:fixed children, trapping the dropdown inside overflow:hidden.
+  // Step 0: use 'none' so no CSS containing block traps position:fixed dropdown.
   // Step 1+: translateX(-50%) per step (track is 200% wide).
   wizardTrack.style.transform = n === 0 ? 'none' : `translateX(-${n * 50}%)`;
   dot1.classList.toggle('active', n === 0);
   dot2.classList.toggle('active', n === 1);
   hideError();
+  // Sync immediately so step-nav buttons are never clipped,
+  // then re-sync after transition for final settled height.
+  syncWrapperHeight();
   setTimeout(syncWrapperHeight, 450);
 }
 
@@ -145,6 +146,49 @@ function setupToggle(btnId, iconId, inputId) {
 setupToggle('togglePw1', 'togglePw1Icon', 'password');
 setupToggle('togglePw2', 'togglePw2Icon', 'confirmPassword');
 
+// ── Real-time username uniqueness check ──────────────────────────
+(function setupUsernameCheck() {
+  const input = document.getElementById('username');
+  if (!input) return;
+
+  // Insert hint element right after the username input-group
+  const group = input.closest('.input-group');
+  const hint  = document.createElement('p');
+  hint.className = 'field-hint';
+  hint.setAttribute('aria-live', 'polite');
+  group.insertAdjacentElement('afterend', hint);
+
+  // Clear hint on every keystroke
+  input.addEventListener('input', () => {
+    hint.className  = 'field-hint';
+    hint.textContent = '';
+    input.classList.remove('username-error', 'username-ok');
+    syncWrapperHeight();
+  });
+
+  // Check on blur
+  input.addEventListener('blur', async () => {
+    const val = input.value.trim();
+    if (!val) return;
+    try {
+      const res  = await fetch(`${API_BASE}/api/auth/check-username/?username=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (!data.available) {
+        hint.className   = 'field-hint hint-error';
+        hint.textContent = '\u26A0 Username already used';
+        input.classList.add('username-error');
+      } else {
+        hint.className   = 'field-hint hint-ok';
+        hint.textContent = '\u2713 Username available';
+        input.classList.add('username-ok');
+      }
+    } catch {
+      /* silent \u2014 server will validate on submit */
+    }
+    syncWrapperHeight(); // recalculate height after hint appears
+  });
+}());
+
 // ── Form submission ──────────────────────────────────────────────
 signupForm.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -184,6 +228,7 @@ signupForm.addEventListener('submit', async (e) => {
       setTimeout(() => { window.location.href = 'login.html'; }, 2000);
     } else {
       const msg =
+        (Array.isArray(data.errors) ? data.errors[0] : data.errors) ||
         data.username?.[0]         ||
         data.email?.[0]            ||
         data.password?.[0]         ||

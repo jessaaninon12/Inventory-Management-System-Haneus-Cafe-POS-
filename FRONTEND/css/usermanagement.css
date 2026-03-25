@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --primary:      #c47b42;
   --primary-dark: #a35f2e;
   --espresso:     #4a2f21;
@@ -25,14 +25,28 @@ body {
   min-height: 100vh;
 }
 
-/* ── Sidebar ─────────────────────────────────────────────────────── */
-aside {
-  width: 240px;
-  background: #4F4410;
-  border-right: 1px solid rgba(255,255,255,0.1);
-  flex-shrink: 0;
+/* -- Sidebar -------------------------------------------------------------------
+   Sidebar layout/collapse handled entirely by sidebar.css (#main-sidebar).    */
+
+/* Sidebar inner scrollable */
+#main-sidebar .sidebar-inner {
   overflow-y: auto;
+  overflow-x: hidden;
 }
+
+
+.sidebar-logo-row {
+  display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem;
+}
+.sidebar-logo-row .logo { margin-bottom: 0; }
+.sidebar-close-btn {
+  width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.18);
+  border-radius:0.375rem; cursor:pointer; color:rgba(245,237,227,0.9);
+  transition:background 0.15s; flex-shrink:0;
+}
+.sidebar-close-btn:hover { background:rgba(255,255,255,0.22); color:white; }
+.sidebar-close-btn svg { width:15px; height:15px; }
 
 .sidebar-inner { padding: 1.5rem; }
 
@@ -73,7 +87,14 @@ aside {
 .nav-link.sidebar-active svg { color: #FEA54E; }
 
 /* ── Main ───────────────────────────────────────────────────────── */
-main { flex: 1; padding: 1.5rem; overflow-y: auto; }
+main {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  height: 100vh;
+  transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
 
 header {
   background: white;
@@ -167,12 +188,14 @@ h1      { font-size: 1.6rem; margin-bottom: 0.25rem; }
   background: var(--cream);
 }
 
-/* ── Table ──────────────────────────────────────────────────────── */
+/* ── Table ──────────────────────────────────────────────── */
 .table-container {
   background: white;
   border-radius: 0.75rem;
-  overflow: hidden;
+  overflow-x: auto;          /* horizontal scroll on small screens */
+  overflow-y: hidden;
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  -webkit-overflow-scrolling: touch;
 }
 
 table { width: 100%; border-collapse: collapse; }
@@ -414,18 +437,124 @@ textarea { resize: vertical; }
   border-radius: 999px;
 }
 
-/* ── Responsive ─────────────────────────────────────────────────── */
-@media (max-width: 768px) {
-  .layout      { flex-direction: column; }
-  aside        { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--latte); }
-  .form-grid   { grid-template-columns: 1fr; }
-  .full-width  { grid-column: span 1; }
-  .detail-grid { grid-template-columns: 1fr; }
-  .toolbar     { flex-direction: column; align-items: stretch; }
-  .search-wrap { max-width: none; }
+/* ──────────────────────────────────────────────────────────────────────
+   RESPONSIVE BREAKPOINTS
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ── Tablet / Small Desktop (≤ 1024px) ──────────────────────────── */
+@media (max-width: 1024px) {
+  .table-container { min-width: 0; }
+  table            { min-width: 600px; }   /* allow scroll before wrapping text */
 }
 
-@media (max-width: 480px) {
-  .actions { gap: 0.3rem; }
-  .btn     { padding: 0.35rem 0.65rem; font-size: 0.78rem; }
+/* ── All Mobile Devices (≤ 767px) ──────────────────────────────── */
+@media (max-width: 767px) {
+  /* Content area fills screen; sidebar.css removes margin-left */
+  .main-wrapper {
+    padding: 0;
+  }
+  main {
+    padding: 1rem;
+  }
+
+  header {
+    padding: 0.875rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  h1     { font-size: 1.3rem; }
+
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .search-wrap { max-width: 100%; min-width: 0; }
+  .filter-group { justify-content: flex-start; flex-wrap: wrap; }
+
+  /* Table scrolls horizontally — min-width ensures columns don’t squish */
+  .table-container { border-radius: 0.5rem; }
+  table { min-width: 520px; }
+  th, td { padding: 0.75rem 0.875rem; font-size: 0.85rem; }
+
+  /* Modal full-width on mobile */
+  .modal-card { max-width: 100%; margin: 0; border-radius: 0.75rem; }
+  .modal-overlay { padding: 0.75rem; }
+  .form-grid  { grid-template-columns: 1fr; }
+  .full-width { grid-column: span 1; }
+  .detail-grid { grid-template-columns: 1fr; }
+
+  .actions { gap: 0.3rem; flex-wrap: wrap; }
+  .btn     { padding: 0.4rem 0.7rem; font-size: 0.8rem; }
+  .btn-primary,
+  .btn-outline,
+  .btn-danger  { padding: 0.5rem 1rem; }
+}
+
+/* ── Large Phone / iPhone Plus & Pixel Max (≤ 430px) ────────────── */
+/* Covers: iPhone 15 Plus/Pro Max (430px), Pixel 7 Pro/8 (412px), iPhone 14 Pro Max (430px) */
+@media (max-width: 430px) {
+  header { padding: 0.75rem 0.875rem; }
+  h1     { font-size: 1.2rem; }
+  .subtitle { font-size: 0.85rem; }
+  .filter-btn { padding: 0.35rem 0.75rem; font-size: 0.82rem; }
+  .modal-body { padding: 1.25rem; }
+  .modal-footer { padding: 0.875rem 1.25rem; }
+}
+
+/* ── iPhone Standard (≤ 393px) ─────────────────────────────── */
+/* Covers: iPhone 12/13/14/15 (390px), 14 Pro (393px), Pixel 6/7 (393px) */
+@media (max-width: 393px) {
+  h1 { font-size: 1.1rem; }
+  .modal-header h2 { font-size: 1rem; }
+  .btn-primary,
+  .btn-outline,
+  .btn-danger  { padding: 0.5rem 0.875rem; font-size: 0.82rem; }
+}
+
+/* ── iPhone SE / Small Android (≤ 375px) ───────────────────── */
+/* Covers: iPhone SE 3rd gen (375px), iPhone 12 mini (375px) */
+@media (max-width: 375px) {
+  main { padding: 0.875rem; }
+  h1   { font-size: 1.05rem; }
+  th, td { padding: 0.625rem 0.75rem; font-size: 0.8rem; }
+  .filter-group { gap: 0.2rem; }
+  .filter-btn   { padding: 0.3rem 0.6rem; font-size: 0.78rem; }
+  .modal-card { border-radius: 0.625rem; }
+}
+
+/* ── Android Compact (≤ 360px) ───────────────────────────── */
+/* Covers: Galaxy A51/A52 (360×800), most Compact-width Android phones */
+@media (max-width: 360px) {
+  main { padding: 0.75rem; }
+  header { gap: 0.5rem; }
+  .toolbar { gap: 0.5rem; }
+  .modal-overlay { padding: 0.5rem; }
+  .form-grid { gap: 0.75rem; }
+  input, select, textarea { font-size: 0.85rem; }
+}
+
+/* ── Smallest Phones (≤ 320px) ───────────────────────────── */
+/* Covers: iPhone SE 1st/2nd gen (320px), very old Android */
+@media (max-width: 320px) {
+  main { padding: 0.625rem; }
+  h1   { font-size: 1rem; }
+  .subtitle { display: none; }
+  .btn svg  { display: none; }
+  th, td    { padding: 0.5rem 0.625rem; font-size: 0.78rem; }
+  .modal-overlay { padding: 0.25rem; }
+  .modal-header  { padding: 1rem 1.25rem; }
+  .modal-body    { padding: 1rem; }
+  .modal-footer  { padding: 0.75rem 1rem; flex-wrap: wrap; }
+}
+
+/* ── Landscape Mobile (≤ 767px, landscape) ───────────────────── */
+/* Covers: landscape phones (568px–812px height, typical rotation) */
+@media (max-width: 767px) and (orientation: landscape) {
+  header     { padding: 0.625rem 1rem; }
+  .toolbar   { flex-direction: row; flex-wrap: wrap; }
+  .modal-card { max-height: 85vh; overflow-y: auto; }
+  .modal-overlay { align-items: flex-start; padding-top: 0.5rem; }
 }

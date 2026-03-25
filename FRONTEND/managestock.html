@@ -7,59 +7,75 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="css/managestock.css">
 </head>
 <body>
 
-<div class="layout">
+<div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-  <!-- Sidebar – Manage Stock is active -->
-  <aside>
+<div class="app-container">
+
+  <aside id="main-sidebar">
     <div class="sidebar-inner">
-      <div class="logo">Haneus Cafe</div>
-
-      <div class="nav-group">
-        <div class="nav-title">Main</div>
-        <a href="dashboard.html" class="nav-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+      <div class="sidebar-logo-row">
+        <h2 class="sidebar-title">Haneus Cafe</h2>
+        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
       </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Inventory</div>
-        <a href="products.html"       class="nav-link"><i data-lucide="box"></i> Products</a>
-        <a href="createproduct.html" class="nav-link"><i data-lucide="plus-square"></i> Create Product</a>
-        <a href="lowstock.html"     class="nav-link"><i data-lucide="alert-triangle"></i> Low Stocks</a>
-      </div>
+      <nav>
+        <div class="sidebar-nav-section" data-role="all">
+          <p class="sidebar-section-title">Main</p>
+          <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Stock</div>
-        <a href="managestock.html"   class="nav-link sidebar-active"><i data-lucide="package"></i> Manage Stock</a>
-        <a href="#" class="nav-link"><i data-lucide="truck"></i> Supplier</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="admin">
+          <p class="sidebar-section-title">Inventory</p>
+          <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Sales</div>
-        <a href="sales.html" class="nav-link"><i data-lucide="dollar-sign"></i> Sales</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="all">
+          <p class="sidebar-section-title">Stock</p>
+          <a href="managestock.html" class="sidebar-link sidebar-active"><i data-lucide="package"></i> Manage Stock</a>
+          <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+        </div>
 
-       <div class="nav-group admin-only">
-        <div class="nav-title">Users</div>
-        <a href="UserManagement.html" class="nav-link " style="font-size: 14px;"><i data-lucide="shield-user"></i> User Management</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="admin">
+          <p class="sidebar-section-title">Sales</p>
+          <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+        </div>
 
-      <div class="nav-group">
-        <div class="nav-title">Settings</div>
-        <a href="profile.html"        class="nav-link"><i data-lucide="user"></i> Profile</a>
-        <a href="#" onclick="confirmLogout(event)" class="nav-link"><i data-lucide="log-out"></i> Logout</a>
-      </div>
+        <div class="sidebar-nav-section" data-role="admin">
+          <p class="sidebar-section-title">Users</p>
+          <a href="UserManagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+        </div>
+
+        <div class="sidebar-nav-section" data-role="all">
+          <p class="sidebar-section-title">Settings</p>
+          <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+          <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+        </div>
+      </nav>
     </div>
   </aside>
 
-  
-  <main>
+  <main class="main-wrapper">
 
-    <header>
-      <h1>Manage Stock</h1>
-      <div class="subtitle">Adjust inventory quantities, record incoming stock, or correct counts</div>
+    <header style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div>
+          <h1 style="font-size:1.5rem;">Manage Stock</h1>
+          <div class="subtitle">Adjust inventory quantities, record incoming stock, or correct counts</div>
+        </div>
+      </div>
+      <button id="lowStockAlertBtn" class="btn-low-stock-alert" onclick="openLowStockModal()" title="View Low Stock Alerts">
+        <i data-lucide="alert-triangle"></i>
+        <span>Low Stock</span>
+        <span id="lowStockBadge" class="ls-badge" style="display:none;">0</span>
+      </button>
     </header>
 
     <div class="controls">
@@ -72,16 +88,15 @@
       <table>
         <thead>
           <tr>
-            <th>Product</th>
-            <th>ID</th>
-            <th>Current Stock</th>
-            <th>Adjust</th>
+            <th>Product Name</th>
+            <th>Category</th>
             <th>Last Updated</th>
-            <th>History</th>
+            <th>Stock Status</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody id="stockTableBody">
-          <tr><td colspan="6" style="text-align:center;color:var(--mocha);">Loading products...</td></tr>
+          <tr><td colspan="5" style="text-align:center;color:var(--mocha);padding:2rem;">Loading products…</td></tr>
         </tbody>
       </table>
     </div>
@@ -90,62 +105,127 @@
 
 </div>
 
-<!-- stock change confirm modal para sa button -->
-<div id="stockConfirmModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:500px;">
-    <h2>Confirm Stock Adjustment</h2>
-    <div id="stockConfirmDetails" style="margin:1.5rem 0;"></div>
-    <div style="display:flex; gap:1rem; justify-content:flex-end;">
-      <button class="btn btn-secondary" onclick="closeStockConfirmModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmStockChange()">Confirm Adjustment</button>
+<!-- ── View Product Modal ───────────────────────────────────── -->
+<div id="viewModal" class="ms-modal-overlay" style="display:none;">
+  <div class="ms-floating-card">
+    <div class="ms-fc-header">
+      <div class="ms-fc-header-left"><i data-lucide="package-open" class="ms-fc-icon"></i><h2>Product Details</h2></div>
+      <button class="ms-fc-close" onclick="closeViewModal()"><i data-lucide="x"></i></button>
+    </div>
+    <div class="ms-fc-body" id="viewModalContent"></div>
+    <div class="ms-fc-footer">
+      <button class="btn btn-secondary" onclick="closeViewModal()">Close</button>
     </div>
   </div>
 </div>
 
-<!-- history modal sa stock -->
-<div id="historyModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:600px; max-height:80vh; overflow-y:auto;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-      <h2 id="historyProductName"></h2>
-      <button onclick="closeHistoryModal()" style="background:none; border:none; font-size:1.5rem; cursor:pointer;">×</button>
+<!-- ── Edit Stock Modal ───────────────────────────────────────── -->
+<div id="editStockModal" class="ms-modal-overlay" style="display:none;">
+  <div class="ms-floating-card" style="max-width:440px;">
+    <div class="ms-fc-header">
+      <div class="ms-fc-header-left"><i data-lucide="pencil" class="ms-fc-icon"></i><h2>Edit Stock</h2></div>
+      <button class="ms-fc-close" onclick="closeEditStockModal()"><i data-lucide="x"></i></button>
     </div>
-    <div id="historyContent"></div>
-    <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:2rem;">
-      <button class="btn btn-secondary" onclick="closeHistoryModal()">Close</button>
+    <div class="ms-fc-body">
+      <div class="ms-field">
+        <label>Product</label>
+        <div id="editStockProductName" class="ms-field-value"></div>
+      </div>
+      <div class="ms-field">
+        <label>Current Stock</label>
+        <div id="editStockCurrentVal" class="ms-field-value"></div>
+      </div>
+      <div class="ms-field">
+        <label>Adjustment (+ to add, - to remove)</label>
+        <div class="ms-adj-row">
+          <button class="ms-adj-btn" onclick="msAdjust(-1)">&#8722;</button>
+          <input type="number" id="editStockQty" value="0" class="ms-adj-input" />
+          <button class="ms-adj-btn" onclick="msAdjust(1)">+</button>
+        </div>
+      </div>
+      <div class="ms-field">
+        <label>Notes (optional)</label>
+        <textarea id="editStockNotes" rows="2" placeholder="Reason for adjustment…" style="width:100%;padding:0.6rem 0.875rem;border:1px solid var(--latte);border-radius:0.5rem;font-family:'Inter',sans-serif;font-size:0.875rem;resize:none;"></textarea>
+      </div>
+    </div>
+    <div class="ms-fc-footer">
+      <button class="btn btn-secondary" onclick="closeEditStockModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitEditStock()"><i data-lucide="check"></i> Apply</button>
     </div>
   </div>
 </div>
 
-<!-- receive stock modal -->
-<div id="receiveStockModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; z-index:1000;">
-  <div style="background:white; border-radius:8px; padding:2rem; width:90%; max-width:520px;">
-    <h2>Receive New Stock</h2>
-    <form id="receiveStockForm" style="margin-top:1rem;">
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.25rem;">Product</label>
-        <select id="receiveProduct" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;"></select>
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.25rem;">Quantity</label>
-        <input id="receiveQuantity" type="number" min="1" value="1" required style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;" />
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.25rem;">Supplier / Reference (optional)</label>
-        <input id="receiveSupplier" type="text" placeholder="Supplier name or reference" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;" />
-      </div>
-      <div style="margin-bottom:1rem;">
-        <label style="display:block; margin-bottom:0.25rem;">Notes (optional)</label>
-        <textarea id="receiveNotes" rows="3" style="width:100%; padding:0.5rem; border:1px solid #ddd; border-radius:4px;"></textarea>
-      </div>
-      <div style="display:flex; gap:1rem; justify-content:flex-end; margin-top:1rem;">
-        <button type="button" class="btn btn-secondary" onclick="closeReceiveStockModal()">Cancel</button>
-        <button type="submit" class="btn btn-primary">Receive</button>
-      </div>
-    </form>
+<!-- ── Delete Confirm Modal ─────────────────────────────────────── -->
+<div id="deleteStockModal" class="ms-modal-overlay" style="display:none;">
+  <div class="ms-floating-card" style="max-width:380px;">
+    <div class="ms-fc-header">
+      <div class="ms-fc-header-left"><i data-lucide="alert-triangle" class="ms-fc-icon" style="color:#dc2626;"></i><h2>Delete Product</h2></div>
+      <button class="ms-fc-close" onclick="closeDeleteStockModal()"><i data-lucide="x"></i></button>
+    </div>
+    <div class="ms-fc-body">
+      <p id="deleteStockMsg" style="font-size:0.9rem;color:var(--espresso);line-height:1.6;"></p>
+    </div>
+    <div class="ms-fc-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteStockModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteStock()"><i data-lucide="trash-2"></i> Delete</button>
+    </div>
   </div>
 </div>
 
+<!-- ── Receive New Stock Modal ─────────────────────────────── -->
+<div id="receiveStockModal" class="ms-modal-overlay" style="display:none;">
+  <div class="ms-floating-card" style="max-width:520px;">
+    <div class="ms-fc-header">
+      <div class="ms-fc-header-left"><i data-lucide="package-plus" class="ms-fc-icon"></i><h2>Receive New Stock</h2></div>
+      <button class="ms-fc-close" onclick="closeReceiveStockModal()"><i data-lucide="x"></i></button>
+    </div>
+    <div class="ms-fc-body">
+      <form id="receiveStockForm">
+        <div class="ms-field">
+          <label>Product</label>
+          <select id="receiveProduct" required class="ms-select"></select>
+        </div>
+        <div class="ms-field">
+          <label>Quantity</label>
+          <input id="receiveQuantity" type="number" min="1" value="1" required class="ms-input" />
+        </div>
+        <div class="ms-field">
+          <label>Supplier / Reference <span style="font-weight:400;color:var(--mocha);">(optional)</span></label>
+          <input id="receiveSupplier" type="text" placeholder="Supplier name or reference" class="ms-input" />
+        </div>
+        <div class="ms-field">
+          <label>Notes <span style="font-weight:400;color:var(--mocha);">(optional)</span></label>
+          <textarea id="receiveNotes" rows="2" placeholder="Additional notes…" style="width:100%;padding:0.6rem 0.875rem;border:1px solid var(--latte);border-radius:0.5rem;font-family:'Inter',sans-serif;font-size:0.875rem;resize:none;"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="ms-fc-footer">
+      <button type="button" class="btn btn-secondary" onclick="closeReceiveStockModal()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="submitReceiveStock()"><i data-lucide="package-plus"></i> Receive</button>
+    </div>
+  </div>
+</div>
+
+<!-- low stock floating card modal -->
+<div id="lowStockModal" class="ls-modal-overlay" style="display:none;" onclick="handleLsOverlayClick(event)">
+  <div class="ls-modal-card">
+    <div class="ls-card-header">
+      <div style="display:flex;align-items:center;gap:0.625rem;">
+        <i data-lucide="alert-triangle" style="width:18px;height:18px;color:#c2410c;"></i>
+        <h3 style="font-size:1rem;font-weight:600;">Low Stock Alerts</h3>
+        <span id="lsCountBadge" class="ls-count-badge">0</span>
+      </div>
+      <button onclick="closeLowStockModal()" class="ls-close-btn" aria-label="Close">×</button>
+    </div>
+    <div class="ls-card-body" id="lowStockContent">
+      <p style="text-align:center;color:var(--mocha);padding:2rem;">Loading low stock items…</p>
+    </div>
+  </div>
+</div>
+
+  <script src="js/role-control.js"></script>
   <script src="js/logout-modal.js"></script>
   <script src="js/managestock.js"></script>
+  <script src="js/sidebar-toggle.js"></script>
 </body>
 </html>

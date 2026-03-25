@@ -1,8 +1,8 @@
-// Sales page — API-driven
+// Sales page — API-driven (reads live POS sale data from /api/sales/view/)
 lucide.createIcons();
 
 const API = 'http://127.0.0.1:8000/api';
-let allOrders = [];
+let allOrders = [];          // holds POS sales from SaleModel
 let currentViewingOrder = null;
 let currentRefundingOrder = null;
 
@@ -11,51 +11,68 @@ function formatPeso(val) {
   return '\u20b1' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function _fmtDate(isoStr) {
+  if (!isoStr) return '\u2014';
+  try {
+    const d = new Date(isoStr);
+    return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+           + ' \u2022 '
+           + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  } catch { return isoStr; }
+}
+
 // ---------- Summary cards ----------
 async function loadAnalytics() {
   try {
     const res = await fetch(`${API}/sales/analytics/`);
     if (!res.ok) throw new Error();
     const d = await res.json();
-    document.getElementById('salesToday').textContent = formatPeso(d.todays_sales);
-    document.getElementById('salesWeek').textContent = formatPeso(d.this_week_sales);
+    document.getElementById('salesToday').textContent   = formatPeso(d.todays_sales);
+    document.getElementById('salesWeek').textContent    = formatPeso(d.this_week_sales);
     document.getElementById('pendingOrders').textContent = d.pending_orders;
-    document.getElementById('avgOrder').textContent = formatPeso(d.average_order);
+    document.getElementById('avgOrder').textContent     = formatPeso(d.average_order);
   } catch (e) { console.error('Analytics load failed', e); }
 }
 
-// ---------- Orders table ----------
+// ---------- Sales table — reads from POS endpoint ----------
 async function loadOrders() {
   const tbody = document.getElementById('ordersTableBody');
   try {
-    const res = await fetch(`${API}/orders/`);
-    if (!res.ok) throw new Error();
+    // Load POS transactions from SaleModel
+    const res = await fetch(`${API}/sales/view/`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     allOrders = await res.json();
     renderOrders(allOrders);
   } catch (e) {
-    console.error(e);
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Failed to load orders.</td></tr>';
+    console.error('Sales load failed', e);
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Failed to load sales. Make sure the backend is running.</td></tr>';
   }
 }
 
 function renderOrders(orders) {
   const tbody = document.getElementById('ordersTableBody');
-  if (!orders.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No orders found.</td></tr>';
+  if (!orders || !orders.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No sales records found.</td></tr>';
     return;
   }
   tbody.innerHTML = orders.map(o => {
-    const d = o.date ? new Date(o.date) : null;
-    const dateStr = d ? d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' \u2022 ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '\u2014';
-    const statusCls = o.status === 'Completed' ? 'status-completed' : o.status === 'Pending' ? 'status-pending' : 'status-cancelled';
-    const refundBtn = o.status === 'Pending' ? `<button class="btn btn-small btn-refund" onclick="openRefundModal(${o.id})">Refund</button>` : '';
-    const completeBtn = o.status === 'Pending' ? `<button class="btn btn-small btn-edit" onclick="completeOrder(${o.id})">Complete</button>` : '';
+    // POS sale fields: id, receipt_number, sale_id, customer_name, created_at, items_count, total, status
+    const orderId   = o.receipt_number || o.sale_id || String(o.id);
+    const dateStr   = _fmtDate(o.created_at);
+    const itemCount = (o.items && o.items.length) || o.items_count || 0;
+    const statusCls = o.status === 'Completed' ? 'status-completed'
+                    : o.status === 'Pending'   ? 'status-pending'
+                    : 'status-cancelled';
+    const refundBtn  = o.status === 'Pending'
+      ? `<button class="btn btn-small btn-refund" onclick="openRefundModal(${o.id})">Refund</button>` : '';
+    const completeBtn = o.status === 'Pending'
+      ? `<button class="btn btn-small btn-edit" onclick="completeOrder(${o.id})">Complete</button>` : '';
     return `
-      <tr data-order-id="${o.order_id}" data-status="${o.status.toLowerCase()}">
-        <td>#${o.order_id}</td>
-        <td>${o.customer_name}</td>
+      <tr data-order-id="${orderId}" data-status="${o.status.toLowerCase()}">
+        <td>#${orderId}</td>
+        <td>${o.customer_name || 'Walk-in'}</td>
         <td>${dateStr}</td>
-        <td>${o.items_count} items</td>
+        <td>${itemCount} item${itemCount !== 1 ? 's' : ''}</td>
         <td class="amount">${formatPeso(o.total)}</td>
         <td><span class="status ${statusCls}">${o.status}</span></td>
         <td class="actions">
@@ -84,14 +101,14 @@ function applyFilters() {
   const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const filtered = allOrders.filter(o => {
-    // Search
-    const text = `${o.order_id} ${o.customer_name} ${o.total}`.toLowerCase();
+    // Search across receipt_number, sale_id, customer_name, total
+    const text = `${o.receipt_number || ''} ${o.sale_id || ''} ${o.customer_name || ''} ${o.total || ''}`.toLowerCase();
     if (q && !text.includes(q)) return false;
-    // Status
+    // Status filter
     if (statusFilter !== 'All Status' && o.status !== statusFilter) return false;
-    // Date
-    if (o.date) {
-      const d = new Date(o.date);
+    // Date filter — POS sales use created_at
+    if (o.created_at) {
+      const d = new Date(o.created_at);
       if (dateFilter === 'Today' && d < today) return false;
       if (dateFilter === 'This Week' && d < monday) return false;
       if (dateFilter === 'This Month' && d < firstOfMonth) return false;
@@ -101,39 +118,58 @@ function applyFilters() {
   renderOrders(filtered);
 }
 
-// ---------- View Order Modal ----------
+// ---------- View Order Modal — reads from POS /api/sales/view/<pk>/ ----------
 async function openOrderModal(pk) {
   try {
-    const res = await fetch(`${API}/orders/${pk}/`);
-    if (!res.ok) throw new Error();
+    const res = await fetch(`${API}/sales/view/${pk}/`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const o = await res.json();
     currentViewingOrder = o;
-    document.getElementById('orderTitle').textContent = `#${o.order_id}`;
+
+    const receiptId = o.receipt_number || o.sale_id || String(o.id);
+    document.getElementById('orderTitle').textContent = `Receipt #${receiptId}`;
 
     const statusColor = o.status === 'Completed' ? '#15803d' : o.status === 'Pending' ? '#ea580c' : '#666';
-    const d = o.date ? new Date(o.date) : null;
-    const dateStr = d ? d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) + ' \u2022 ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : '\u2014';
+    const dateStr = _fmtDate(o.created_at);
 
-    let itemsHTML = '<ul style="list-style:none;padding:0;">';
+    // Build items list
+    let itemsHTML = '<ul style="list-style:none;padding:0;margin:0;">';
     (o.items || []).forEach(i => {
+      const lineTotal = formatPeso(i.subtotal || i.total || (parseFloat(i.unit_price) * i.quantity));
       itemsHTML += `<li style="padding:0.5rem 0;border-bottom:1px solid #eee;display:flex;justify-content:space-between;">
-        <span>${i.product_name} x${i.quantity}</span>
-        <span style="font-weight:500;">${formatPeso(i.subtotal)}</span>
+        <span>${i.product_name} &times;${i.quantity}</span>
+        <span style="font-weight:500;">${lineTotal}</span>
       </li>`;
     });
     itemsHTML += '</ul>';
 
     document.getElementById('orderDetails').innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
-        <div><p style="color:#999;font-size:0.875rem;margin-bottom:0.25rem;">Customer</p><p style="font-weight:500;font-size:1.125rem;">${o.customer_name}</p></div>
-        <div><p style="color:#999;font-size:0.875rem;margin-bottom:0.25rem;">Status</p><p style="font-weight:500;font-size:1.125rem;color:${statusColor};">${o.status}</p></div>
-        <div><p style="color:#999;font-size:0.875rem;margin-bottom:0.25rem;">Total Amount</p><p style="font-weight:600;font-size:1.25rem;">${formatPeso(o.total)}</p></div>
-        <div><p style="color:#999;font-size:0.875rem;margin-bottom:0.25rem;">Order Date</p><p style="font-weight:500;">${dateStr}</p></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem 1.5rem;margin-bottom:1.5rem;">
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Receipt #</p><p style="font-weight:600;">${receiptId}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Customer #</p><p style="font-weight:600;">${o.customer_number || '\u2014'}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Customer</p><p style="font-weight:500;">${o.customer_name || 'Walk-in'}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Cashier</p><p style="font-weight:500;">${o.cashier_name || '\u2014'}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Order Type</p><p style="font-weight:500;">${o.order_type || '\u2014'}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Table</p><p style="font-weight:500;">${o.table_number || '\u2014'}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Payment</p><p style="font-weight:500;">${o.payment_method || '\u2014'}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Date / Time</p><p style="font-weight:500;">${dateStr}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Status</p><p style="font-weight:600;color:${statusColor};">${o.status}</p></div>
+        <div><p style="color:#999;font-size:0.8rem;margin-bottom:0.2rem;">Total</p><p style="font-weight:700;font-size:1.1rem;">${formatPeso(o.total)}</p></div>
       </div>
-      <div style="margin-top:2rem;"><h3 style="margin-bottom:1rem;">Order Items</h3>${itemsHTML}</div>
+      <div style="margin-bottom:0.75rem;padding:0.75rem;background:#f8f4f0;border-radius:6px;display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;font-size:0.85rem;">
+        <div><span style="color:#999;">Subtotal:</span> <strong>${formatPeso(o.subtotal)}</strong></div>
+        <div><span style="color:#999;">Discount:</span> <strong>${formatPeso(o.discount)}</strong></div>
+        <div><span style="color:#999;">VAT (12%):</span> <strong>${formatPeso(o.tax)}</strong></div>
+        <div><span style="color:#999;">Tendered:</span> <strong>${formatPeso(o.amount_tendered)}</strong></div>
+        <div><span style="color:#999;">Change:</span> <strong>${formatPeso(o.change_amount)}</strong></div>
+      </div>
+      <div><h3 style="margin:1rem 0 0.5rem;">Order Items</h3>${itemsHTML}</div>
     `;
     document.getElementById('orderModal').style.display = 'flex';
-  } catch (e) { alert('Could not load order details.'); }
+  } catch (e) {
+    console.error('openOrderModal failed:', e);
+    alert('Could not load sale details.');
+  }
 }
 
 function closeOrderModal() {
@@ -146,10 +182,11 @@ function openRefundModal(pk) {
   const o = allOrders.find(x => x.id === pk);
   if (!o) return;
   currentRefundingOrder = o;
+  const receiptId = o.receipt_number || o.sale_id || String(o.id);
   document.getElementById('refundDetails').innerHTML = `
     <div style="display:grid;gap:1rem;padding:1rem;background:#f5f5f5;border-radius:4px;">
-      <div><p style="color:#999;font-size:0.875rem;">Order ID</p><p style="font-weight:500;">${o.order_id}</p></div>
-      <div><p style="color:#999;font-size:0.875rem;">Customer</p><p style="font-weight:500;">${o.customer_name}</p></div>
+      <div><p style="color:#999;font-size:0.875rem;">Receipt #</p><p style="font-weight:500;">${receiptId}</p></div>
+      <div><p style="color:#999;font-size:0.875rem;">Customer</p><p style="font-weight:500;">${o.customer_name || 'Walk-in'}</p></div>
       <div><p style="color:#999;font-size:0.875rem;">Refund Amount</p><p style="font-weight:600;font-size:1.25rem;color:#15803d;">${formatPeso(o.total)}</p></div>
     </div>
   `;
@@ -169,13 +206,19 @@ document.getElementById('refundForm').addEventListener('submit', async function(
   if (!reason) { alert('Please select a refund reason'); return; }
 
   try {
-    const res = await fetch(`${API}/orders/${currentRefundingOrder.id}/cancel/`, { method: 'POST' });
+    // PATCH the POS sale status to Cancelled
+    const res = await fetch(`${API}/sales/partialedit/${currentRefundingOrder.id}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Cancelled' }),
+    });
     if (!res.ok) {
       const err = await res.json();
-      alert('Refund failed: ' + (err.error || JSON.stringify(err)));
+      alert('Refund failed: ' + (err.error || err.errors || JSON.stringify(err)));
       return;
     }
-    alert(`Refund processed for order #${currentRefundingOrder.order_id}!`);
+    const receiptId = currentRefundingOrder.receipt_number || currentRefundingOrder.sale_id || String(currentRefundingOrder.id);
+    alert(`Refund processed for sale #${receiptId}!`);
     closeRefundModal();
     loadOrders();
     loadAnalytics();
@@ -184,18 +227,23 @@ document.getElementById('refundForm').addEventListener('submit', async function(
 
 async function completeOrder(pk) {
   if (!pk) return;
-  if (!confirm('Mark this order as Completed?')) return;
+  if (!confirm('Mark this sale as Completed?')) return;
   try {
-    const res = await fetch(`${API}/orders/${pk}/complete/`, { method: 'POST' });
+    // PATCH the POS sale status to Completed
+    const res = await fetch(`${API}/sales/partialedit/${pk}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Completed' }),
+    });
     if (!res.ok) {
       const err = await res.json();
-      alert('Complete failed: ' + (err.error || JSON.stringify(err)));
+      alert('Complete failed: ' + (err.error || err.errors || JSON.stringify(err)));
       return;
     }
-    alert('Order marked as Completed.');
+    alert('Sale marked as Completed.');
     loadOrders();
     loadAnalytics();
-  } catch (err) { alert('Failed to complete order.'); }
+  } catch (err) { alert('Failed to complete sale.'); }
 }
 
 // ---------- Close modals on outside click ----------
@@ -205,24 +253,29 @@ window.addEventListener('click', function(event) {
 });
 
 function exportSalesCsv() {
-  const rows = Array.from(document.querySelectorAll('#ordersTableBody tr[data-order-id]'))
-    .filter(row => row.style.display !== 'none');
-  if (!rows.length) { alert('No rows to export.'); return; }
-  const header = ['Order ID', 'Customer', 'Date/Time', 'Items', 'Total', 'Status'];
+  // Export from the in-memory allOrders array (POS sales)
+  if (!allOrders.length) { alert('No sales to export.'); return; }
+  const header = ['Receipt #', 'Customer', 'Date/Time', 'Items', 'Subtotal', 'Discount', 'Tax (12%)', 'Total', 'Payment', 'Status'];
   const escapeCell = (v) => {
     const s = String(v ?? '').replace(/"/g, '""');
     return /[",\n]/.test(s) ? `"${s}"` : s;
   };
   const lines = [header.join(',')];
-  rows.forEach(row => {
-    const cells = row.querySelectorAll('td');
-    const orderId = cells[0]?.textContent?.trim() || '';
-    const customer = cells[1]?.textContent?.trim() || '';
-    const dateTime = cells[2]?.textContent?.trim() || '';
-    const items = cells[3]?.textContent?.trim() || '';
-    const total = cells[4]?.textContent?.trim() || '';
-    const status = cells[5]?.textContent?.trim() || '';
-    lines.push([orderId, customer, dateTime, items, total, status].map(escapeCell).join(','));
+  allOrders.forEach(o => {
+    const receiptId = o.receipt_number || o.sale_id || String(o.id);
+    const itemCount = (o.items && o.items.length) || o.items_count || 0;
+    lines.push([
+      '#' + receiptId,
+      o.customer_name || 'Walk-in',
+      _fmtDate(o.created_at),
+      itemCount + ' item(s)',
+      parseFloat(o.subtotal || 0).toFixed(2),
+      parseFloat(o.discount || 0).toFixed(2),
+      parseFloat(o.tax || 0).toFixed(2),
+      parseFloat(o.total || 0).toFixed(2),
+      o.payment_method || '',
+      o.status || '',
+    ].map(escapeCell).join(','));
   });
   const csv = lines.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -230,10 +283,10 @@ function exportSalesCsv() {
   const a = document.createElement('a');
   const date = new Date();
   const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const mo = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   a.href = url;
-  a.download = `sales_${y}-${m}-${d}.csv`;
+  a.download = `sales_${y}-${mo}-${d}.csv`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

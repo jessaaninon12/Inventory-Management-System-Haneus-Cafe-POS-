@@ -226,3 +226,157 @@ async function loadDashboard() {
 
 setDateRange();
 loadDashboard();
+
+// ---------------------------------------------------------------------------
+// Notification System (Parts 3+4)
+// ---------------------------------------------------------------------------
+
+const NOTIF_STORE_KEY = 'haneus_notif_store';
+let _selectedNotifId = null;
+
+function _loadStore()   { try { return JSON.parse(localStorage.getItem(NOTIF_STORE_KEY) || '[]'); } catch { return []; } }
+function _saveStore(ns) { localStorage.setItem(NOTIF_STORE_KEY, JSON.stringify(ns)); }
+
+function _updateBadge(notifs) {
+  const badge  = document.getElementById('notifBadge');
+  if (!badge) return;
+  const unread = notifs.filter(n => !n.read).length;
+  badge.textContent = unread > 9 ? '9+' : String(unread);
+  badge.classList.toggle('visible', unread > 0);
+}
+
+async function _buildNotifications() {
+  try {
+    const res      = await fetch(`${API_BASE}/products/low-stock/`);
+    const products = await res.json();
+    const store    = _loadStore();
+    const storeMap = {};
+    store.forEach(n => { storeMap[n.id] = n; });
+
+    const fresh = products.map(p => {
+      const type = p.stock <= 0                        ? 'out_of_stock'
+                 : p.stock <= p.low_stock_threshold / 2 ? 'critical' : 'low_stock';
+      const title = p.stock <= 0 ? 'Out of Stock' : type === 'critical' ? 'Critical Stock' : 'Low Stock Alert';
+      const msg   = p.stock <= 0
+        ? `${p.name} is out of stock and needs immediate restocking.`
+        : `${p.name} has only ${p.stock} unit(s) left. Reorder point: ${p.low_stock_threshold}.`;
+      return {
+        id          : `ls_${p.id}`,
+        type,
+        title,
+        message     : msg,
+        productId   : p.id,
+        productName : p.name,
+        stock       : p.stock,
+        threshold   : p.low_stock_threshold,
+        category    : p.category,
+        timestamp   : new Date().toISOString(),
+        read        : storeMap[`ls_${p.id}`]?.read ?? false,
+      };
+    });
+
+    _saveStore(fresh);
+    _renderNotifList(fresh);
+    _updateBadge(fresh);
+  } catch (e) {
+    console.error('Notification fetch failed:', e);
+    const panel = document.getElementById('notifList');
+    if (panel) panel.innerHTML = '<p style="padding:1.25rem;color:var(--mocha);font-size:0.875rem;">Could not load notifications.</p>';
+  }
+}
+
+function _renderNotifList(notifs) {
+  const list = document.getElementById('notifList');
+  if (!list) return;
+
+  if (!notifs.length) {
+    list.innerHTML = '<p style="padding:1.25rem;color:var(--mocha);font-size:0.875rem;text-align:center;">No notifications</p>';
+    return;
+  }
+
+  list.innerHTML = notifs.map(n => `
+    <div class="notif-item ${n.read ? 'read' : ''} ${_selectedNotifId === n.id ? 'selected' : ''}"
+         onclick="_selectNotif('${n.id}')">
+      <div class="notif-item-dot dot-${n.type === 'out_of_stock' ? 'danger' : n.type === 'critical' ? 'warning' : 'caution'}"></div>
+      <div class="notif-item-body">
+        <div class="notif-item-title">${n.title}</div>
+        <div class="notif-item-preview">${n.productName}</div>
+      </div>
+      ${!n.read ? '<span class="notif-unread-dot"></span>' : ''}
+    </div>`).join('');
+}
+
+function _selectNotif(id) {
+  _selectedNotifId = id;
+  const notifs = _loadStore();
+  const n = notifs.find(x => x.id === id);
+  if (!n) return;
+
+  n.read = true;
+  _saveStore(notifs);
+  _updateBadge(notifs);
+  _renderNotifList(notifs);
+
+  const detail   = document.getElementById('notifDetailPanel');
+  if (!detail) return;
+  const typeColor = n.type === 'out_of_stock' ? '#b91c1c' : n.type === 'critical' ? '#92400e' : '#b45309';
+  const typeBg    = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
+
+  detail.innerHTML = `
+    <div class="notif-detail-content">
+      <span style="background:${typeBg};color:${typeColor};padding:0.2rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${n.title}</span>
+      <h3 style="font-size:0.975rem;font-weight:600;color:var(--espresso);margin:0.625rem 0 0.25rem;">${n.productName}</h3>
+      <p style="font-size:0.83rem;color:var(--mocha);line-height:1.6;margin-bottom:0.75rem;">${n.message}</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;margin-bottom:0.75rem;">
+        <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;">
+          <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">Stock</div>
+          <div style="font-size:1.05rem;font-weight:700;color:${typeColor};">${n.stock}</div>
+        </div>
+        <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;">
+          <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">ROP</div>
+          <div style="font-size:1.05rem;font-weight:700;color:var(--espresso);">${n.threshold}</div>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:var(--mocha);">Category: ${n.category}</p>
+      <a href="lowstock.html" class="notif-detail-action">Go to Low Stock Page &#8594;</a>
+    </div>`;
+}
+
+// Bell toggle
+document.getElementById('notifBellBtn')?.addEventListener('click', function(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('notifDropdown');
+  if (!dd) return;
+  const willOpen = !dd.classList.contains('open');
+  dd.classList.toggle('open');
+  if (willOpen) _buildNotifications();
+});
+
+// Close on outside click
+document.addEventListener('click', e => {
+  const w  = document.getElementById('notifWrapper');
+  const dd = document.getElementById('notifDropdown');
+  if (w && dd && !w.contains(e.target)) dd.classList.remove('open');
+});
+
+// Mark all read
+document.getElementById('markAllReadBtn')?.addEventListener('click', () => {
+  const notifs = _loadStore();
+  notifs.forEach(n => n.read = true);
+  _saveStore(notifs);
+  _updateBadge(notifs);
+  _renderNotifList(notifs);
+});
+
+// Clear all
+document.getElementById('clearAllBtn')?.addEventListener('click', () => {
+  _saveStore([]);
+  _updateBadge([]);
+  _renderNotifList([]);
+  const detail = document.getElementById('notifDetailPanel');
+  if (detail) detail.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;padding:1.25rem;">Select a notification to view details.</p>';
+  _selectedNotifId = null;
+});
+
+// Init badge on load (silent, non-blocking)
+_buildNotifications();
