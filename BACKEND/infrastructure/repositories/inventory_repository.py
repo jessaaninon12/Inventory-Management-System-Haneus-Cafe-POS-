@@ -18,17 +18,24 @@ class InventoryRepository(InventoryRepositoryInterface):
     # ------------------------------------------------------------------
 
     def get_transactions_by_product(self, product_id):
-        qs = InventoryTransactionModel.objects.filter(product_id=product_id)
+        # select_related('product') avoids N+1 if product fields are accessed
+        qs = InventoryTransactionModel.objects.select_related("product").filter(
+            product_id=product_id
+        ).order_by("-timestamp")
         return [self._txn_to_entity(m) for m in qs]
 
     def get_low_stock_items(self):
-        qs = ProductModel.objects.filter(stock__lte=F("low_stock_threshold"))
+        qs = ProductModel.objects.filter(
+            stock__lte=F("low_stock_threshold")
+        ).only("id", "name", "stock", "unit", "low_stock_threshold").order_by("stock")
         return [self._product_to_inventory_item(m) for m in qs]
 
     def get_inventory_summary(self):
         return [
             self._product_to_inventory_item(m)
-            for m in ProductModel.objects.all()
+            for m in ProductModel.objects.only(
+                "id", "name", "stock", "unit", "low_stock_threshold"
+            )
         ]
 
     # ------------------------------------------------------------------

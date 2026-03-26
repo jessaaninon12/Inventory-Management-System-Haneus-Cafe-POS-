@@ -48,9 +48,9 @@ document.getElementById('createProductForm').addEventListener('submit', async fu
 
   const nameError = document.getElementById('nameError');
   if (!name) { nameError.style.display = 'block'; valid = false; } else { nameError.style.display = 'none'; }
-  if (!category) { alert('Please select a category'); valid = false; }
-  if (isNaN(price) || price <= 0) { alert('Please enter a valid price'); valid = false; }
-  if (isNaN(stock) || stock < 0) { alert('Please enter a valid stock quantity'); valid = false; }
+  if (!category) { showErrorModal('Please select a category'); valid = false; }
+  if (isNaN(price) || price <= 0) { showErrorModal('Please enter a valid price'); valid = false; }
+  if (isNaN(stock) || stock < 0) { showErrorModal('Please enter a valid stock quantity'); valid = false; }
 
   if (!valid) return;
 
@@ -72,22 +72,23 @@ document.getElementById('createProductForm').addEventListener('submit', async fu
 
     if (!res.ok) {
       const err = await res.json();
-      alert('Error: ' + JSON.stringify(err.errors || err));
+      showErrorModal('Error: ' + JSON.stringify(err.errors || err));
       return;
     }
 
     const product = await res.json();
-    alert(`Product "${product.name}" created successfully!\nID: ${product.id}`);
-    window.location.href = 'products.html';
+    showAlertModal(`Product "${product.name}" created successfully! ID: ${product.id}`, 'success', {
+      onConfirm: () => { window.location.href = 'products.html'; }
+    });
   } catch (err) {
     console.error(err);
-    alert('Failed to create product. Is the backend running?');
+    showErrorModal('Failed to create product. Is the backend running?');
   }
 });
 
 document.querySelector('button[type="button"].btn-secondary').addEventListener('click', function(e) {
   e.preventDefault();
-  if (confirm('Are you sure you want to cancel? Any unsaved data will be lost.')) {
+  showConfirmModal('Are you sure you want to cancel? Any unsaved data will be lost.', function() {
     window.location.href = 'products.html';
-  }
+  });
 });

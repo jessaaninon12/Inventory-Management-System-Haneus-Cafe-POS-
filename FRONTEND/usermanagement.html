@@ -223,6 +223,30 @@
 </div>
 
 
+<!-- ── RESET PASSWORD MODAL ──────────────────────────────────────── -->
+<div id="resetPasswordModal" class="modal-overlay" style="display:none;">
+  <div class="modal-card modal-card--sm">
+    <div class="modal-header">
+      <h2>Reset User Password</h2>
+      <button class="modal-close" onclick="closeModal('resetPasswordModal')"><i data-lucide="x"></i></button>
+    </div>
+    <div class="modal-body">
+      <p id="resetPwMessage" style="margin-bottom: 1.5rem;"></p>
+      <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">Temporary Password:</p>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="text" id="tempPasswordDisplay" readonly style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem; font-family: monospace; font-weight: 600;" />
+          <button type="button" class="btn btn-outline" onclick="copyTempPassword()">Copy</button>
+        </div>
+      </div>
+      <p style="font-size: 0.875rem; color: #666;"><i data-lucide="info" style="width: 16px; height: 16px; display: inline; vertical-align: -2px; margin-right: 0.5rem;"></i>Share this password with the user. They will be forced to change it on login.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">Close</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── DELETE MODAL ────────────────────────────────────────────── -->
 <div id="deleteModal" class="modal-overlay" style="display:none;">
   <div class="modal-card modal-card--sm">
@@ -242,6 +266,7 @@
 
   <script src="js/role-control.js"></script>
   <script src="js/logout-modal.js"></script>
+  <script src="js/alert-modal.js"></script>
   <script src="js/UserManagement.js"></script>
   <script src="js/sidebar-toggle.js"></script>
 </body>

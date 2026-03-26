@@ -275,6 +275,34 @@ async function _buildNotifications() {
       };
     });
 
+    // Fetch admin approval requests if user is an Admin
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.user_type === 'Admin') {
+      try {
+        const approvalRes = await fetch(`${API_BASE}/admin/approval-requests/`);
+        if (approvalRes.ok) {
+          const approvalData = await approvalRes.json();
+          const approvals = (approvalData.requests || []).map(req => ({
+            id          : `approval_${req.id}`,
+            type        : 'approval_pending',
+            title       : 'Admin Approval Needed',
+            message     : `${req.user_name} (${req.email}) is awaiting approval.`,
+            userId      : req.user_id,
+            userName    : req.user_name,
+            userEmail   : req.email,
+            requestId   : req.id,
+            status      : req.status,
+            createdAt   : req.created_at,
+            timestamp   : req.created_at,
+            read        : storeMap[`approval_${req.id}`]?.read ?? false,
+          }));
+          fresh.push(...approvals);
+        }
+      } catch (approvalErr) {
+        console.warn('Could not load approval requests:', approvalErr);
+      }
+    }
+
     _saveStore(fresh);
     _renderNotifList(fresh);
     _updateBadge(fresh);
@@ -294,16 +322,22 @@ function _renderNotifList(notifs) {
     return;
   }
 
-  list.innerHTML = notifs.map(n => `
-    <div class="notif-item ${n.read ? 'read' : ''} ${_selectedNotifId === n.id ? 'selected' : ''}"
-         onclick="_selectNotif('${n.id}')">
-      <div class="notif-item-dot dot-${n.type === 'out_of_stock' ? 'danger' : n.type === 'critical' ? 'warning' : 'caution'}"></div>
-      <div class="notif-item-body">
-        <div class="notif-item-title">${n.title}</div>
-        <div class="notif-item-preview">${n.productName}</div>
-      </div>
-      ${!n.read ? '<span class="notif-unread-dot"></span>' : ''}
-    </div>`).join('');
+  list.innerHTML = notifs.map(n => {
+    const isApproval = n.type === 'approval_pending';
+    const dotColor = isApproval ? 'info' : (n.type === 'out_of_stock' ? 'danger' : n.type === 'critical' ? 'warning' : 'caution');
+    const preview = isApproval ? n.userName : n.productName;
+    
+    return `
+      <div class="notif-item ${n.read ? 'read' : ''} ${_selectedNotifId === n.id ? 'selected' : ''}"
+           onclick="_selectNotif('${n.id}')">
+        <div class="notif-item-dot dot-${dotColor}"></div>
+        <div class="notif-item-body">
+          <div class="notif-item-title">${n.title}</div>
+          <div class="notif-item-preview">${preview}</div>
+        </div>
+        ${!n.read ? '<span class="notif-unread-dot"></span>' : ''}
+      </div>`;
+  }).join('');
 }
 
 function _selectNotif(id) {
@@ -319,27 +353,112 @@ function _selectNotif(id) {
 
   const detail   = document.getElementById('notifDetailPanel');
   if (!detail) return;
-  const typeColor = n.type === 'out_of_stock' ? '#b91c1c' : n.type === 'critical' ? '#92400e' : '#b45309';
-  const typeBg    = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
+  
+  // Handle approval notifications
+  if (n.type === 'approval_pending') {
+    const typeBg    = '#dbeafe';
+    const typeColor = '#0284c7';
+    detail.innerHTML = `
+      <div class="notif-detail-content">
+        <span style="background:${typeBg};color:${typeColor};padding:0.2rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${n.title}</span>
+        <h3 style="font-size:0.975rem;font-weight:600;color:var(--espresso);margin:0.625rem 0 0.25rem;">${n.userName}</h3>
+        <p style="font-size:0.83rem;color:var(--mocha);line-height:1.6;margin-bottom:0.75rem;">${n.message}</p>
+        <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;margin-bottom:0.75rem;">
+          <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">Email</div>
+          <div style="font-size:0.9rem;color:var(--espresso);">${n.userEmail}</div>
+        </div>
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+          <button onclick="_approveUser(${n.userId}, '${n.id}')" style="flex:1;padding:0.5rem;background:#10b981;color:white;border:none;border-radius:0.375rem;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.3s;">
+            ✓ Approve
+          </button>
+          <button onclick="_rejectUser(${n.userId}, '${n.id}')" style="flex:1;padding:0.5rem;background:#ef4444;color:white;border:none;border-radius:0.375rem;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.3s;">
+            ✕ Reject
+          </button>
+        </div>
+      </div>`;
+  } else {
+    // Handle stock notifications
+    const typeColor = n.type === 'out_of_stock' ? '#b91c1c' : n.type === 'critical' ? '#92400e' : '#b45309';
+    const typeBg    = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
+    detail.innerHTML = `
+      <div class="notif-detail-content">
+        <span style="background:${typeBg};color:${typeColor};padding:0.2rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${n.title}</span>
+        <h3 style="font-size:0.975rem;font-weight:600;color:var(--espresso);margin:0.625rem 0 0.25rem;">${n.productName}</h3>
+        <p style="font-size:0.83rem;color:var(--mocha);line-height:1.6;margin-bottom:0.75rem;">${n.message}</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;margin-bottom:0.75rem;">
+          <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;">
+            <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">Stock</div>
+            <div style="font-size:1.05rem;font-weight:700;color:${typeColor};">${n.stock}</div>
+          </div>
+          <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;">
+            <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">ROP</div>
+            <div style="font-size:1.05rem;font-weight:700;color:var(--espresso);">${n.threshold}</div>
+          </div>
+        </div>
+        <p style="font-size:0.78rem;color:var(--mocha);">Category: ${n.category}</p>
+        <a href="lowstock.html" class="notif-detail-action">Go to Low Stock Page &#8594;</a>
+      </div>`;
+  }
+}
 
-  detail.innerHTML = `
-    <div class="notif-detail-content">
-      <span style="background:${typeBg};color:${typeColor};padding:0.2rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${n.title}</span>
-      <h3 style="font-size:0.975rem;font-weight:600;color:var(--espresso);margin:0.625rem 0 0.25rem;">${n.productName}</h3>
-      <p style="font-size:0.83rem;color:var(--mocha);line-height:1.6;margin-bottom:0.75rem;">${n.message}</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.625rem;margin-bottom:0.75rem;">
-        <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;">
-          <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">Stock</div>
-          <div style="font-size:1.05rem;font-weight:700;color:${typeColor};">${n.stock}</div>
-        </div>
-        <div style="background:var(--cream);border-radius:0.5rem;padding:0.625rem;">
-          <div style="font-size:0.68rem;color:var(--mocha);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.2rem;">ROP</div>
-          <div style="font-size:1.05rem;font-weight:700;color:var(--espresso);">${n.threshold}</div>
-        </div>
-      </div>
-      <p style="font-size:0.78rem;color:var(--mocha);">Category: ${n.category}</p>
-      <a href="lowstock.html" class="notif-detail-action">Go to Low Stock Page &#8594;</a>
-    </div>`;
+// Approval/Rejection handlers
+function _approveUser(userId, notifId) {
+  showConfirmModal(
+    'Approve this admin user?',
+    async () => {
+      try {
+        const response = await fetch(`${API_BASE}/admin/approve-user/${userId}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          const notifs = _loadStore();
+          const idx = notifs.findIndex(n => n.id === notifId);
+          if (idx >= 0) notifs.splice(idx, 1);
+          _saveStore(notifs);
+          _renderNotifList(notifs);
+          _updateBadge(notifs);
+          showAlertModal('User approved successfully!', 'success');
+        } else {
+          showErrorModal(data.error || 'Failed to approve user.');
+        }
+      } catch (err) {
+        console.error('Approval error:', err);
+        showErrorModal('Network error. Could not approve user.');
+      }
+    }
+  );
+}
+
+function _rejectUser(userId, notifId) {
+  showConfirmModal(
+    'Reject this admin user and remove their account?',
+    async () => {
+      try {
+        const response = await fetch(`${API_BASE}/admin/reject-user/${userId}/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ delete_user: true }),
+        });
+        const data = await response.json();
+        if (response.ok && data.success) {
+          const notifs = _loadStore();
+          const idx = notifs.findIndex(n => n.id === notifId);
+          if (idx >= 0) notifs.splice(idx, 1);
+          _saveStore(notifs);
+          _renderNotifList(notifs);
+          _updateBadge(notifs);
+          showAlertModal('User rejected and removed.', 'success');
+        } else {
+          showErrorModal(data.error || 'Failed to reject user.');
+        }
+      } catch (err) {
+        console.error('Rejection error:', err);
+        showErrorModal('Network error. Could not reject user.');
+      }
+    }
+  );
 }
 
 // Bell toggle

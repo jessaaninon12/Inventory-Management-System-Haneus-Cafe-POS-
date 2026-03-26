@@ -10,6 +10,13 @@ coverage/
 !.env.example
 
 # -------------------------------------------------------
+# Markdown files — all .md files are git-ignored
+# EXCEPTION: README.md must always be pushable
+# -------------------------------------------------------
+*.md
+!README.md
+
+# -------------------------------------------------------
 # Python / Django Backend
 # -------------------------------------------------------
 __pycache__/

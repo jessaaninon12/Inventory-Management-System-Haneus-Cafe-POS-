@@ -105,6 +105,10 @@ class OrderModel(models.Model):
     class Meta:
         db_table = "orders"
         ordering = ["-date"]
+        indexes = [
+            # Speeds up dashboard WHERE status='Completed' AND date BETWEEN ... queries
+            models.Index(fields=["status", "date"], name="idx_order_status_date"),
+        ]
 
     def __str__(self):
         return f"{self.order_id} — {self.customer_name}"
@@ -177,6 +181,10 @@ class SaleModel(models.Model):
     class Meta:
         db_table = "sales"
         ordering = ["-created_at"]
+        indexes = [
+            # Speeds up dashboard aggregations: WHERE status='Completed' AND created_at BETWEEN ...
+            models.Index(fields=["status", "created_at"], name="idx_sale_status_created"),
+        ]
 
     def __str__(self):
         return f"{self.receipt_number or self.sale_id} — {self.customer_name}"
@@ -232,6 +240,10 @@ class InventoryTransactionModel(models.Model):
     class Meta:
         db_table = "inventory_transactions"
         ordering = ["-timestamp"]
+        indexes = [
+            # Speeds up get_transactions_by_product: WHERE product_id=? ORDER BY timestamp DESC
+            models.Index(fields=["product", "-timestamp"], name="idx_invtxn_product_time"),
+        ]
 
     def __str__(self):
         sign = "+" if self.quantity_change > 0 else ""

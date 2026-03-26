@@ -63,10 +63,10 @@ function openRestockModal(productId) {
         ? p.low_stock_threshold - p.stock : 10;
       document.getElementById('restockModal').style.display = 'flex';
     })
-    .catch(() => alert('Could not load product details.'));
+    .catch(() => showErrorModal('Could not load product details.'));
 }
 
-function closeRestockModal() {
+function closeRestockModal()
   document.getElementById('restockModal').style.display = 'none';
   currentRestockingProduct = null;
 }
@@ -95,16 +95,16 @@ document.getElementById('restockForm').addEventListener('submit', async function
 
     if (!res.ok) {
       const err = await res.json();
-      alert('Restock failed: ' + JSON.stringify(err.errors || err));
+      showErrorModal('Restock failed: ' + JSON.stringify(err.errors || err));
       return;
     }
 
-    alert(`Restocked ${quantity} units of ${currentRestockingProduct.name} successfully!`);
+    showSuccessModal(`Restocked ${quantity} units of ${currentRestockingProduct.name} successfully!`);
     closeRestockModal();
     loadLowStock();
   } catch (err) {
     console.error(err);
-    alert('Failed to restock. Is the backend running?');
+    showErrorModal('Failed to restock. Is the backend running?');
   }
 });
 
@@ -158,10 +158,10 @@ function openViewModal(productId) {
 
       document.getElementById('viewModal').style.display = 'flex';
     })
-    .catch(() => alert('Could not load product details.'));
+    .catch(() => showErrorModal('Could not load product details.'));
 }
 
-function closeViewModal() {
+function closeViewModal()
   document.getElementById('viewModal').style.display = 'none';
   currentViewingProduct = null;
 }

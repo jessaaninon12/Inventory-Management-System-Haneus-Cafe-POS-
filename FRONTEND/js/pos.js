@@ -120,20 +120,20 @@ function setupPOSButtons() {
     if (clearBtn) {
         clearBtn.addEventListener("click", () => {
             if (posCart.length === 0) return;
-            if (confirm("Clear the current cart?")) {
+            showConfirmModal("Clear the current cart?", () => {
                 posCart = [];
                 updatePOSReceiptLabel();
                 updatePOSCart();
                 resetCashTendered();
                 resetDiscount();
-            }
+            });
         });
     }
 
     if (cancelBtn) {
         cancelBtn.addEventListener("click", () => {
             if (posCart.length === 0) return;
-            if (confirm("Cancel this order?")) {
+            showConfirmModal("Cancel this order?", () => {
                 posCart = [];
                 updatePOSReceiptLabel();
                 posCurrentCat = "all";
@@ -144,7 +144,7 @@ function setupPOSButtons() {
                 updatePOSCart();
                 resetCashTendered();
                 resetDiscount();
-            }
+            });
         });
     }
 
@@ -225,10 +225,11 @@ function renderPOSProducts() {
 
     grid.innerHTML = filtered.map(p => {
         const stock      = parseInt(p.stock) || 0;
-        const outOfStock = stock <= 0;
+        const canOrder   = p.can_order !== false; // API may return can_order: false for sold-out
+        const outOfStock = stock <= 0 || !canOrder;
         const lowStock   = !outOfStock && stock < (parseInt(p.low_stock_threshold) || 10);
         const badgeCls   = outOfStock ? "out-of-stock" : lowStock ? "low-stock" : "available";
-        const badgeTxt   = outOfStock ? "Out of Stock"  : lowStock ? "Low Stock" : "In Stock";
+        const badgeTxt   = outOfStock ? "Sold Out"  : lowStock ? "Low Stock" : "In Stock";
         const badge      = `<span class="pos-stock-badge ${badgeCls}">${badgeTxt}</span>`;
 
         const emoji  = getCategoryEmoji(p.category);
@@ -238,10 +239,15 @@ function renderPOSProducts() {
                     onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
                <div class="pos-product-emoji" style="display:none">${emoji}</div>`
             : `<div class="pos-product-emoji">${emoji}</div>`;
-        const addBtn = outOfStock ? "" :
+        const addBtn = outOfStock ? 
+            `<button class="pos-add-btn pos-add-btn-disabled" disabled title="Out of stock" onclick="event.stopPropagation();">×</button>` :
             `<button class="pos-add-btn"
                      onclick="event.stopPropagation();posAddToCart(${p.id},'${escStr(p.name)}',${price},${stock})"
                      title="Add to order">+</button>`;
+
+        const supplierLine = p.supplier_name
+            ? `<div class="pos-product-supplier">&#128230; ${escHtml(p.supplier_name)}</div>`
+            : '';
 
         return `
             <div class="pos-product-card${outOfStock ? " out-of-stock" : ""}"
@@ -250,6 +256,7 @@ function renderPOSProducts() {
                 ${visual}
                 <div class="pos-product-name">${escHtml(p.name)}</div>
                 <div class="pos-product-cat">${escHtml(p.category)}</div>
+                ${supplierLine}
                 <div class="pos-product-price">${formatPOS(price)}</div>
                 ${addBtn}
             </div>`;
@@ -272,7 +279,12 @@ function getCategoryEmoji(cat) {
 // ── Cart ──────────────────────────────────────────────────────────
 
 function posAddToCart(productId, productName, price, stock) {
-    if (stock <= 0) { posToast("Product is out of stock", "error"); return; }
+    // Check stock and can_order flag from API
+    const product = posProducts.find(p => p.id === productId);
+    if (!product || stock <= 0 || product.can_order === false) { 
+        posToast("Product is out of stock", "error"); 
+        return; 
+    }
 
     const existing = posCart.find(i => i.id === productId);
     if (existing) {

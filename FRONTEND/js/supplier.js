@@ -188,8 +188,8 @@ function submitSupplierForm() {
   const previewImg = document.getElementById('sImagePreviewImg');
   const newDataUrl = (fileInput && fileInput.files[0]) ? previewImg.src : null;
 
-  if (!company) { alert('Company name is required.'); return; }
-  if (!owner)   { alert('Owner name is required.');   return; }
+  if (!company) { showErrorModal('Company name is required.'); return; }
+  if (!owner)   { showErrorModal('Owner name is required.');   return; }
 
   if (editingId !== null) {
     const idx = suppliers.findIndex(s => s.id === editingId);

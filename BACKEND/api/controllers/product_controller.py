@@ -26,15 +26,39 @@ def _get_service():
 
 class ProductListCreateController(APIView):
     """
-    GET  /api/products/      → list all products
+    GET  /api/products/      → list all products (supports ?page=N&limit=M for pagination)
     POST /api/products/      → create a new product
     """
 
     @extend_schema(tags=["Products"], responses=ProductResponseSchema(many=True))
     def get(self, request):
         service = _get_service()
-        products = service.get_all_products()
-        return Response([p.to_dict() for p in products])
+        # Check if pagination is requested
+        page_param = request.query_params.get("page")
+        limit_param = request.query_params.get("limit")
+        
+        if page_param or limit_param:
+            try:
+                page = int(page_param or 1)
+                limit = int(limit_param or 30)
+                page = max(page, 1)
+                limit = min(max(limit, 1), 100)  # Cap at 100 items per page
+            except (TypeError, ValueError):
+                return Response(
+                    {"error": "Invalid pagination parameters."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            result = service.get_products_paginated(page=page, limit=limit)
+            return Response({
+                "products": [p.to_dict() for p in result["products"]],
+                "total_count": result["total_count"],
+                "page": result["page"],
+                "limit": result["limit"],
+                "total_pages": result["total_pages"],
+            })
+        else:
+            products = service.get_all_products()
+            return Response([p.to_dict() for p in products])
 
     @extend_schema(
         tags=["Products"],
@@ -115,13 +139,23 @@ class ProductDetailController(APIView):
 
 
 class LowStockController(APIView):
-    """GET /api/products/low-stock/ → list products below threshold."""
+    """GET /api/products/low-stock/ → list products below threshold.
+    Cached for 60 seconds since the notification badge polls this frequently.
+    Cache is invalidated on any stock change via explicit delete in mutation views.
+    """
 
     @extend_schema(tags=["Products"], responses=ProductResponseSchema(many=True))
     def get(self, request):
+        from django.core.cache import cache
+        cache_key = "products:low_stock"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
         service = _get_service()
         products = service.get_low_stock_products()
-        return Response([p.to_dict() for p in products])
+        data = [p.to_dict() for p in products]
+        cache.set(cache_key, data, timeout=60)
+        return Response(data)
 
 
 # ---------------------------------------------------------------------------
@@ -130,12 +164,34 @@ class LowStockController(APIView):
 
 class ProductViewListController(APIView):
     """
-    GET /api/products/view/  → list all products
+    GET /api/products/view/  → list all products (supports ?page=N&limit=M for pagination)
     """
 
     @extend_schema(tags=["Products v2"], responses=ProductResponseSchema(many=True))
     def get(self, request):
         service = _get_service()
+        page_param = request.query_params.get("page")
+        limit_param = request.query_params.get("limit")
+
+        if page_param or limit_param:
+            try:
+                page = int(page_param or 1)
+                limit = int(limit_param or 30)
+                page = max(page, 1)
+                limit = min(max(limit, 1), 100)
+            except (TypeError, ValueError):
+                return Response(
+                    {"error": "Invalid pagination parameters."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            result = service.get_products_paginated(page=page, limit=limit)
+            return Response({
+                "products": [p.to_dict() for p in result["products"]],
+                "total_count": result["total_count"],
+                "page": result["page"],
+                "limit": result["limit"],
+                "total_pages": result["total_pages"],
+            })
         products = service.get_all_products()
         return Response([p.to_dict() for p in products])
 

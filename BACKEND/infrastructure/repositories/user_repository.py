@@ -36,6 +36,13 @@ class UserRepository(UserRepositoryInterface):
             return self._to_entity(UserModel.objects.get(email=email))
         except UserModel.DoesNotExist:
             return None
+    
+    def find_by_email(self, email):
+        """Alias for get_by_email — returns the ORM model instance (not entity)."""
+        try:
+            return UserModel.objects.get(email=email)
+        except UserModel.DoesNotExist:
+            return None
 
     def username_exists(self, username):
         return UserModel.objects.filter(username=username).exists()
@@ -106,8 +113,29 @@ class UserRepository(UserRepositoryInterface):
             return False
 
         orm_user.set_password(new_password)
+        orm_user.require_password_change = False
+        orm_user.temporary_password_hash = ""
         orm_user.save()
         return True
+
+    def set_temporary_password(self, user_id, hashed_password, require_change=True):
+        """Persist a temporary hashed password and set forced password change flag."""
+        try:
+            orm_user = UserModel.objects.get(pk=user_id)
+        except UserModel.DoesNotExist:
+            return False
+        orm_user.temporary_password_hash = hashed_password
+        orm_user.require_password_change = require_change
+        orm_user.save()
+        return True
+
+    def get_require_password_change(self, user_id):
+        """Check if user must change password on next login."""
+        try:
+            orm_user = UserModel.objects.get(pk=user_id)
+            return getattr(orm_user, "require_password_change", False)
+        except UserModel.DoesNotExist:
+            return False
 
     def get_all_by_type(self, user_type):
         """Return all User entities matching the given user_type."""
@@ -116,10 +144,38 @@ class UserRepository(UserRepositoryInterface):
             for m in UserModel.objects.filter(user_type=user_type).order_by("id")
         ]
 
-    def delete(self, user_id):
-        """Delete a user by primary key. Returns True on success, False if not found."""
-        deleted, _ = UserModel.objects.filter(pk=user_id).delete()
-        return deleted > 0
+    def delete(self, user_id, deleted_by_id=None):
+        """Delete a user by primary key, backing up data first. Returns True on success."""
+        try:
+            orm_user = UserModel.objects.get(pk=user_id)
+        except UserModel.DoesNotExist:
+            return False
+
+        # --- Backup record before deletion ---
+        try:
+            from api.models import DeletedRecordsBackup
+            DeletedRecordsBackup.objects.create(
+                record_type="user",
+                original_id=orm_user.pk,
+                data={
+                    "id": orm_user.pk,
+                    "username": orm_user.username,
+                    "email": orm_user.email,
+                    "first_name": orm_user.first_name,
+                    "last_name": orm_user.last_name,
+                    "user_type": orm_user.user_type,
+                    "phone": orm_user.phone,
+                    "bio": orm_user.bio,
+                    "is_active": orm_user.is_active,
+                    "date_joined": str(orm_user.date_joined),
+                },
+                deleted_by_id=deleted_by_id,
+            )
+        except Exception:
+            pass  # Backup failure must not block deletion
+
+        orm_user.delete()
+        return True
 
     # ------------------------------------------------------------------
     # Mapping helpers
@@ -128,7 +184,7 @@ class UserRepository(UserRepositoryInterface):
     @staticmethod
     def _to_entity(m):
         """Convert a UserModel ORM instance to a User domain entity."""
-        return UserEntity(
+        entity = UserEntity(
             id=m.pk,
             username=m.username,
             email=m.email,
@@ -141,3 +197,6 @@ class UserRepository(UserRepositoryInterface):
             is_active=m.is_active,
             user_type=getattr(m, "user_type", "Staff"),
         )
+        entity.require_password_change = getattr(m, "require_password_change", False)
+        entity.profile_picture_url = getattr(m, "profile_picture_url", "")
+        return entity

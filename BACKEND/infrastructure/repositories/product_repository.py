@@ -28,8 +28,18 @@ class ProductRepository(ProductRepositoryInterface):
             return None
 
     def get_low_stock(self):
-        qs = ProductModel.objects.filter(stock__lte=F("low_stock_threshold"))
+        """Get products with stock <= threshold, optimized for dashboard."""
+        qs = ProductModel.objects.filter(stock__lte=F("low_stock_threshold")).order_by("stock")
         return [self._to_entity(m) for m in qs]
+
+    def get_paginated(self, offset=0, limit=30):
+        """Return paginated results with offset and limit. Use offset limit pattern for consistency."""
+        qs = ProductModel.objects.all().order_by("id")[offset : offset + limit]
+        return [self._to_entity(m) for m in qs]
+
+    def get_total_count(self):
+        """Return total count of products for pagination metadata."""
+        return ProductModel.objects.count()
 
     # ------------------------------------------------------------------
     # Commands
@@ -45,9 +55,42 @@ class ProductRepository(ProductRepositoryInterface):
         )
         return self.get_by_id(product.id)
 
-    def delete(self, product_id):
-        deleted, _ = ProductModel.objects.filter(pk=product_id).delete()
-        return deleted > 0
+    def delete(self, product_id, deleted_by_id=None):
+        """Delete a product, backing up full data first. Returns True on success."""
+        try:
+            m = ProductModel.objects.get(pk=product_id)
+        except ProductModel.DoesNotExist:
+            return False
+
+        # --- Backup record before deletion ---
+        try:
+            from api.models import DeletedRecordsBackup
+            DeletedRecordsBackup.objects.create(
+                record_type="product",
+                original_id=m.pk,
+                data={
+                    "id": m.pk,
+                    "name": m.name,
+                    "category": m.category,
+                    "price": str(m.price),
+                    "cost": str(m.cost),
+                    "stock": m.stock,
+                    "unit": m.unit,
+                    "description": m.description,
+                    "low_stock_threshold": m.low_stock_threshold,
+                    "supplier_name": getattr(m, "supplier_name", ""),
+                    "supplier_contact": getattr(m, "supplier_contact", ""),
+                    "image_url": str(m.image_url) if m.image_url else "",
+                    "created_at": str(m.created_at),
+                    "updated_at": str(m.updated_at),
+                },
+                deleted_by_id=deleted_by_id,
+            )
+        except Exception:
+            pass  # Backup failure must not block deletion
+
+        m.delete()
+        return True
 
     # ------------------------------------------------------------------
     # Mapping helpers
@@ -55,7 +98,7 @@ class ProductRepository(ProductRepositoryInterface):
 
     @staticmethod
     def _to_entity(m: ProductModel) -> Product:
-        return Product(
+        entity = Product(
             id=m.pk,
             name=m.name,
             category=m.category,
@@ -69,10 +112,14 @@ class ProductRepository(ProductRepositoryInterface):
             created_at=m.created_at,
             updated_at=m.updated_at,
         )
+        entity.supplier_name = getattr(m, "supplier_name", "")
+        entity.supplier_contact = getattr(m, "supplier_contact", "")
+        entity.is_orderable = getattr(m, "is_orderable", True)
+        return entity
 
     @staticmethod
     def _to_model_data(entity: Product) -> dict:
-        return {
+        data = {
             "name": entity.name,
             "category": entity.category,
             "price": entity.price,
@@ -83,3 +130,10 @@ class ProductRepository(ProductRepositoryInterface):
             "low_stock_threshold": entity.low_stock_threshold,
             "image_url": entity.image_url,
         }
+        if hasattr(entity, "supplier_name"):
+            data["supplier_name"] = entity.supplier_name
+        if hasattr(entity, "supplier_contact"):
+            data["supplier_contact"] = entity.supplier_contact
+        if hasattr(entity, "is_orderable"):
+            data["is_orderable"] = entity.is_orderable
+        return data

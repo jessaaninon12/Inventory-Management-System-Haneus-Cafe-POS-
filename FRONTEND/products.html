@@ -96,6 +96,8 @@
       <p style="color:var(--mocha);padding:2rem;">Loading products...</p>
     </div>
 
+    <div class="pagination-container" id="paginationControls"></div>
+
   </main>
 
 </div>
@@ -197,6 +199,18 @@
         <label for="pThreshold">Low Stock Alert Threshold *</label>
         <input type="number" id="pThreshold" min="0" value="10" />
         <div class="fc-hint">Notify admin when stock falls to or below this number</div>
+      </div>
+
+      <!-- Row: Supplier Name + Supplier Contact -->
+      <div class="fc-form-row">
+        <div class="fc-form-group">
+          <label for="pSupplierName">Supplier Name</label>
+          <input type="text" id="pSupplierName" placeholder="e.g. ABC Coffee Supplies" />
+        </div>
+        <div class="fc-form-group">
+          <label for="pSupplierContact">Supplier Contact</label>
+          <input type="text" id="pSupplierContact" placeholder="e.g. +63-999-123-4567 or email@supplier.com" />
+        </div>
       </div>
 
     </div>

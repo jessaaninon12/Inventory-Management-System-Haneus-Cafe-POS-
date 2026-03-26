@@ -3,6 +3,10 @@ User application service — orchestrates business logic.
 Depends only on domain entities, DTOs, and the repository interface.
 """
 
+import secrets
+import string
+from django.contrib.auth.hashers import make_password, check_password
+
 from domain.entities.user import User
 from application.dtos.user_dto import UserDTO
 from application.interfaces.user_repository_interface import UserRepositoryInterface
@@ -109,3 +113,102 @@ class UserService:
     def check_username_exists(self, username):
         """Return True if the username is already taken."""
         return self.repository.username_exists(username)
+
+    # ------------------------------------------------------------------
+    # Password Reset & Forced Password Change
+    # ------------------------------------------------------------------
+
+    def generate_temporary_password(self):
+        """Generate a random 12-character password with letters and numbers mixed.
+        Returns (plain_password_str, hashed_password_str).
+        """
+        chars = string.ascii_letters + string.digits
+        # Ensure at least 2 letters and 2 digits
+        password = ''.join(secrets.choice(string.ascii_letters) for _ in range(6))
+        password += ''.join(secrets.choice(string.digits) for _ in range(4))
+        password += ''.join(secrets.choice(chars) for _ in range(2))
+        # Shuffle
+        password = ''.join(secrets.choice(password) for _ in range(len(password)))
+        hashed = make_password(password)
+        return password, hashed
+
+    def reset_user_password(self, user_id):
+        """Admin initiates password reset. Returns (plain_temp_password, hashed) tuple.
+        Raises ValueError if user not found.
+        """
+        user_entity = self.repository.get_by_id(user_id)
+        if user_entity is None:
+            raise ValueError("User not found.")
+        plain_temp, hashed_temp = self.generate_temporary_password()
+        # Persist hashed password and flag
+        self.repository.set_temporary_password(user_id, hashed_temp, require_change=True)
+        return plain_temp, hashed_temp
+
+    def change_password_from_temporary(self, user_id, new_password):
+        """User changes password after forced password change requirement.
+        Returns True on success, False if user not found or validation fails.
+        Raises ValueError for invalid input.
+        """
+        user_entity = self.repository.get_by_id(user_id)
+        if user_entity is None:
+            return False
+        
+        if len(str(new_password)) < 6:
+            raise ValueError("New password must be at least 6 characters.")
+        
+        return self.repository.change_password(user_id, new_password)
+
+    def login_with_forced_password_change_check(self, dto):
+        """Authenticate user and check if forced password change is needed.
+        Returns dict with 'user', 'require_password_change', 'success' flags.
+        """
+        user = self.repository.authenticate(dto.username, dto.password, dto.user_type)
+        if user is None:
+            return {'success': False, 'user': None, 'require_password_change': False}
+        user_dto = UserDTO.from_entity(user)
+        return {
+            'success': True,
+            'user': user_dto,
+            'require_password_change': user.require_password_change
+        }
+
+    # ------------------------------------------------------------------
+    # Input Normalization
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def normalize_first_name(value):
+        """Convert to Sentence Case (first letter uppercase, rest lowercase)."""
+        return value.strip().capitalize() if value else ""
+
+    @staticmethod
+    def normalize_last_name(value):
+        """Convert to Sentence Case (first letter uppercase, rest lowercase)."""
+        return value.strip().capitalize() if value else ""
+
+    @staticmethod
+    def normalize_email(value):
+        """Convert to lowercase."""
+        return value.strip().lower() if value else ""
+
+    @staticmethod
+    def normalize_username(value, case_mode="sentence"):
+        """Support case-toggle behavior for username:
+        - sentence: First word capitalized
+        - title: Title Case
+        - upper: UPPERCASE
+        - lower: lowercase
+        """
+        value = value.strip()
+        if case_mode == "title":
+            return value.title()
+        elif case_mode == "upper":
+            return value.upper()
+        elif case_mode == "lower":
+            return value.lower()
+        else:  # sentence (default)
+            # First word capitalized, rest lowercase
+            words = value.split()
+            if words:
+                words[0] = words[0].capitalize()
+            return ' '.join(words)

@@ -233,7 +233,9 @@ class DashboardRepository(DashboardRepositoryInterface):
         ]
 
     def get_recent_sales(self, limit=5):
-        """Return the latest sales from POS (SaleModel), with fallback to OrderModel."""
+        """Return the latest sales from POS (SaleModel), with fallback to OrderModel.
+        Uses prefetch_related and accesses cached .all() to avoid N+1 queries.
+        """
         qs_sales = (
             SaleModel.objects
             .prefetch_related("items")
@@ -242,7 +244,9 @@ class DashboardRepository(DashboardRepositoryInterface):
         )
         results = []
         for sale in qs_sales:
-            first_item = sale.items.first()
+            # Use list() on prefetched queryset to avoid N+1 (do NOT call .first())
+            items_list = list(sale.items.all())
+            first_item = items_list[0] if items_list else None
             results.append({
                 "id": sale.pk,
                 "order_id": sale.receipt_number or sale.sale_id,
@@ -262,11 +266,13 @@ class DashboardRepository(DashboardRepositoryInterface):
                 .order_by("-date")[: limit - len(results)]
             )
             for order in qs_orders:
+                # Use prefetch cache via list() to avoid N+1
+                order_items = list(order.items.all())
                 total = sum(
                     float(item.unit_price) * item.quantity
-                    for item in order.items.all()
+                    for item in order_items
                 )
-                first_item = order.items.first()
+                first_item = order_items[0] if order_items else None
                 results.append({
                     "id": order.pk,
                     "order_id": order.order_id,

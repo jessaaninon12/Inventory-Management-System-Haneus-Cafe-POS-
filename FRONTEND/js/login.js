@@ -47,24 +47,29 @@ loginForm.addEventListener('submit', async (e) => {
       localStorage.setItem('user', JSON.stringify(data.user));
       localStorage.setItem('user_type', data.user.user_type);
 
-      // Show full-page success overlay with spinner
-      document.getElementById('welcomeMsg').textContent =
-        `Welcome, ${data.user.user_type} ${data.user.username}!`;
-      document.getElementById('loginSuccessOverlay').style.display = 'flex';
-      loginForm.closest('.right').style.visibility = 'hidden';
+      // Check if user needs to change temporary password
+      if (data.user.require_password_change) {
+        // Show forced password change modal instead of success overlay
+        showForcedPasswordChangeModal(data.user);
+      } else {
+        // Normal login flow: show success overlay and redirect
+        document.getElementById('welcomeMsg').textContent =
+          `Welcome, ${data.user.user_type} ${data.user.username}!`;
+        document.getElementById('loginSuccessOverlay').style.display = 'flex';
+        loginForm.closest('.right').style.visibility = 'hidden';
 
-      // Redirect after 2 s based on role
-      setTimeout(() => {
-        const role = data.user.user_type;
-        if (role === 'Admin') {
-          window.location.href = 'dashboard.html';
-        } else if (role === 'Staff') {
-          window.location.href = 'staffdashboard.html';
-        } else {
-          // Fallback to dashboard (should not happen)
-          window.location.href = 'dashboard.html';
-        }
-      }, 2000);
+        // Redirect after 2 s based on role
+        setTimeout(() => {
+          const role = data.user.user_type;
+          if (role === 'Admin') {
+            window.location.href = 'dashboard.html';
+          } else if (role === 'Staff') {
+            window.location.href = 'staffdashboard.html';
+          } else {
+            window.location.href = 'dashboard.html';
+          }
+        }, 2000);
+      }
     } else {
       errorMsg.textContent = data.error || 'Invalid username or password.';
       errorMsg.style.display = 'block';
@@ -115,9 +120,9 @@ forgotModal.addEventListener('click', (e) => {
 });
 
 sendBtn.addEventListener('click', async () => {
-  const identifier = resetInput.value.trim();
-  if (!identifier) {
-    showResetFeedback('Please enter your email or username.', true);
+  const email = resetInput.value.trim();
+  if (!email) {
+    showResetFeedback('Please enter your email address.', true);
     return;
   }
 
@@ -128,12 +133,12 @@ sendBtn.addEventListener('click', async () => {
     const res = await fetch(`${API_BASE}/api/auth/forgot-password/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier }),
+      body: JSON.stringify({ email }),
     });
     const data = await res.json();
 
     if (res.ok) {
-      showResetFeedback(data.message || 'Reset link sent! Check your email.', false);
+      showResetFeedback(data.message || 'If an account exists, a reset link will be sent to your email.', false);
       closeForgotModal();
     } else {
       showResetFeedback(data.error || 'Failed to send reset link.', true);
@@ -152,3 +157,97 @@ document.addEventListener('keydown', (e) => {
     closeForgotModal();
   }
 });
+
+// ── Forced Password Change Modal ──────────────────────────────────
+function showForcedPasswordChangeModal(user) {
+  const modal = document.getElementById('forcedPasswordChangeModal');
+  if (!modal) {
+    console.error('Forced password change modal not found in HTML.');
+    return;
+  }
+  
+  document.getElementById('forcedPwMsg').textContent = 
+    `Welcome ${user.first_name}! You must change your password before proceeding.`;
+  modal.style.display = 'flex';
+  loginForm.closest('.right').style.visibility = 'hidden';
+  document.getElementById('newForcedPassword').focus();
+}
+
+function closeForcedPasswordChangeModal() {
+  const modal = document.getElementById('forcedPasswordChangeModal');
+  if (modal) modal.style.display = 'none';
+  document.getElementById('newForcedPassword').value = '';
+  document.getElementById('confirmForcedPassword').value = '';
+  document.getElementById('forcedPwError').style.display = 'none';
+}
+
+if (document.getElementById('submitForcedPassword')) {
+  document.getElementById('submitForcedPassword').addEventListener('click', async () => {
+    const newPw = document.getElementById('newForcedPassword').value;
+    const confirmPw = document.getElementById('confirmForcedPassword').value;
+    const errorDiv = document.getElementById('forcedPwError');
+    const submitBtn = document.getElementById('submitForcedPassword');
+    const user = JSON.parse(localStorage.getItem('user'));
+    
+    errorDiv.style.display = 'none';
+    
+    if (!newPw || !confirmPw) {
+      errorDiv.textContent = 'Both password fields are required.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    if (newPw.length < 6) {
+      errorDiv.textContent = 'Password must be at least 6 characters.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    if (newPw !== confirmPw) {
+      errorDiv.textContent = 'Passwords do not match.';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Updating...';
+    
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/change-temporary-password/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, new_password: newPw }),
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        // Update user object to clear forced password change flag
+        user.require_password_change = false;
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Show success and redirect
+        closeForcedPasswordChangeModal();
+        document.getElementById('welcomeMsg').textContent = `Welcome, ${user.user_type} ${user.username}!`;
+        document.getElementById('loginSuccessOverlay').style.display = 'flex';
+        
+        setTimeout(() => {
+          const role = user.user_type;
+          if (role === 'Admin') {
+            window.location.href = 'dashboard.html';
+          } else if (role === 'Staff') {
+            window.location.href = 'staffdashboard.html';
+          } else {
+            window.location.href = 'dashboard.html';
+          }
+        }, 2000);
+      } else {
+        errorDiv.textContent = data.error || 'Failed to update password.';
+        errorDiv.style.display = 'block';
+      }
+    } catch (err) {
+      errorDiv.textContent = 'Network error. Could not update password.';
+      errorDiv.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Change Password';
+    }
+  });
+}

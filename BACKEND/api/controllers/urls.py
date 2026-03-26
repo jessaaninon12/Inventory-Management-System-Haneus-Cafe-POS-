@@ -5,7 +5,9 @@ All endpoints are prefixed with /api/ by the root config/urls.py.
 
 from django.urls import path
 from api.controllers.user_controller import (
+    AdminResetPasswordController,
     ChangePasswordController,
+    ChangeTemporaryPasswordController,
     CheckUsernameController,
     LoginController,
     ProfileDetailController,
@@ -24,6 +26,18 @@ from api.controllers.user_controller import (
     StaffUserEditController,
     StaffUserDeleteController,
     StaffUserPartialEditController,
+)
+
+from api.controllers.password_reset_controller import (
+    ForgotPasswordController,
+    ResetPasswordWithTokenController,
+)
+
+from api.controllers.admin_approval_controller import (
+    ApprovalRequestListController,
+    ApproveUserController,
+    RejectUserController,
+    CheckApprovalStatusController,
 )
 
 from api.controllers.product_controller import (
@@ -67,10 +81,14 @@ urlpatterns = [
     path("auth/register/", RegisterController.as_view(), name="register"),
     path("auth/login/", LoginController.as_view(), name="login"),
     path("auth/check-username/", CheckUsernameController.as_view(), name="check-username"),
+    path("auth/change-temporary-password/", ChangeTemporaryPasswordController.as_view(), name="auth-change-temp-password"),
+    path("auth/forgot-password/", ForgotPasswordController.as_view(), name="auth-forgot-password"),
+    path("auth/reset-password-with-token/", ResetPasswordWithTokenController.as_view(), name="auth-reset-password-with-token"),
 
     # ── Profile ─────────────────────────────────────────────────────────
     path("profile/<int:pk>/", ProfileDetailController.as_view(), name="profile-detail"),
     path("profile/<int:pk>/password/", ChangePasswordController.as_view(), name="profile-password"),
+    path("users/<int:pk>/reset-password/", AdminResetPasswordController.as_view(), name="user-reset-password"),
 
     # ── Dashboard ─────────────────────────────────────────────────────
     path("dashboard/", DashboardController.as_view(), name="dashboard"),
@@ -122,11 +140,17 @@ urlpatterns = [
     path("users/admin/delete/<int:pk>/", AdminUserDeleteController.as_view(), name="admin-user-delete"),
     path("users/admin/partialedit/<int:pk>/", AdminUserPartialEditController.as_view(), name="admin-user-partialedit"),
 
-    # ── Users – Staff (standardised naming) ──────────────────────────
+    # ── Users – Staff (standardised naming) ──────────────────────────────────────────────────────
     path("users/staff/view/", StaffUserListController.as_view(), name="staff-user-view-list"),
     path("users/staff/view/<int:pk>/", StaffUserDetailController.as_view(), name="staff-user-view-detail"),
     path("users/staff/create/", StaffUserCreateController.as_view(), name="staff-user-create"),
     path("users/staff/edit/<int:pk>/", StaffUserEditController.as_view(), name="staff-user-edit"),
     path("users/staff/delete/<int:pk>/", StaffUserDeleteController.as_view(), name="staff-user-delete"),
     path("users/staff/partialedit/<int:pk>/", StaffUserPartialEditController.as_view(), name="staff-user-partialedit"),
+
+    # ── Admin Approvals ─────────────────────────────────────────────────────
+    path("admin/approval-requests/", ApprovalRequestListController.as_view(), name="admin-approval-requests-list"),
+    path("admin/check-approval-status/", CheckApprovalStatusController.as_view(), name="admin-check-approval-status"),
+    path("admin/approve-user/<int:pk>/", ApproveUserController.as_view(), name="admin-approve-user"),
+    path("admin/reject-user/<int:pk>/", RejectUserController.as_view(), name="admin-reject-user"),
 ]

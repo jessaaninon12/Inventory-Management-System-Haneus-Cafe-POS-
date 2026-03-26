@@ -21,6 +21,9 @@ class ProductDTO:
         stock_status="",
         created_at=None,
         updated_at=None,
+        supplier_name="",
+        supplier_contact="",
+        is_orderable=True,
     ):
         self.id = id
         self.name = name
@@ -35,6 +38,14 @@ class ProductDTO:
         self.stock_status = stock_status
         self.created_at = created_at
         self.updated_at = updated_at
+        self.supplier_name = supplier_name
+        self.supplier_contact = supplier_contact
+        self.is_orderable = is_orderable
+
+    @property
+    def can_order(self):
+        """Return True if product can be ordered (stock > 0)."""
+        return self.stock > 0
 
     @staticmethod
     def from_entity(entity):
@@ -52,6 +63,9 @@ class ProductDTO:
             stock_status=entity.stock_status,
             created_at=entity.created_at,
             updated_at=entity.updated_at,
+            supplier_name=getattr(entity, "supplier_name", ""),
+            supplier_contact=getattr(entity, "supplier_contact", ""),
+            is_orderable=getattr(entity, "is_orderable", True),
         )
 
     def to_dict(self):
@@ -69,6 +83,10 @@ class ProductDTO:
             "stock_status": self.stock_status,
             "created_at": str(self.created_at) if self.created_at else None,
             "updated_at": str(self.updated_at) if self.updated_at else None,
+            "supplier_name": self.supplier_name,
+            "supplier_contact": self.supplier_contact,
+            "is_orderable": self.is_orderable,
+            "can_order": self.can_order,
         }
 
 

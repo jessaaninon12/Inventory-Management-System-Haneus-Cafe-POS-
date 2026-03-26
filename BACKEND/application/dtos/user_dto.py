@@ -18,6 +18,8 @@ class UserDTO:
         avatar_url="",
         date_joined=None,
         user_type="Staff",
+        require_password_change=False,
+        profile_picture_url="",
     ):
         self.id = id
         self.username = username
@@ -29,6 +31,16 @@ class UserDTO:
         self.avatar_url = avatar_url
         self.date_joined = date_joined
         self.user_type = user_type
+        self.require_password_change = require_password_change
+        self.profile_picture_url = profile_picture_url
+
+    @property
+    def account_type_label(self):
+        """Return formatted account type label with cafe designation."""
+        if self.user_type == "Admin":
+            return "Admin • Haneus Cafe Owner"
+        else:
+            return "Staff • Haneus Cafe Employee"
 
     @staticmethod
     def from_entity(entity):
@@ -43,6 +55,8 @@ class UserDTO:
             avatar_url=entity.avatar_url,
             date_joined=entity.date_joined,
             user_type=getattr(entity, "user_type", "Staff"),
+            require_password_change=getattr(entity, "require_password_change", False),
+            profile_picture_url=getattr(entity, "profile_picture_url", ""),
         )
 
     def to_dict(self):
@@ -57,6 +71,9 @@ class UserDTO:
             "avatar_url": self.avatar_url,
             "date_joined": str(self.date_joined) if self.date_joined else None,
             "user_type": self.user_type,
+            "account_type_label": self.account_type_label,
+            "require_password_change": self.require_password_change,
+            "profile_picture_url": self.profile_picture_url,
         }
 
 

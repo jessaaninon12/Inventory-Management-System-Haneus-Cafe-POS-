@@ -6,6 +6,12 @@ let allOrders = [];          // holds POS sales from SaleModel
 let currentViewingOrder = null;
 let currentRefundingOrder = null;
 
+// ── Pagination state ───────────────────────────────────────────────
+let salesCurrentPage      = 1;
+const salesItemsPerPage   = 15;
+let salesTotalPages        = 1;
+let currentFilteredOrders = [];
+
 function formatPeso(val) {
   const n = parseFloat(val) || 0;
   return '\u20b1' + n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -50,12 +56,22 @@ async function loadOrders() {
 }
 
 function renderOrders(orders) {
+  currentFilteredOrders = orders || [];
+  salesCurrentPage = 1;
+  salesTotalPages = Math.max(1, Math.ceil(currentFilteredOrders.length / salesItemsPerPage));
+  _renderOrderRows();
+  renderSalesPagination();
+}
+
+function _renderOrderRows() {
   const tbody = document.getElementById('ordersTableBody');
-  if (!orders || !orders.length) {
+  const start = (salesCurrentPage - 1) * salesItemsPerPage;
+  const pageOrders = currentFilteredOrders.slice(start, start + salesItemsPerPage);
+  if (!pageOrders.length) {
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No sales records found.</td></tr>';
     return;
   }
-  tbody.innerHTML = orders.map(o => {
+  tbody.innerHTML = pageOrders.map(o => {
     // POS sale fields: id, receipt_number, sale_id, customer_name, created_at, items_count, total, status
     const orderId   = o.receipt_number || o.sale_id || String(o.id);
     const dateStr   = _fmtDate(o.created_at);
@@ -82,6 +98,33 @@ function renderOrders(orders) {
         </td>
       </tr>`;
   }).join('');
+}
+
+function renderSalesPagination() {
+  const container = document.getElementById('paginationControls');
+  if (!container) return;
+  if (salesTotalPages <= 1) { container.innerHTML = ''; return; }
+  let html = '<div class="pagination">';
+  html += `<button class="page-btn" onclick="goToSalesPage(${salesCurrentPage - 1})" ${salesCurrentPage === 1 ? 'disabled' : ''}>‹ Prev</button>`;
+  let startPage = Math.max(1, salesCurrentPage - 2);
+  let endPage   = Math.min(salesTotalPages, salesCurrentPage + 2);
+  if (endPage - startPage < 4) {
+    if (startPage === 1) endPage   = Math.min(salesTotalPages, startPage + 4);
+    if (endPage === salesTotalPages) startPage = Math.max(1, endPage - 4);
+  }
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="page-btn ${i === salesCurrentPage ? 'active' : ''}" onclick="goToSalesPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goToSalesPage(${salesCurrentPage + 1})" ${salesCurrentPage === salesTotalPages ? 'disabled' : ''}>Next ›</button>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function goToSalesPage(page) {
+  if (page < 1 || page > salesTotalPages) return;
+  salesCurrentPage = page;
+  _renderOrderRows();
+  renderSalesPagination();
 }
 
 // ---------- Filters ----------
@@ -168,7 +211,7 @@ async function openOrderModal(pk) {
     document.getElementById('orderModal').style.display = 'flex';
   } catch (e) {
     console.error('openOrderModal failed:', e);
-    alert('Could not load sale details.');
+    showErrorModal('Could not load sale details.');
   }
 }
 
@@ -203,7 +246,7 @@ document.getElementById('refundForm').addEventListener('submit', async function(
   e.preventDefault();
   if (!currentRefundingOrder) return;
   const reason = document.getElementById('refundReason').value;
-  if (!reason) { alert('Please select a refund reason'); return; }
+  if (!reason) { showErrorModal('Please select a refund reason'); return; }
 
   try {
     // PATCH the POS sale status to Cancelled
@@ -214,20 +257,25 @@ document.getElementById('refundForm').addEventListener('submit', async function(
     });
     if (!res.ok) {
       const err = await res.json();
-      alert('Refund failed: ' + (err.error || err.errors || JSON.stringify(err)));
+      showErrorModal('Refund failed: ' + (err.error || err.errors || JSON.stringify(err)));
       return;
     }
     const receiptId = currentRefundingOrder.receipt_number || currentRefundingOrder.sale_id || String(currentRefundingOrder.id);
-    alert(`Refund processed for sale #${receiptId}!`);
+    showSuccessModal(`Refund processed for sale #${receiptId}!`);
     closeRefundModal();
     loadOrders();
     loadAnalytics();
-  } catch (err) { alert('Failed to process refund.'); }
+  } catch (err) { showErrorModal('Failed to process refund.'); }
 });
 
 async function completeOrder(pk) {
   if (!pk) return;
-  if (!confirm('Mark this sale as Completed?')) return;
+  showConfirmModal('Mark this sale as Completed?', () => {
+    _completeOrderConfirmed(pk);
+  });
+}
+
+async function _completeOrderConfirmed(pk) {
   try {
     // PATCH the POS sale status to Completed
     const res = await fetch(`${API}/sales/partialedit/${pk}/`, {
@@ -237,13 +285,13 @@ async function completeOrder(pk) {
     });
     if (!res.ok) {
       const err = await res.json();
-      alert('Complete failed: ' + (err.error || err.errors || JSON.stringify(err)));
+      showErrorModal('Complete failed: ' + (err.error || err.errors || JSON.stringify(err)));
       return;
     }
-    alert('Sale marked as Completed.');
+    showSuccessModal('Sale marked as Completed.');
     loadOrders();
     loadAnalytics();
-  } catch (err) { alert('Failed to complete sale.'); }
+  } catch (err) { showErrorModal('Failed to complete sale.'); }
 }
 
 // ---------- Close modals on outside click ----------
@@ -254,7 +302,7 @@ window.addEventListener('click', function(event) {
 
 function exportSalesCsv() {
   // Export from the in-memory allOrders array (POS sales)
-  if (!allOrders.length) { alert('No sales to export.'); return; }
+  if (!allOrders.length) { showErrorModal('No sales to export.'); return; }
   const header = ['Receipt #', 'Customer', 'Date/Time', 'Items', 'Subtotal', 'Discount', 'Tax (12%)', 'Total', 'Payment', 'Status'];
   const escapeCell = (v) => {
     const s = String(v ?? '').replace(/"/g, '""');

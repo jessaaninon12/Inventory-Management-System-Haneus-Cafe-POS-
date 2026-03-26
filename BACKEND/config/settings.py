@@ -106,6 +106,8 @@ if DB_ENGINE == "mssql":
             "HOST": os.environ.get("DB_HOST", "localhost"),
             "PORT": os.environ.get("DB_PORT", "1433"),
             "OPTIONS": _mssql_options,
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "600")),
+            "ATOMIC_REQUESTS": True,
         }
     }
 else:
@@ -125,8 +127,27 @@ else:
                 ),
                 "charset": "utf8mb4",
             },
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "600")),
+            "ATOMIC_REQUESTS": True,
         }
     }
+
+# ------------------------------------------------------------------
+# Cache configuration
+# ------------------------------------------------------------------
+CACHES = {
+    "default": {
+        "BACKEND": os.environ.get(
+            "CACHE_BACKEND",
+            "django.core.cache.backends.locmem.LocMemCache" if DEBUG else "django.core.cache.backends.db.DatabaseCache",
+        ),
+        "LOCATION": os.environ.get("CACHE_LOCATION", "haneus_cache_table"),
+        "TIMEOUT": int(os.environ.get("CACHE_TIMEOUT", "300")),  # 5 minutes default
+        "OPTIONS": {
+            "MAX_ENTRIES": int(os.environ.get("CACHE_MAX_ENTRIES", "10000")),
+        },
+    }
+}
 
 # ------------------------------------------------------------------
 # Password validation
@@ -184,6 +205,12 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "anon": os.environ.get("THROTTLE_ANON", "200/hour"),
         "user": os.environ.get("THROTTLE_USER", "2000/hour"),
+        # Sensitive endpoint scopes (used by api/throttles.py)
+        "login": os.environ.get("THROTTLE_LOGIN", "10/minute"),
+        "anon_login": os.environ.get("THROTTLE_ANON_LOGIN", "20/minute"),
+        "password_reset": os.environ.get("THROTTLE_PW_RESET", "3/hour"),
+        "anon_password_reset": os.environ.get("THROTTLE_ANON_PW_RESET", "5/hour"),
+        "admin_approval": os.environ.get("THROTTLE_ADMIN_APPROVAL", "30/minute"),
     },
 }
 
@@ -232,3 +259,21 @@ if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     X_FRAME_OPTIONS = "DENY"
+
+# ------------------------------------------------------------------
+# Email configuration
+# ------------------------------------------------------------------
+EMAIL_BACKEND = os.environ.get(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+)
+
+if not DEBUG:
+    # Production SMTP settings
+    EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@haneuscafe.com")

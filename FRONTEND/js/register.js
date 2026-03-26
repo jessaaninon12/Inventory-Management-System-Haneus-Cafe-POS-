@@ -189,18 +189,114 @@ setupToggle('togglePw2', 'togglePw2Icon', 'confirmPassword');
   });
 }());
 
-// ── Form submission ──────────────────────────────────────────────
+// ── Admin Approval Waiting + Polling ────────────────────────
+/**
+ * Show the "Waiting for admin permission..." overlay and poll the backend
+ * every 5 seconds for the approval decision.
+ * - On 'approved': show "Welcome!" then redirect to login.html
+ * - On 'rejected': show rejection message and a back-to-login link
+ */
+function showAdminApprovalWaiting(userId) {
+  const overlay   = document.getElementById('adminApprovalOverlay');
+  const statusMsg = document.getElementById('approvalStatusMsg');
+  if (!overlay || !statusMsg) return;
+
+  statusMsg.textContent = 'Waiting for admin permission...';
+  overlay.style.display = 'flex';
+
+  // Poll every 5 seconds
+  const pollInterval = setInterval(async () => {
+    try {
+      const res  = await fetch(`${API_BASE}/api/admin/check-approval-status/?user_id=${userId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data.status === 'approved') {
+        clearInterval(pollInterval);
+        // Hide spinner
+        const spinner = overlay.querySelector('.pl');
+        if (spinner) spinner.style.display = 'none';
+        statusMsg.textContent = 'Welcome!';
+        // Redirect to login after 2 seconds
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+
+      } else if (data.status === 'rejected') {
+        clearInterval(pollInterval);
+        // Hide spinner
+        const card    = overlay.querySelector('.reg-overlay-card');
+        const spinner = overlay.querySelector('.pl');
+        if (spinner) spinner.style.display = 'none';
+        statusMsg.textContent = "Sorry your request didn't get granted!";
+        // Show back-to-login link
+        setTimeout(() => {
+          if (card) {
+            const link = document.createElement('a');
+            link.href        = 'login.html';
+            link.textContent = 'Back to Login';
+            link.style.cssText = [
+              'display:inline-block',
+              'margin-top:1.25rem',
+              'padding:0.5rem 1.5rem',
+              'background:#c47b42',
+              'color:#fff',
+              'border-radius:0.5rem',
+              'text-decoration:none',
+              'font-weight:500',
+              'font-size:0.9rem',
+            ].join(';');
+            card.appendChild(link);
+          }
+        }, 800);
+      }
+      // If 'pending', keep polling
+    } catch (e) {
+      // Network error — silently keep polling
+    }
+  }, 5000);
+}
+
+// ── Input Normalization Helpers ──────────────────────────────
+function normalizeSentenceCase(value) {
+  // Capitalize first letter, rest lowercase
+  return value.trim() ? value.trim().charAt(0).toUpperCase() + value.trim().slice(1).toLowerCase() : '';
+}
+
+function normalizeEmail(value) {
+  return value.trim().toLowerCase();
+}
+
+function normalizeUsername(value) {
+  // Sentence case: first word capitalized, rest lowercase
+  const trimmed = value.trim();
+  const words = trimmed.split(/\s+/);
+  if (words.length > 0) {
+    words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1).toLowerCase();
+    for (let i = 1; i < words.length; i++) {
+      words[i] = words[i].toLowerCase();
+    }
+  }
+  return words.join(' ');
+}
+
+// ── Form submission ──────────────────────────────────
 signupForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   if (!validateStep2()) return;
 
-  const first_name       = document.getElementById('firstName').value.trim();
-  const last_name        = document.getElementById('lastName').value.trim();
+  // Apply input normalization before submission
+  let first_name       = document.getElementById('firstName').value.trim();
+  let last_name        = document.getElementById('lastName').value.trim();
   const user_type        = hiddenUserType ? hiddenUserType.value : '';
-  const username         = document.getElementById('username').value.trim();
-  const email            = document.getElementById('email').value.trim();
+  let username         = document.getElementById('username').value.trim();
+  let email            = document.getElementById('email').value.trim();
   const password         = document.getElementById('password').value;
   const confirm_password = document.getElementById('confirmPassword').value;
+
+  // Normalize inputs
+  first_name = normalizeSentenceCase(first_name);
+  last_name = normalizeSentenceCase(last_name);
+  email = normalizeEmail(email);
+  username = normalizeUsername(username);
 
   submitBtn.disabled    = true;
   submitBtn.textContent = 'Creating...';
@@ -219,13 +315,19 @@ signupForm.addEventListener('submit', async (e) => {
     const data = await res.json();
 
     if (res.ok && data.success) {
-      // Show full-page success overlay with spinner
-      document.getElementById('regSuccessMsg').textContent =
-        `${user_type} Account Successfully Created!`;
-      document.getElementById('regSuccessOverlay').style.display = 'flex';
-      hideError();
-
-      setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+      // For Admin accounts, show the waiting-for-approval overlay with real-time polling
+      if (user_type === 'Admin') {
+        const userId = data.user && data.user.id;
+        hideError();
+        showAdminApprovalWaiting(userId);
+      } else {
+        // For Staff accounts, show normal success message
+        document.getElementById('regSuccessMsg').textContent =
+          `${user_type} Account Successfully Created!`;
+        document.getElementById('regSuccessOverlay').style.display = 'flex';
+        hideError();
+        setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+      }
     } else {
       const msg =
         (Array.isArray(data.errors) ? data.errors[0] : data.errors) ||

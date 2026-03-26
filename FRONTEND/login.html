@@ -81,14 +81,39 @@
   </div>
 </div>
 
+<!-- ── Forced Password Change Modal ────────────────────────── -->
+<div id="forcedPasswordChangeModal" class="login-overlay" style="display:none;">
+  <div class="login-overlay-card" style="max-width: 400px; padding: 2rem;">
+    <p id="forcedPwMsg" class="welcome-msg" style="text-align: center; margin-bottom: 1.5rem;"></p>
+    
+    <div class="input-group float-group" style="margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="newForcedPassword" name="newForcedPassword" placeholder=" " required>
+      <label for="newForcedPassword">New Password</label>
+    </div>
+    
+    <div class="input-group float-group" style="margin-bottom: 1.5rem;">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="confirmForcedPassword" name="confirmForcedPassword" placeholder=" " required>
+      <label for="confirmForcedPassword">Confirm Password</label>
+    </div>
+    
+    <div id="forcedPwError" class="error-msg" style="margin-bottom: 1rem; display:none;"></div>
+    
+    <div class="login-btns" style="display: flex; gap: 1rem;">
+      <button class="btn-lo-confirm" id="submitForcedPassword" style="flex: 1;">Change Password</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Forgot Password Modal ───────────────────────────────── -->
 <div id="forgotPasswordModal" class="login-overlay" style="display:none;">
   <div class="login-overlay-card" style="max-width: 380px; padding: 2rem;">
     <h3 style="margin-bottom: 1rem;">Reset Password</h3>
-    <p style="font-size:0.9rem; margin-bottom:1.5rem;">Enter your email or username and we'll send you a reset link.</p>
+    <p style="font-size:0.9rem; margin-bottom:1.5rem;">Enter your email address and we'll send you a password reset link.</p>
     <div class="input-group" style="margin-bottom: 1.5rem;">
       <i class="fa-regular fa-envelope"></i>
-      <input type="text" id="resetIdentifier" placeholder="Email or username">
+      <input type="email" id="resetIdentifier" placeholder="your@email.com">
     </div>
     <div class="login-btns" style="display: flex; gap: 1rem;">
       <button class="btn-lo-cancel" id="closeForgotModal">Cancel</button>

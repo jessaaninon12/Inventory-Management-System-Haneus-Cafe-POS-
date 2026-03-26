@@ -16,6 +16,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.throttles import AnonLoginThrottle, LoginThrottle
 from api.schema_serializers import (
     AuthSuccessSchema,
     ChangePasswordRequestSchema,
@@ -25,6 +26,7 @@ from api.schema_serializers import (
     RegisterRequestSchema as RegisterRequestDoc,
     UpdateProfileRequestSchema,
 )
+from api.models import AdminApprovalRequest
 from application.dtos.user_dto import (
     ChangePasswordDTO,
     CreateUserDTO,
@@ -91,6 +93,13 @@ class RegisterController(APIView):
                 user_type=request.data.get("user_type", "Staff"),
             )
             user_dto = service.register(dto)
+            
+            # If user_type is Admin, create an approval request
+            if dto.user_type == "Admin":
+                from api.models import User as UserModel
+                user = UserModel.objects.get(id=user_dto.id)
+                AdminApprovalRequest.objects.create(user=user, status="pending")
+            
             return Response(
                 {"success": True, "user": user_dto.to_dict()},
                 status=status.HTTP_201_CREATED,
@@ -109,6 +118,7 @@ class LoginController(APIView):
     Request:  { username, password }
     Response: { success: true, user: UserDTO }
     """
+    throttle_classes = [AnonLoginThrottle, LoginThrottle]
 
     @extend_schema(
         tags=["Auth"],
@@ -208,6 +218,70 @@ class ChangePasswordController(APIView):
             if not success:
                 return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
             return Response({"success": True, "message": "Password updated successfully."})
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminResetPasswordController(APIView):
+    """
+    POST /api/users/<pk>/reset-password/
+    Admin initiates password reset for a user.
+    Returns: { success: true, temporary_password: "XXXXXXXXXXXX" }
+    """
+
+    @extend_schema(
+        tags=["Profile"],
+        responses={200: None, 404: ErrorSchema},
+    )
+    def post(self, request, pk):
+        service = _get_service()
+        try:
+            plain_password, hashed_password = service.reset_user_password(pk)
+            return Response(
+                {"success": True, "temporary_password": plain_password},
+                status=status.HTTP_200_OK,
+            )
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+
+class ChangeTemporaryPasswordController(APIView):
+    """
+    POST /api/auth/change-temporary-password/
+    User changes their temporary password (forced on login if require_password_change=True).
+    Request:  { user_id, new_password }
+    Response: { success: true, message: "Password updated successfully." }
+    """
+
+    @extend_schema(
+        tags=["Auth"],
+        responses={200: None, 400: ErrorSchema, 404: ErrorSchema},
+    )
+    def post(self, request):
+        service = _get_service()
+        user_id = request.data.get("user_id")
+        new_password = request.data.get("new_password", "")
+
+        if not user_id:
+            return Response(
+                {"error": "User ID is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not new_password:
+            return Response(
+                {"error": "New password is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            success = service.change_password_from_temporary(user_id, new_password)
+            if not success:
+                return Response(
+                    {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND
+                )
+            return Response(
+                {"success": True, "message": "Password updated successfully."}
+            )
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

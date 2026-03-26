@@ -578,6 +578,26 @@ h1 { font-size:1.875rem; font-weight:700; color:var(--espresso); }
 .pos-stock-badge.low-stock  { background:#fef3c7; color:#92400e; }
 .pos-stock-badge.out-of-stock { background:#fee2e2; color:#b91c1c; }
 
+/* Sold-out product card styling */
+.pos-product-card.out-of-stock {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.pos-product-card.out-of-stock:hover {
+  transform: none;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+.pos-add-btn-disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+}
+.pos-add-btn-disabled:hover {
+  background: #e5e7eb !important;
+  color: #6b7280 !important;
+}
+
 /* Receipt panel */
 .pos-receipt-panel {
   background: white;

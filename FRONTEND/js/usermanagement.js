@@ -13,8 +13,8 @@ if (!_currentUser || !_currentUser.id) {
   window.location.href = 'login.html';
 }
 if (_currentUser.user_type !== 'Admin') {
-  alert('Access denied. This page is for Admins only.');
-  window.location.href = 'dashboard.html';
+  showErrorModal('Access denied. This page is for Admins only.');
+  setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
 }
 
 /* Show / hide admin-only sidebar items */
@@ -452,5 +452,43 @@ async function confirmDelete() {
   }
 }
 
-/* ── Bootstrap ───────────────────────────────────────────────────── */
+/* ── RESET PASSWORD ───────────────────────────────── */
+async function openResetPasswordModal(userId) {
+  try {
+    const res = await fetch(`${API}/users/${userId}/reset-password/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      showAlert(err.error || 'Failed to reset password.', false);
+      return;
+    }
+
+    const data = await res.json();
+    const tempPassword = data.temporary_password;
+
+    // Show modal with temp password
+    document.getElementById('resetPwMessage').textContent =
+      `Password reset initiated. A temporary 12-character password has been generated.`;
+    document.getElementById('tempPasswordDisplay').value = tempPassword;
+    document.getElementById('resetPasswordModal').style.display = 'flex';
+
+    showAlert('Password reset successful! Share the temporary password with the user.', true);
+  } catch (err) {
+    console.error(err);
+    showAlert('Network error. Could not reset password.', false);
+  }
+}
+
+function copyTempPassword() {
+  const field = document.getElementById('tempPasswordDisplay');
+  field.select();
+  document.execCommand('copy');
+  showAlert('Password copied to clipboard!', true);
+}
+
+/* ── Bootstrap ───────────────────────────────────── */
 loadUsers();

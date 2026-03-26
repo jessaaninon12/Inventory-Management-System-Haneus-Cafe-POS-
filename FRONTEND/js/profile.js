@@ -45,8 +45,10 @@ async function loadProfile() {
     document.getElementById('profileDisplayName').textContent =
       `${p.first_name || ''} ${p.last_name || ''}`.trim() || p.username;
 
-    if (p.avatar_url) {
-      const src = p.avatar_url.startsWith('http') ? p.avatar_url : `http://127.0.0.1:8000${p.avatar_url}`;
+    // Display profile picture (new field) or avatar_url (legacy fallback)
+    const pictureUrl = p.profile_picture_url || p.avatar_url;
+    if (pictureUrl) {
+      const src = pictureUrl.startsWith('http') ? pictureUrl : `http://127.0.0.1:8000${pictureUrl}`;
       document.getElementById('avatarPreview').src = src;
     }
 
@@ -104,7 +106,11 @@ document.getElementById('profileForm').addEventListener('submit', async function
       phone:      document.getElementById('phone').value,
       bio:        document.getElementById('bio').value,
     };
-    if (avatar_url) body.avatar_url = avatar_url;
+    // Persist both avatar_url and profile_picture_url for consistency
+    if (avatar_url) {
+      body.avatar_url = avatar_url;
+      body.profile_picture_url = avatar_url;
+    }
 
     const res = await fetch(`${API}/profile/${userId}/`, {
       method: 'PUT',

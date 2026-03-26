@@ -8,6 +8,12 @@ let allProducts       = [];
 let editingProductId  = null;
 let deletingProductId = null;
 
+// ── Pagination state ───────────────────────────────────────────────
+let currentPage        = 1;
+const itemsPerPage     = 12;
+let totalPages         = 1;
+let currentFilteredList = [];
+
 function escHtml(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -67,7 +73,39 @@ function applyFilterSort() {
   if (sort === 'name-desc')  list.sort((a,b) => b.name.localeCompare(a.name));
   if (sort === 'price-asc')  list.sort((a,b) => parseFloat(a.price) - parseFloat(b.price));
   if (sort === 'price-desc') list.sort((a,b) => parseFloat(b.price) - parseFloat(a.price));
-  renderGrid(list);
+  currentFilteredList = list;
+  currentPage = 1;
+  totalPages = Math.max(1, Math.ceil(list.length / itemsPerPage));
+  renderGrid(list.slice(0, itemsPerPage));
+  renderPaginationControls();
+}
+
+function renderPaginationControls() {
+  const container = document.getElementById('paginationControls');
+  if (!container) return;
+  if (totalPages <= 1) { container.innerHTML = ''; return; }
+  let html = '<div class="pagination">';
+  html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹ Prev</button>`;
+  let startPage = Math.max(1, currentPage - 2);
+  let endPage   = Math.min(totalPages, currentPage + 2);
+  if (endPage - startPage < 4) {
+    if (startPage === 1) endPage   = Math.min(totalPages, startPage + 4);
+    if (endPage === totalPages) startPage = Math.max(1, endPage - 4);
+  }
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+  }
+  html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next ›</button>`;
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function goToPage(page) {
+  if (page < 1 || page > totalPages) return;
+  currentPage = page;
+  const start = (currentPage - 1) * itemsPerPage;
+  renderGrid(currentFilteredList.slice(start, start + itemsPerPage));
+  renderPaginationControls();
 }
 
 function renderGrid(products) {
@@ -131,6 +169,8 @@ function openCreateModal() {
   document.getElementById('pUnit').value      = 'Piece/Item';
   document.getElementById('pDesc').value      = '';
   document.getElementById('pThreshold').value = '10';
+  document.getElementById('pSupplierName').value = '';
+  document.getElementById('pSupplierContact').value = '';
   resetImagePreview();
   document.getElementById('productModal').style.display = 'flex';
   lucide.createIcons();
@@ -150,6 +190,8 @@ function openEditModal(id) {
   document.getElementById('pUnit').value      = p.unit || 'Piece/Item';
   document.getElementById('pDesc').value      = p.description || '';
   document.getElementById('pThreshold').value = p.low_stock_threshold ?? 10;
+  document.getElementById('pSupplierName').value = p.supplier_name || '';
+  document.getElementById('pSupplierContact').value = p.supplier_contact || '';
   // File inputs cannot be pre-filled; show existing image if available
   const inp = document.getElementById('pImage');
   if (inp) inp.value = '';
@@ -184,14 +226,16 @@ async function submitProductForm() {
   const unit      = document.getElementById('pUnit').value;
   const desc      = document.getElementById('pDesc').value.trim();
   const threshold = parseInt(document.getElementById('pThreshold').value, 10);
+  const supplierName = document.getElementById('pSupplierName').value.trim();
+  const supplierContact = document.getElementById('pSupplierContact').value.trim();
   const imageFile = document.getElementById('pImage')?.files[0];
 
-  if (!name)                      { alert('Product name is required.');         return; }
-  if (!category)                  { alert('Please select a category.');         return; }
-  if (isNaN(price) || price < 0)  { alert('Please enter a valid selling price.'); return; }
-  if (isNaN(cost)  || cost  < 0)  { alert('Please enter a valid cost per unit.'); return; }
-  if (!unit)                      { alert('Please select a unit of measure.');  return; }
-  if (isNaN(threshold) || threshold < 0) { alert('Please enter a valid low-stock threshold.'); return; }
+  if (!name)                      { showErrorModal('Product name is required.');         return; }
+  if (!category)                  { showErrorModal('Please select a category.');         return; }
+  if (isNaN(price) || price < 0)  { showErrorModal('Please enter a valid selling price.'); return; }
+  if (isNaN(cost)  || cost  < 0)  { showErrorModal('Please enter a valid cost per unit.'); return; }
+  if (!unit)                      { showErrorModal('Please select a unit of measure.');  return; }
+  if (isNaN(threshold) || threshold < 0) { showErrorModal('Please enter a valid low-stock threshold.'); return; }
 
   const saveBtn = document.getElementById('saveProductBtn');
   saveBtn.disabled    = true;
@@ -215,6 +259,7 @@ async function submitProductForm() {
 
     const body = { name, category, price, cost, stock, unit,
                    description: desc, low_stock_threshold: threshold,
+                   supplier_name: supplierName || null, supplier_contact: supplierContact || null,
                    image_url: imageUrl };
     let res;
     if (editingProductId) {
@@ -228,10 +273,10 @@ async function submitProductForm() {
         body: JSON.stringify(body),
       });
     }
-    if (!res.ok) { const err = await res.json(); alert(JSON.stringify(err.errors||err.error||err)); return; }
+    if (!res.ok) { const err = await res.json(); showErrorModal(JSON.stringify(err.errors||err.error||err)); return; }
     closeProductModal();
     loadProducts();
-  } catch { alert('Failed to save. Is the backend running?'); }
+  } catch { showErrorModal('Failed to save. Is the backend running?'); }
   finally {
     saveBtn.disabled    = false;
     saveBtn.textContent = editingProductId ? 'Save Changes' : 'Create Product';
@@ -253,8 +298,8 @@ async function confirmDelete() {
   try {
     const res = await fetch(`${API}/products/delete/${deletingProductId}/`, { method:'DELETE' });
     if (res.status === 204 || res.ok) { closeDeleteModal(); loadProducts(); }
-    else alert('Failed to delete product.');
-  } catch { alert('Failed to delete product.'); }
+    else showErrorModal('Failed to delete product.');
+  } catch { showErrorModal('Failed to delete product.'); }
 }
 
 window.addEventListener('click', e => {

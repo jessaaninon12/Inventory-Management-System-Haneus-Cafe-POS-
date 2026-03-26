@@ -9,6 +9,9 @@ const API = 'http://127.0.0.1:8000/api';
 let loadedProducts = [];
 let editingProductId = null;
 let deletingProductId = null;
+let currentPage = 1;
+let totalPages = 1;
+let totalProductCount = 0;
 
 // ── Helpers ─────────────────────────────────────────────────────
 function escHtml(s) {
@@ -41,19 +44,72 @@ function relativeTime(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-// ── Load / Render ───────────────────────────────────────────────
-async function loadProducts() {
+// ── Load / Render with Pagination ──────────────────────────
+async function loadProducts(pageNum = 1) {
   const tbody = document.getElementById('stockTableBody');
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mocha);padding:2rem;">Loading…</td></tr>';
   try {
-    const res  = await fetch(`${API}/products/view/`);
+    // Fetch paginated products (30 per page)
+    const res = await fetch(`${API}/products/view/?page=${pageNum}&limit=30`);
     const data = await res.json();
-    loadedProducts = data.results || data;
+    
+    // Handle both paginated and non-paginated responses for backward compatibility
+    if (data.products) {
+      loadedProducts = data.products;
+      currentPage = data.page || pageNum;
+      totalPages = data.total_pages || 1;
+      totalProductCount = data.total_count || 0;
+    } else {
+      // Fallback for non-paginated response
+      loadedProducts = Array.isArray(data) ? data : data.results || [];
+      currentPage = 1;
+      totalPages = 1;
+      totalProductCount = loadedProducts.length;
+    }
+    
     renderTable(loadedProducts);
+    renderPaginationControls();
   } catch (e) {
     console.error(e);
     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#dc2626;padding:2rem;">Failed to load products. Is the backend running?</td></tr>';
   }
+}
+
+function renderPaginationControls() {
+  const container = document.getElementById('paginationControls');
+  if (!container) return;
+  
+  if (totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+  
+  let html = '<div class="pagination-controls" style="display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1.5rem; padding: 1rem; background: #f9f9f9; border-radius: 0.5rem;">';
+  html += `<span style="color: #666; font-size: 0.875rem;">Page ${currentPage} of ${totalPages} (${totalProductCount} total)</span>`;
+  html += '<div style="display: flex; gap: 0.5rem;">';
+  
+  // Previous button
+  html += `<button class="page-btn" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 0.375rem; background: white; cursor: pointer; font-size: 0.875rem;">← Prev</button>`;
+  
+  // Page numbers
+  const pageStart = Math.max(1, currentPage - 2);
+  const pageEnd = Math.min(totalPages, currentPage + 2);
+  
+  for (let i = pageStart; i <= pageEnd; i++) {
+    const isActive = i === currentPage;
+    html += `<button class="page-btn" onclick="goToPage(${i})" style="padding: 0.5rem 0.75rem; border: 1px solid ${isActive ? '#c47b42' : '#ddd'}; border-radius: 0.375rem; background: ${isActive ? '#c47b42' : 'white'}; color: ${isActive ? 'white' : '#333'}; cursor: pointer; font-size: 0.875rem; font-weight: ${isActive ? 'bold' : 'normal'};">${i}</button>`;
+  }
+  
+  // Next button
+  html += `<button class="page-btn" onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''} style="padding: 0.5rem 0.75rem; border: 1px solid #ddd; border-radius: 0.375rem; background: white; cursor: pointer; font-size: 0.875rem;">Next →</button>`;
+  
+  html += '</div></div>';
+  container.innerHTML = html;
+}
+
+function goToPage(pageNum) {
+  if (pageNum < 1 || pageNum > totalPages) return;
+  loadProducts(pageNum);
 }
 
 function renderTable(products) {
@@ -110,6 +166,8 @@ function openViewModal(productId) {
     <div class="ms-detail-row"><span class="ms-detail-label">Reorder Threshold</span><span class="ms-detail-val">${p.low_stock_threshold || 10}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Status</span><span class="status-badge ${status.cls}">${status.label}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Last Updated</span><span class="ms-detail-val">${p.updated_at ? new Date(p.updated_at).toLocaleString() : '—'}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Supplier Name</span><span class="ms-detail-val">${p.supplier_name ? escHtml(p.supplier_name) : 'No supplier info'}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Supplier Contact</span><span class="ms-detail-val">${p.supplier_contact ? escHtml(p.supplier_contact) : '—'}</span></div>
     ${p.description ? `<div class="ms-detail-row"><span class="ms-detail-label">Description</span><span class="ms-detail-val">${escHtml(p.description)}</span></div>` : ''}
   `;
   document.getElementById('viewModal').style.display = 'flex';
@@ -142,7 +200,7 @@ function msAdjust(delta) {
 async function submitEditStock() {
   const qty   = parseInt(document.getElementById('editStockQty').value || 0);
   const notes = document.getElementById('editStockNotes').value.trim();
-  if (qty === 0) { alert('Please enter a non-zero adjustment.'); return; }
+  if (qty === 0) { showErrorModal('Please enter a non-zero adjustment.'); return; }
   try {
     const res = await fetch(`${API}/inventory/adjust/`, {
       method: 'POST',
@@ -157,13 +215,13 @@ async function submitEditStock() {
     });
     if (!res.ok) {
       const err = await res.json();
-      alert('Adjustment failed: ' + JSON.stringify(err.errors || err));
+      showErrorModal('Adjustment failed: ' + JSON.stringify(err.errors || err));
       return;
     }
     closeEditStockModal();
     loadProducts();
   } catch (e) {
-    alert('Failed to adjust stock. Is the backend running?');
+    showErrorModal('Failed to adjust stock. Is the backend running?');
   }
 }
 
@@ -187,13 +245,13 @@ async function confirmDeleteStock() {
     const res = await fetch(`${API}/products/${deletingProductId}/delete/`, { method: 'DELETE' });
     if (!res.ok && res.status !== 204) {
       const err = await res.json().catch(() => ({}));
-      alert('Delete failed: ' + JSON.stringify(err));
+      showErrorModal('Delete failed: ' + JSON.stringify(err));
       return;
     }
     closeDeleteStockModal();
     loadProducts();
   } catch (e) {
-    alert('Failed to delete product. Is the backend running?');
+    showErrorModal('Failed to delete product. Is the backend running?');
   }
 }
 
@@ -217,7 +275,7 @@ async function submitReceiveStock() {
   const quantity   = parseInt(document.getElementById('receiveQuantity').value);
   const supplier   = document.getElementById('receiveSupplier').value.trim();
   const notes      = document.getElementById('receiveNotes').value.trim();
-  if (!product_id || !quantity || quantity <= 0) { alert('Please select a product and enter a valid quantity.'); return; }
+  if (!product_id || !quantity || quantity <= 0) { showErrorModal('Please select a product and enter a valid quantity.'); return; }
   try {
     const res = await fetch(`${API}/inventory/adjust/`, {
       method: 'POST',
@@ -231,17 +289,17 @@ async function submitReceiveStock() {
     });
     if (!res.ok) {
       const err = await res.json();
-      alert('Receive failed: ' + JSON.stringify(err.errors || err));
+      showErrorModal('Receive failed: ' + JSON.stringify(err.errors || err));
       return;
     }
     closeReceiveStockModal();
     loadProducts();
-  } catch (e) { alert('Failed to receive stock.'); }
+  } catch (e) { showErrorModal('Failed to receive stock.'); }
 }
 
 // ── Export CSV ────────────────────────────────────────────────
 function exportStockCsv() {
-  if (!loadedProducts.length) { alert('No data to export.'); return; }
+  if (!loadedProducts.length) { showInfoModal('No data to export.'); return; }
   const esc = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s; };
   const hdr = ['Product Name', 'Category', 'Stock', 'Unit', 'Status', 'Last Updated'];
   const rows = loadedProducts.map(p => {
