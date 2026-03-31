@@ -23,9 +23,7 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() in ("true", "1", "yes")
 
-ALLOWED_HOSTS = os.environ.get(
-    "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
-).split(",")
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
 
 # ------------------------------------------------------------------
 # Installed apps
@@ -42,8 +40,8 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_spectacular",
     # Local apps
-    "api",              # Auth models (User), legacy CRUD views
-    "infrastructure",   # Clean Architecture ORM models
+    "api",  # Auth models (User), legacy CRUD views
+    "infrastructure",  # Clean Architecture ORM models
 ]
 
 # Custom user model (defined in api.models.User)
@@ -110,6 +108,13 @@ if DB_ENGINE == "mssql":
             "ATOMIC_REQUESTS": True,
         }
     }
+elif DB_ENGINE == "sqlite":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / os.environ.get("DB_NAME", "db.sqlite3"),
+        }
+    }
 else:
     # MySQL / MariaDB (XAMPP) — default
     DATABASES = {
@@ -139,7 +144,9 @@ CACHES = {
     "default": {
         "BACKEND": os.environ.get(
             "CACHE_BACKEND",
-            "django.core.cache.backends.locmem.LocMemCache" if DEBUG else "django.core.cache.backends.db.DatabaseCache",
+            "django.core.cache.backends.locmem.LocMemCache"
+            if DEBUG
+            else "django.core.cache.backends.db.DatabaseCache",
         ),
         "LOCATION": os.environ.get("CACHE_LOCATION", "haneus_cache_table"),
         "TIMEOUT": int(os.environ.get("CACHE_TIMEOUT", "300")),  # 5 minutes default
@@ -153,7 +160,9 @@ CACHES = {
 # Password validation
 # ------------------------------------------------------------------
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+    },
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
@@ -190,7 +199,9 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated" if os.environ.get("API_REQUIRE_AUTH", "False").lower() in ("true", "1", "yes") else "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated"
+        if os.environ.get("API_REQUIRE_AUTH", "False").lower() in ("true", "1", "yes")
+        else "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.TokenAuthentication",
@@ -241,7 +252,9 @@ SPECTACULAR_SETTINGS = {
 # ------------------------------------------------------------------
 # CORS
 # ------------------------------------------------------------------
-CORS_ALLOW_ALL_ORIGINS = DEBUG or os.environ.get("CORS_ALLOW_ALL_ORIGINS", "False").lower() in ("true", "1", "yes")
+CORS_ALLOW_ALL_ORIGINS = DEBUG or os.environ.get(
+    "CORS_ALLOW_ALL_ORIGINS", "False"
+).lower() in ("true", "1", "yes")
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = []
 if not CORS_ALLOW_ALL_ORIGINS:
@@ -252,7 +265,11 @@ if not CORS_ALLOW_ALL_ORIGINS:
 # Security headers
 # ------------------------------------------------------------------
 if not DEBUG:
-    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True").lower() in ("true","1","yes")
+    SECURE_SSL_REDIRECT = os.environ.get("SECURE_SSL_REDIRECT", "True").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = int(os.environ.get("SECURE_HSTS_SECONDS", "31536000"))
@@ -265,14 +282,20 @@ if not DEBUG:
 # ------------------------------------------------------------------
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
 )
 
 if not DEBUG:
     # Production SMTP settings
     EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
     EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
+    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in (
+        "true",
+        "1",
+        "yes",
+    )
     EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
     EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 

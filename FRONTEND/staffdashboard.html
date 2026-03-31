@@ -368,130 +368,14 @@
   </div>
 </div>
 
-  <!-- CASH PAYMENT MODAL -->
-  <div id="cash-payment-modal" class="payment-modal-overlay" onclick="closeCashModal(event)">
-    <div class="payment-modal" onclick="event.stopPropagation()">
-      <div class="payment-modal-content">
-        <div style="margin-bottom:1.5rem;text-align:center;">
-          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="cash-modal-order-num">#00001</strong></div>
-          <div style="font-size:0.9rem;color:#666;margin-bottom:1rem;">Customer #: <strong id="cash-modal-customer-num">CUST-00001</strong></div>
-        </div>
-        <div style="margin-bottom:1.5rem;">
-          <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#333;">Amount Customer Gives</label>
-          <input type="number" id="cash-modal-amount" class="payment-modal-input" placeholder="₱0.00" min="0" step="0.01" />
-        </div>
-      </div>
-      <div class="payment-modal-actions">
-        <button id="cash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
-        <button id="cash-modal-ok-btn" class="payment-btn payment-btn-primary">OK</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- GCASH PAYMENT MODAL -->
-  <div id="gcash-payment-modal" class="payment-modal-overlay" onclick="closeGCashModal(event)">
-    <div class="payment-modal" onclick="event.stopPropagation()">
-      <div class="payment-modal-content">
-        <div style="margin-bottom:1.5rem;text-align:center;">
-          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="gcash-modal-order-num">#00001</strong></div>
-          <div style="font-size:0.9rem;color:#666;margin-bottom:1.5rem;">Customer #: <strong id="gcash-modal-customer-num">CUST-00001</strong></div>
-        </div>
-        <div id="gcash-modal-qr" style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:0.5rem;padding:1.5rem;text-align:center;background:#f9f9f9;">
-        </div>
-        <div style="text-align:center;margin-bottom:1.5rem;">
-          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Scan to Pay via GCash</div>
-          <div style="font-size:1.25rem;font-weight:600;color:#333;">Amount: <span id="gcash-modal-amount">₱0.00</span></div>
-        </div>
-      </div>
-      <div class="payment-modal-actions">
-        <button id="gcash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
-        <button id="gcash-modal-confirm-btn" class="payment-btn payment-btn-primary">CONFIRM PAYMENT</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ╠══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
-       RECEIPT MODAL
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="receipt-modal-overlay" class="receipt-modal-overlay" onclick="closeReceiptModal(event)">
-    <div class="receipt-modal" onclick="event.stopPropagation()">
-
-      <!-- Printable paper area -->
-      <div class="receipt-paper" id="receipt-to-download">
-        <div class="receipt-head">
-          <div class="receipt-cafe-name">HANEUS CAFE</div>
-          <div class="receipt-cafe-addr">BRGY Balbautog Sitio Uwagan</div>
-        </div>
-        <div class="receipt-divider"></div>
-        <div class="receipt-meta">
-          <div class="receipt-meta-row"><span>Receipt #:</span><span id="rm-receipt-num"></span></div>
-          <div class="receipt-meta-row"><span>Customer #:</span><span id="rm-customer-num"></span></div>
-          <div class="receipt-meta-row"><span>Date:</span><span id="rm-date"></span></div>
-          <div class="receipt-meta-row"><span>Cashier:</span><span id="rm-cashier"></span></div>
-          <div class="receipt-meta-row"><span>Order Type:</span><span id="rm-order-type"></span></div>
-        </div>
-        <div class="receipt-divider"></div>
-        <div class="receipt-items-header">
-          <span>ORDER</span><span>PRICE</span>
-        </div>
-        <div id="rm-items" class="receipt-items-list"></div>
-        <div class="receipt-divider"></div>
-        <div class="receipt-totals">
-          <div class="receipt-row"><span>Subtotal</span><span id="rm-subtotal"></span></div>
-          <div class="receipt-row"><span>Discount</span><span id="rm-discount"></span></div>
-          <div class="receipt-row"><span>VAT (12%)</span><span id="rm-vat"></span></div>
-        </div>
-        <div class="receipt-divider receipt-divider-double"></div>
-        <div class="receipt-row receipt-total-row">
-          <span>TOTAL</span><span id="rm-total"></span>
-        </div>
-        <div class="receipt-divider"></div>
-        <div class="receipt-payment-rows">
-          <div class="receipt-row"><span>Payment:</span><span id="rm-payment"></span></div>
-          <div class="receipt-row"><span>Tendered:</span><span id="rm-tendered"></span></div>
-          <div class="receipt-row"><span>Change:</span><span id="rm-change"></span></div>
-        </div>
-        <div class="receipt-divider"></div>
-        <div class="receipt-footer">Thank you for visiting!</div>
-      </div>
-
-      <!-- Action buttons (hidden when printing) -->
-      <div class="receipt-actions no-print">
-        <button class="receipt-btn receipt-btn-download" onclick="downloadReceiptPNG()">
-          &#11015; Download Receipt
-        </button>
-        <button class="receipt-btn receipt-btn-ok" onclick="closeReceiptModal()">
-          OK
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══════════════════════════════════════════════════════════════
-       ORDER HISTORY PANEL
-  ══════════════════════════════════════════════════════════════ -->
-  <div id="order-history-overlay" class="order-history-overlay" onclick="closeOrderHistory(event)">
-    <div class="order-history-card" onclick="event.stopPropagation()">
-      <div class="order-history-hdr">
-        <h3>&#x1F4CB; Order History</h3>
-        <button class="order-history-close" onclick="closeOrderHistory()">&#x2715;</button>
-      </div>
-      <div id="order-history-list" class="order-history-list">
-        <p style="color:var(--mocha);font-size:0.875rem;padding:1rem;">Loading&hellip;</p>
-      </div>
-    </div>
-  </div>
-
   <script src="js/role-control.js"></script>
   <script src="js/logout-modal.js"></script>
   <script src="js/alert-modal.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/pos.js"></script>
   <script src="js/sidebar-toggle.js"></script>
 </body>
 </html>
 
 <script>
-
-    lucide.createIcons();
+  lucide.createIcons();
 </script>
