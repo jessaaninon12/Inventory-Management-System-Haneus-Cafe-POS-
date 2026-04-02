@@ -126,7 +126,7 @@ class AdminApprovalRequest(models.Model):
         ("rejected", "Rejected"),
     ]
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="approval_request")
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="approval_request")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     decided_at = models.DateTimeField(null=True, blank=True)  # When approved/rejected
@@ -138,7 +138,7 @@ class AdminApprovalRequest(models.Model):
             # Speeds up listing pending requests: WHERE status='pending'
             models.Index(fields=["status"], name="idx_approval_status"),
             # Speeds up ordering by creation time for notification list
-            models.Index(fields=["status", "-created_at"], name="idx_approval_status_created"),
+            models.Index(fields=["status", "created_at"], name="idx_approval_status_created"),
         ]
     
     def __str__(self):
@@ -167,7 +167,7 @@ class DeletedRecordsBackup(models.Model):
             # Speeds up --type=user filter in show_deleted_records command
             models.Index(fields=["record_type"], name="idx_deleted_record_type"),
             # Speeds up time-based audit queries
-            models.Index(fields=["record_type", "-deleted_at"], name="idx_deleted_type_time"),
+            models.Index(fields=["record_type", "deleted_at"], name="idx_deleted_type_time"),
         ]
     
     def __str__(self):

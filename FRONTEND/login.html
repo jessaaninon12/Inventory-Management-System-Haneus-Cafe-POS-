@@ -1,129 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>User Login</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet"/>
-<link rel="stylesheet" href="css/login.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="css/login.css">
 </head>
+
 <body>
 
-<div class="container">
+  <div class="container">
 
-  <!-- LEFT SIDE -->
-  <div class="left">
-    <img src="images/coffee.png" alt="Coffee">
-    <h1></h1>
+    <!-- LEFT SIDE -->
+    <div class="left">
+      <img src="images/coffee.png" alt="Coffee">
+      <h1></h1>
+    </div>
+
+    <!-- RIGHT SIDE -->
+    <div class="right">
+      <h2>USER LOGIN</h2>
+
+      <form id="loginForm">
+
+        <!-- Username -->
+        <div class="input-group float-group">
+          <i class="fa-regular fa-user"></i>
+          <input type="text" id="username" name="username" placeholder=" " autocomplete="username" required>
+          <label for="username">Username</label>
+        </div>
+
+        <!-- Password -->
+        <div class="input-group float-group">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password" required>
+          <label for="password">Password</label>
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password visibility">
+            <i class="fa-regular fa-eye" id="togglePwIcon"></i>
+          </button>
+        </div>
+
+        <!-- Options row: Remember me + Forgot Password -->
+        <div class="options-row">
+          <label class="remember-label">
+            <input type="checkbox" name="rememberMe"> Remember me
+          </label>
+          <button type="button" id="forgotPwBtn" class="forgot-link">Forgot Password?</button>
+        </div>
+
+        <div id="errorMsg" class="error-msg" style="display:none;"></div>
+
+        <button type="submit" id="loginBtn" class="login-btn">Login</button>
+
+        <div class="register">
+          Don't have an account? <a href="register.html">Register here</a>
+        </div>
+
+      </form>
+
+    </div>
+
   </div>
 
-  <!-- RIGHT SIDE -->
-  <div class="right">
-    <h2>USER LOGIN</h2>
+  <!-- ── Full-page login success overlay ───────────────────── -->
+  <div id="loginSuccessOverlay" class="login-overlay" style="display:none;">
+    <div class="login-overlay-card">
+      <p id="welcomeMsg" class="welcome-msg"></p>
+      <svg class="pl" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
+        <circle class="pl__ring pl__ring--a" cx="120" cy="120" r="105" fill="none" stroke-width="20"
+          stroke-dasharray="0 660" stroke-dashoffset="-330" stroke-linecap="round" />
+        <circle class="pl__ring pl__ring--b" cx="120" cy="120" r="35" fill="none" stroke-width="20"
+          stroke-dasharray="0 220" stroke-dashoffset="-110" stroke-linecap="round" />
+        <circle class="pl__ring pl__ring--c" cx="85" cy="120" r="70" fill="none" stroke-width="20"
+          stroke-dasharray="0 440" stroke-linecap="round" />
+        <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none" stroke-width="20"
+          stroke-dasharray="0 440" stroke-linecap="round" />
+      </svg>
+    </div>
+  </div>
 
-    <form id="loginForm">
+  <!-- ── Unified Reset Password Wizard ───────────────────────── -->
+  <div id="resetWizardModal" class="login-overlay" style="display:none;">
+    <div class="login-overlay-card" style="max-width:420px;padding:2rem;overflow:hidden;">
 
-      <!-- Username -->
-      <div class="input-group float-group">
-        <i class="fa-regular fa-user"></i>
-        <input type="text" id="username" name="username" placeholder=" " autocomplete="username" required>
-        <label for="username">Username</label>
+      <!-- Phase dots (dynamically managed by JS) -->
+      <div id="resetDots" style="display:flex;justify-content:center;gap:0.5rem;margin-bottom:1.25rem;"></div>
+
+      <!-- Wizard viewport — clips overflow, shows one phase at a time -->
+      <div style="overflow:hidden;width:100%;">
+        <div id="resetTrack" style="display:flex;transition:transform 0.4s ease;">
+
+          <!-- ─── STEP 0: Option Selector ─── -->
+          <div class="wiz-step" data-step="0" style="min-width:100%;flex-shrink:0;padding:0 0.25rem;">
+            <h3 style="text-align:center;margin-bottom:1rem;color:#fff;">Reset Password</h3>
+            <p style="font-size:0.9rem;text-align:center;margin-bottom:1.25rem;color:rgba(255,255,255,0.7);">
+              Choose how you'd like to reset your password:
+            </p>
+
+            <label class="reset-option" id="optEmail"
+              style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;border:2px solid rgba(255,217,168,0.5);border-radius:0.5rem;cursor:pointer;margin-bottom:0.75rem;transition:border-color 0.2s;">
+              <input type="radio" name="resetOption" value="email" checked
+                style="accent-color:#ffd9a8;width:18px;height:18px;">
+              <div>
+                <div style="font-weight:600;font-size:0.95rem;color:#fff;">Email Reset</div>
+                <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);">Receive a 6-digit code via email</div>
+              </div>
+            </label>
+
+            <label class="reset-option" id="optCode"
+              style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;border:2px solid rgba(255,255,255,0.2);border-radius:0.5rem;cursor:pointer;margin-bottom:1.25rem;transition:border-color 0.2s;">
+              <input type="radio" name="resetOption" value="code"
+                style="accent-color:#ffd9a8;width:18px;height:18px;">
+              <div>
+                <div style="font-weight:600;font-size:0.95rem;color:#fff;">Reset via CODE</div>
+                <div style="font-size:0.8rem;color:rgba(255,255,255,0.6);">Enter a reset CODE given by your Admin</div>
+              </div>
+            </label>
+
+            <div class="login-btns" style="display:flex;gap:1rem;">
+              <button class="btn-lo-cancel" type="button" onclick="closeResetWizard()">Cancel</button>
+              <button class="btn-lo-confirm" type="button" id="btnNextOption" style="flex:1;">Next →</button>
+            </div>
+          </div>
+
+          <!-- ─── EMAIL PHASE 1: Enter Email ─── -->
+          <div class="wiz-step" data-step="e1" style="min-width:100%;flex-shrink:0;padding:0 0.25rem;">
+            <h3 style="text-align:center;margin-bottom:0.5rem;color:#fff;">Reset Password</h3>
+            <p style="font-size:0.85rem;text-align:center;margin-bottom:1.25rem;color:rgba(255,255,255,0.7);">
+              Enter your email to receive a 6-digit reset code.
+            </p>
+
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-regular fa-envelope"></i>
+              <input type="email" id="emailResetInput" placeholder=" " required>
+              <label for="emailResetInput">Email Address</label>
+            </div>
+
+            <div id="emailResetError" class="error-msg" style="margin-bottom:1rem;display:none;"></div>
+
+            <div class="login-btns" style="display:flex;gap:1rem;">
+              <button class="btn-lo-cancel" type="button" id="btnBackFromEmail1">← Back</button>
+              <button class="btn-lo-confirm" type="button" id="btnSendEmailCode" style="flex:1;">Send Reset Code</button>
+            </div>
+          </div>
+
+          <!-- ─── EMAIL PHASE 2: Enter CODE ─── -->
+          <div class="wiz-step" data-step="e2" style="min-width:100%;flex-shrink:0;padding:0 0.25rem;">
+            <h3 style="text-align:center;margin-bottom:0.5rem;color:#fff;">Verify Code</h3>
+            <p id="emailCodeSentTo" style="font-size:0.85rem;text-align:center;margin-bottom:1.25rem;color:rgba(255,255,255,0.7);"></p>
+
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-solid fa-key"></i>
+              <input type="text" id="emailCodeInput" maxlength="6" placeholder=" " autocomplete="off"
+                inputmode="numeric" required>
+              <label for="emailCodeInput">🔑 Reset CODE</label>
+            </div>
+
+            <div id="emailCodeError" class="error-msg" style="margin-bottom:1rem;display:none;"></div>
+
+            <div class="login-btns" style="display:flex;gap:1rem;">
+              <button class="btn-lo-cancel" type="button" id="btnBackToEmail1">← Back</button>
+              <button class="btn-lo-confirm" type="button" id="btnVerifyEmailCode" style="flex:1;">Verify Code</button>
+            </div>
+          </div>
+
+          <!-- ─── EMAIL PHASE 3: New Password ─── -->
+          <div class="wiz-step" data-step="e3" style="min-width:100%;flex-shrink:0;padding:0 0.25rem;">
+            <h3 style="text-align:center;margin-bottom:0.5rem;color:#fff;">Set New Password</h3>
+            <p style="font-size:0.85rem;text-align:center;margin-bottom:1.25rem;color:rgba(255,255,255,0.7);">
+              Code verified! Create your new password.
+            </p>
+
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="emailNewPw" placeholder=" " required>
+              <label for="emailNewPw">New Password</label>
+            </div>
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="emailConfirmPw" placeholder=" " required>
+              <label for="emailConfirmPw">Confirm Password</label>
+            </div>
+
+            <div id="emailPwError" class="error-msg" style="margin-bottom:1rem;display:none;"></div>
+
+            <div class="login-btns" style="display:flex;gap:1rem;">
+              <button class="btn-lo-cancel" type="button" onclick="closeResetWizard()">Cancel</button>
+              <button class="btn-lo-confirm" type="button" id="btnEmailChangePw" style="flex:1;">Change Password</button>
+            </div>
+          </div>
+
+          <!-- ─── CODE PHASE 1: Username + CODE ─── -->
+          <div class="wiz-step" data-step="c1" style="min-width:100%;flex-shrink:0;padding:0 0.25rem;">
+            <h3 style="text-align:center;margin-bottom:0.5rem;color:#fff;">Reset via CODE</h3>
+            <p id="codePhase1Msg"
+              style="font-size:0.85rem;text-align:center;margin-bottom:1.25rem;color:rgba(255,255,255,0.7);">
+              Enter your username and the 6-digit reset CODE from your Admin.
+            </p>
+
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-regular fa-user"></i>
+              <input type="text" id="codeUsername" placeholder=" " autocomplete="username" required>
+              <label for="codeUsername">Username</label>
+            </div>
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-solid fa-key"></i>
+              <input type="text" id="codeResetInput" maxlength="6" placeholder=" " autocomplete="off"
+                inputmode="numeric" required>
+              <label for="codeResetInput">🔑 Reset CODE</label>
+            </div>
+
+            <div id="codeVerifyError" class="error-msg" style="margin-bottom:1rem;display:none;"></div>
+
+            <div class="login-btns" style="display:flex;gap:1rem;">
+              <button class="btn-lo-cancel" type="button" id="btnBackFromCode">← Back</button>
+              <button class="btn-lo-confirm" type="button" id="btnVerifyCode" style="flex:1;">Verify CODE</button>
+            </div>
+          </div>
+
+          <!-- ─── CODE PHASE 2: New Password ─── -->
+          <div class="wiz-step" data-step="c2" style="min-width:100%;flex-shrink:0;padding:0 0.25rem;">
+            <h3 style="text-align:center;margin-bottom:0.5rem;color:#fff;">Set New Password</h3>
+            <p style="font-size:0.85rem;text-align:center;margin-bottom:1.25rem;color:rgba(255,255,255,0.7);">
+              CODE verified! Create your new password.
+            </p>
+
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="codeNewPw" placeholder=" " required>
+              <label for="codeNewPw">New Password</label>
+            </div>
+            <div class="input-group float-group" style="margin-bottom:1.25rem;">
+              <i class="fa-solid fa-lock"></i>
+              <input type="password" id="codeConfirmPw" placeholder=" " required>
+              <label for="codeConfirmPw">Confirm Password</label>
+            </div>
+
+            <div id="codePwError" class="error-msg" style="margin-bottom:1rem;display:none;"></div>
+
+            <div class="login-btns" style="display:flex;gap:1rem;">
+              <button class="btn-lo-cancel" type="button" onclick="closeResetWizard()">Cancel</button>
+              <button class="btn-lo-confirm" type="button" id="btnCodeChangePw" style="flex:1;">Change Password</button>
+            </div>
+          </div>
+
+        </div>
       </div>
-
-      <!-- Password -->
-      <div class="input-group float-group">
-        <i class="fa-solid fa-lock"></i>
-        <input type="password" id="password" name="password" placeholder=" " autocomplete="current-password" required>
-        <label for="password">Password</label>
-        <button type="button" class="toggle-pw" id="togglePw" aria-label="Toggle password visibility">
-          <i class="fa-regular fa-eye" id="togglePwIcon"></i>
-        </button>
-      </div>
-
-      <!-- Options row: Remember me + Forgot Password -->
-      <div class="options-row">
-        <label class="remember-label">
-          <input type="checkbox" name="rememberMe"> Remember me
-        </label>
-        <button type="button" id="forgotPwBtn" class="forgot-link">Forgot Password?</button>
-      </div>
-
-      <div id="errorMsg" class="error-msg" style="display:none;"></div>
-
-      <button type="submit" id="loginBtn" class="login-btn">Login</button>
-
-      <div class="register">
-        Don't have an account? <a href="register.html">Register here</a>
-      </div>
-
-    </form>
-
-
-  </div>
-
-</div>
-
-<!-- ── Full-page login success overlay ───────────────────── -->
-<div id="loginSuccessOverlay" class="login-overlay" style="display:none;">
-  <div class="login-overlay-card">
-    <p id="welcomeMsg" class="welcome-msg"></p>
-    <svg class="pl" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg">
-      <circle class="pl__ring pl__ring--a" cx="120" cy="120" r="105" fill="none"
-        stroke-width="20" stroke-dasharray="0 660" stroke-dashoffset="-330" stroke-linecap="round"/>
-      <circle class="pl__ring pl__ring--b" cx="120" cy="120" r="35" fill="none"
-        stroke-width="20" stroke-dasharray="0 220" stroke-dashoffset="-110" stroke-linecap="round"/>
-      <circle class="pl__ring pl__ring--c" cx="85" cy="120" r="70" fill="none"
-        stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
-      <circle class="pl__ring pl__ring--d" cx="155" cy="120" r="70" fill="none"
-        stroke-width="20" stroke-dasharray="0 440" stroke-linecap="round"/>
-    </svg>
-  </div>
-</div>
-
-<!-- ── Forced Password Change Modal ────────────────────────── -->
-<div id="forcedPasswordChangeModal" class="login-overlay" style="display:none;">
-  <div class="login-overlay-card" style="max-width: 400px; padding: 2rem;">
-    <p id="forcedPwMsg" class="welcome-msg" style="text-align: center; margin-bottom: 1.5rem;"></p>
-    
-    <div class="input-group float-group" style="margin-bottom: 1.5rem;">
-      <i class="fa-solid fa-lock"></i>
-      <input type="password" id="newForcedPassword" name="newForcedPassword" placeholder=" " required>
-      <label for="newForcedPassword">New Password</label>
-    </div>
-    
-    <div class="input-group float-group" style="margin-bottom: 1.5rem;">
-      <i class="fa-solid fa-lock"></i>
-      <input type="password" id="confirmForcedPassword" name="confirmForcedPassword" placeholder=" " required>
-      <label for="confirmForcedPassword">Confirm Password</label>
-    </div>
-    
-    <div id="forcedPwError" class="error-msg" style="margin-bottom: 1rem; display:none;"></div>
-    
-    <div class="login-btns" style="display: flex; gap: 1rem;">
-      <button class="btn-lo-confirm" id="submitForcedPassword" style="flex: 1;">Change Password</button>
     </div>
   </div>
-</div>
 
-<!-- ── Forgot Password Modal ───────────────────────────────── -->
-<div id="forgotPasswordModal" class="login-overlay" style="display:none;">
-  <div class="login-overlay-card" style="max-width: 380px; padding: 2rem;">
-    <h3 style="margin-bottom: 1rem;">Reset Password</h3>
-    <p style="font-size:0.9rem; margin-bottom:1.5rem;">Enter your email address and we'll send you a password reset link.</p>
-    <div class="input-group" style="margin-bottom: 1.5rem;">
-      <i class="fa-regular fa-envelope"></i>
-      <input type="email" id="resetIdentifier" placeholder="your@email.com">
-    </div>
-    <div class="login-btns" style="display: flex; gap: 1rem;">
-      <button class="btn-lo-cancel" id="closeForgotModal">Cancel</button>
-      <button class="btn-lo-confirm" id="sendResetLink">Send Reset Link</button>
-    </div>
-    <div id="resetFeedback" class="error-msg" style="margin-top: 1rem; display:none;"></div>
-  </div>
-</div>
-
-<script src="js/login.js"></script>
+  <script src="js/login.js"></script>
 
 </body>
+
 </html>

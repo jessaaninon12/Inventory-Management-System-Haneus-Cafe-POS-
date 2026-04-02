@@ -26,7 +26,8 @@ from api.schema_serializers import (
     RegisterRequestSchema as RegisterRequestDoc,
     UpdateProfileRequestSchema,
 )
-from api.models import AdminApprovalRequest
+from application.services.admin_approval_service import AdminApprovalService
+from infrastructure.repositories.admin_approval_repository import AdminApprovalRepository
 from application.dtos.user_dto import (
     ChangePasswordDTO,
     CreateUserDTO,
@@ -59,7 +60,10 @@ class CheckUsernameController(APIView):
             )
         service = _get_service()
         if service.check_username_exists(username):
-            return Response({"available": False, "error": "Username already used"})
+            # Also return user_id for CODE-based password reset flow
+            user_entity = service.repository.get_by_username(username)
+            user_id = user_entity.id if user_entity else None
+            return Response({"available": False, "error": "Username already used", "user_id": user_id})
         return Response({"available": True})
 
 
@@ -94,11 +98,10 @@ class RegisterController(APIView):
             )
             user_dto = service.register(dto)
             
-            # If user_type is Admin, create an approval request
+            # If user_type is Admin, create an approval request via service
             if dto.user_type == "Admin":
-                from api.models import User as UserModel
-                user = UserModel.objects.get(id=user_dto.id)
-                AdminApprovalRequest.objects.create(user=user, status="pending")
+                approval_service = AdminApprovalService(AdminApprovalRepository())
+                approval_service.create_approval_request(user_dto.id)
             
             return Response(
                 {"success": True, "user": user_dto.to_dict()},
@@ -225,8 +228,8 @@ class ChangePasswordController(APIView):
 class AdminResetPasswordController(APIView):
     """
     POST /api/users/<pk>/reset-password/
-    Admin initiates password reset for a user.
-    Returns: { success: true, temporary_password: "XXXXXXXXXXXX" }
+    Admin initiates CODE-based password reset for a user.
+    Returns: { success: true, reset_code: "123456" }
     """
 
     @extend_schema(
@@ -236,20 +239,61 @@ class AdminResetPasswordController(APIView):
     def post(self, request, pk):
         service = _get_service()
         try:
-            plain_password, hashed_password = service.reset_user_password(pk)
+            plain_code, _hashed = service.reset_user_password(pk)
             return Response(
-                {"success": True, "temporary_password": plain_password},
+                {"success": True, "reset_code": plain_code},
                 status=status.HTTP_200_OK,
             )
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
 
+class VerifyResetCodeController(APIView):
+    """
+    POST /api/auth/verify-reset-code/
+    Verify a reset CODE for a user (Phase 1 of forced reset wizard).
+    Request:  { user_id, code }
+    Response: { success: true } or { error: "..." }
+    """
+
+    @extend_schema(
+        tags=["Auth"],
+        responses={200: None, 400: ErrorSchema},
+    )
+    def post(self, request):
+        service = _get_service()
+        user_id = request.data.get("user_id")
+        code = request.data.get("code", "").strip()
+
+        if not user_id:
+            return Response(
+                {"error": "User ID is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not code:
+            return Response(
+                {"error": "Reset CODE is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            valid = service.verify_reset_code(user_id, code)
+            if valid:
+                return Response({"success": True, "message": "CODE verified successfully."})
+            else:
+                return Response(
+                    {"error": "Invalid reset CODE."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
 class ChangeTemporaryPasswordController(APIView):
     """
     POST /api/auth/change-temporary-password/
-    User changes their temporary password (forced on login if require_password_change=True).
-    Request:  { user_id, new_password }
+    User changes their password after verifying reset CODE (Phase 2 of forced reset wizard).
+    Request:  { user_id, code, new_password }
     Response: { success: true, message: "Password updated successfully." }
     """
 
@@ -260,11 +304,17 @@ class ChangeTemporaryPasswordController(APIView):
     def post(self, request):
         service = _get_service()
         user_id = request.data.get("user_id")
+        code = request.data.get("code", "").strip()
         new_password = request.data.get("new_password", "")
 
         if not user_id:
             return Response(
                 {"error": "User ID is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not code:
+            return Response(
+                {"error": "Reset CODE is required."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         if not new_password:
@@ -274,7 +324,7 @@ class ChangeTemporaryPasswordController(APIView):
             )
 
         try:
-            success = service.change_password_from_temporary(user_id, new_password)
+            success = service.change_password_from_temporary(user_id, new_password, code=code)
             if not success:
                 return Response(
                     {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND

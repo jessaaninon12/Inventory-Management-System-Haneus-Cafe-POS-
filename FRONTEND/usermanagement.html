@@ -24,38 +24,41 @@
       </div>
 
       <nav>
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Main</p>
-          <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Inventory</p>
-          <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Stock</p>
-          <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
-          <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Sales</p>
-          <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Users</p>
-          <a href="usermanagement.html" class="sidebar-link sidebar-active"><i data-lucide="shield-user"></i> User Management</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Settings</p>
-          <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
-          <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
-        </div>
-      </nav>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Main</p>
+    <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="staff">
+    <p class="sidebar-section-title">Main</p>
+    <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="staff">
+    <p class="sidebar-section-title">POS</p>
+    <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Inventory</p>
+    <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="all">
+    <p class="sidebar-section-title">Stock</p>
+    <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+    <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Sales</p>
+    <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Users</p>
+    <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="all">
+    <p class="sidebar-section-title">Settings</p>
+    <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+    <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+  </div>
+</nav>
     </div>
   </aside>
 
@@ -216,8 +219,8 @@
       </div>
       <div class="modal-footer" style="justify-content:space-between;align-items:center;">
         <button type="button" id="editResetPasswordBtn" class="btn" style="background:#f59e0b;color:#fff;border:none;"
-                title="Generate a temporary password for this user">
-          🔑 Reset Temp Password
+                title="Generate a reset CODE for this user">
+          🔑 Reset CODE Password
         </button>
         <div style="display:flex;gap:0.5rem;">
           <button type="button" class="btn btn-outline" onclick="closeModal('editModal')">Cancel</button>
@@ -239,13 +242,13 @@
     <div class="modal-body">
       <p id="resetPwMessage" style="margin-bottom: 1.5rem;"></p>
       <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-        <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">Temporary Password:</p>
+      <p style="font-size: 0.875rem; color: #666; margin-bottom: 0.5rem;">Reset CODE:</p>
         <div style="display: flex; gap: 0.5rem;">
-          <input type="text" id="tempPasswordDisplay" readonly style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem; font-family: monospace; font-weight: 600;" />
+          <input type="text" id="tempPasswordDisplay" readonly style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.375rem; font-family: monospace; font-weight: 600; font-size: 1.25rem; letter-spacing: 0.3em; text-align: center;" />
           <button type="button" class="btn btn-outline" onclick="copyTempPassword()">Copy</button>
         </div>
       </div>
-      <p style="font-size: 0.875rem; color: #666;"><i data-lucide="info" style="width: 16px; height: 16px; display: inline; vertical-align: -2px; margin-right: 0.5rem;"></i>Share this password with the user. They will be forced to change it on login.</p>
+      <p style="font-size: 0.875rem; color: #666;"><i data-lucide="info" style="width: 16px; height: 16px; display: inline; vertical-align: -2px; margin-right: 0.5rem;"></i>Share this CODE with the user. They will need to enter it on login to set a new password.</p>
     </div>
     <div class="modal-footer">
       <button class="btn btn-outline" onclick="closeModal('resetPasswordModal')">Close</button>

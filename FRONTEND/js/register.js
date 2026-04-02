@@ -201,7 +201,7 @@ function showAdminApprovalWaiting(userId) {
   const statusMsg = document.getElementById('approvalStatusMsg');
   if (!overlay || !statusMsg) return;
 
-  statusMsg.textContent = 'Waiting for admin permission...';
+  statusMsg.textContent = 'Waiting for admin approval. The system will send an email once approved.';
   overlay.style.display = 'flex';
 
   // Poll every 5 seconds

@@ -115,47 +115,65 @@ class UserService:
         return self.repository.username_exists(username)
 
     # ------------------------------------------------------------------
-    # Password Reset & Forced Password Change
+    # Reset CODE Password & Forced Password Change
     # ------------------------------------------------------------------
 
-    def generate_temporary_password(self):
-        """Generate a random 12-character password with letters and numbers mixed.
-        Returns (plain_password_str, hashed_password_str).
+    def generate_reset_code(self):
+        """Generate a secure 6-digit numeric reset CODE.
+        Returns (plain_code_str, hashed_code_str).
         """
-        chars = string.ascii_letters + string.digits
-        # Ensure at least 2 letters and 2 digits
-        password = ''.join(secrets.choice(string.ascii_letters) for _ in range(6))
-        password += ''.join(secrets.choice(string.digits) for _ in range(4))
-        password += ''.join(secrets.choice(chars) for _ in range(2))
-        # Shuffle
-        password = ''.join(secrets.choice(password) for _ in range(len(password)))
-        hashed = make_password(password)
-        return password, hashed
+        code = ''.join(secrets.choice(string.digits) for _ in range(6))
+        hashed = make_password(code)
+        return code, hashed
 
     def reset_user_password(self, user_id):
-        """Admin initiates password reset. Returns (plain_temp_password, hashed) tuple.
+        """Admin initiates CODE-based password reset.
+        Generates a 6-digit CODE, stores the hash, and flags the user.
+        Returns (plain_code, hashed_code) tuple.
         Raises ValueError if user not found.
         """
         user_entity = self.repository.get_by_id(user_id)
         if user_entity is None:
             raise ValueError("User not found.")
-        plain_temp, hashed_temp = self.generate_temporary_password()
-        # Persist hashed password and flag
-        self.repository.set_temporary_password(user_id, hashed_temp, require_change=True)
-        return plain_temp, hashed_temp
+        plain_code, hashed_code = self.generate_reset_code()
+        # Persist hashed CODE in temporary_password_hash and flag require_password_change
+        self.repository.set_temporary_password(user_id, hashed_code, require_change=True)
+        return plain_code, hashed_code
 
-    def change_password_from_temporary(self, user_id, new_password):
-        """User changes password after forced password change requirement.
-        Returns True on success, False if user not found or validation fails.
+    def verify_reset_code(self, user_id, code):
+        """Verify a reset CODE against the stored hash.
+        Returns True if CODE matches, False otherwise.
+        Raises ValueError if user not found or no CODE is pending.
+        """
+        user_entity = self.repository.get_by_id(user_id)
+        if user_entity is None:
+            raise ValueError("User not found.")
+        if not getattr(user_entity, 'require_password_change', False):
+            raise ValueError("No reset CODE is pending for this user.")
+        # Retrieve the stored hash and verify
+        stored_hash = self.repository.get_temporary_password_hash(user_id)
+        if not stored_hash:
+            raise ValueError("No reset CODE found.")
+        return check_password(code, stored_hash)
+
+    def change_password_from_temporary(self, user_id, new_password, code=None):
+        """User changes password after verifying reset CODE.
+        If code is provided, verifies it first.
+        Returns True on success, False if user not found.
         Raises ValueError for invalid input.
         """
         user_entity = self.repository.get_by_id(user_id)
         if user_entity is None:
             return False
-        
+
+        # Verify CODE if provided
+        if code:
+            if not self.verify_reset_code(user_id, code):
+                raise ValueError("Invalid reset CODE.")
+
         if len(str(new_password)) < 6:
             raise ValueError("New password must be at least 6 characters.")
-        
+
         return self.repository.change_password(user_id, new_password)
 
     def login_with_forced_password_change_check(self, dto):

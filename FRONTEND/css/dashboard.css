@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --primary:       #c47b42;
   --primary-dark:  #a35f2e;
   --espresso:      #4a2f21;
@@ -1063,6 +1063,7 @@ h1 { font-size:1.875rem; font-weight:700; color:var(--espresso); }
 .dot-danger  { background: #dc2626; }
 .dot-warning { background: #d97706; }
 .dot-caution { background: #ca8a04; }
+.dot-info    { background: #0284c7; }
 
 .notif-item-body { flex: 1; min-width: 0; }
 .notif-item-title {

@@ -1,1 +1,213 @@
-/**\n * Alert Modal System\n * Replaces all alert() calls with card-based UI modals\n * Reuses existing .floating-card styling from dashboard.css\n */\n\n'use strict';\n\n/**\n * Show an alert card modal with optional action buttons\n * @param {string} message - Alert message to display\n * @param {string} type - Type of alert: 'info' | 'success' | 'warning' | 'error' (default: 'info')\n * @param {Object} options - Optional configuration\n *   - title: Custom title (default: based on type)\n *   - confirmText: Confirm button text (default: 'OK')\n *   - cancelText: Cancel button text (default: 'Cancel')\n *   - onConfirm: Callback function when confirm clicked\n *   - onCancel: Callback function when cancel clicked\n *   - showCancel: Show cancel button (default: false for info/success, true for warning/error)\n */\nfunction showAlertModal(message, type = 'info', options = {}) {\n    const defaults = {\n        title: getTitleByType(type),\n        confirmText: 'OK',\n        cancelText: 'Cancel',\n        onConfirm: null,\n        onCancel: null,\n        showCancel: type === 'warning' || type === 'error'\n    };\n    const config = { ...defaults, ...options };\n\n    // Create overlay\n    const overlay = document.createElement('div');\n    overlay.className = 'alert-modal-overlay';\n    overlay.style.cssText = `\n        position: fixed;\n        inset: 0;\n        background: rgba(0,0,0,0.3);\n        backdrop-filter: blur(2px);\n        -webkit-backdrop-filter: blur(2px);\n        z-index: 2000;\n        display: flex;\n        align-items: center;\n        justify-content: center;\n    `;\n\n    // Create card\n    const card = document.createElement('div');\n    card.className = 'alert-modal-card';\n    card.style.cssText = `\n        background: white;\n        border-radius: 0.75rem;\n        box-shadow: 0 10px 40px rgba(0,0,0,0.15);\n        max-width: 400px;\n        padding: 2rem;\n        animation: slideUp 0.3s ease;\n    `;\n\n    // Title\n    const title = document.createElement('h2');\n    title.className = `alert-modal-title alert-modal-title-${type}`;\n    title.textContent = config.title;\n    title.style.cssText = `\n        margin: 0 0 1rem 0;\n        font-size: 1.125rem;\n        font-weight: 600;\n        color: #1f2937;\n    `;\n    card.appendChild(title);\n\n    // Message\n    const msg = document.createElement('p');\n    msg.className = 'alert-modal-message';\n    msg.textContent = message;\n    msg.style.cssText = `\n        margin: 0 0 1.5rem 0;\n        font-size: 0.95rem;\n        color: #4b5563;\n        line-height: 1.5;\n    `;\n    card.appendChild(msg);\n\n    // Buttons container\n    const buttonsDiv = document.createElement('div');\n    buttonsDiv.className = 'alert-modal-buttons';\n    buttonsDiv.style.cssText = `\n        display: flex;\n        gap: 0.75rem;\n        justify-content: flex-end;\n    `;\n\n    // Cancel button (if needed)\n    if (config.showCancel) {\n        const cancelBtn = document.createElement('button');\n        cancelBtn.className = 'alert-modal-btn alert-modal-btn-secondary';\n        cancelBtn.textContent = config.cancelText;\n        cancelBtn.style.cssText = `\n            padding: 0.625rem 1.25rem;\n            border: 1px solid #d1d5db;\n            background: white;\n            color: #374151;\n            border-radius: 0.5rem;\n            cursor: pointer;\n            font-size: 0.875rem;\n            font-weight: 500;\n            font-family: 'Inter', sans-serif;\n            transition: all 0.15s;\n        `;\n        cancelBtn.onmouseover = () => { cancelBtn.style.background = '#f3f4f6'; };\n        cancelBtn.onmouseout = () => { cancelBtn.style.background = 'white'; };\n        cancelBtn.addEventListener('click', () => {\n            overlay.remove();\n            if (config.onCancel) config.onCancel();\n        });\n        buttonsDiv.appendChild(cancelBtn);\n    }\n\n    // Confirm button\n    const confirmBtn = document.createElement('button');\n    confirmBtn.className = `alert-modal-btn alert-modal-btn-${type}`;\n    confirmBtn.textContent = config.confirmText;\n    const bgColor = type === 'error' ? '#dc2626' : type === 'warning' ? '#f59e0b' : '#10b981';\n    const bgColorHover = type === 'error' ? '#b91c1c' : type === 'warning' ? '#d97706' : '#059669';\n    confirmBtn.style.cssText = `\n        padding: 0.625rem 1.25rem;\n        border: none;\n        background: ${bgColor};\n        color: white;\n        border-radius: 0.5rem;\n        cursor: pointer;\n        font-size: 0.875rem;\n        font-weight: 500;\n        font-family: 'Inter', sans-serif;\n        transition: all 0.15s;\n    `;\n    confirmBtn.onmouseover = () => { confirmBtn.style.background = bgColorHover; };\n    confirmBtn.onmouseout = () => { confirmBtn.style.background = bgColor; };\n    confirmBtn.addEventListener('click', () => {\n        overlay.remove();\n        if (config.onConfirm) config.onConfirm();\n    });\n    buttonsDiv.appendChild(confirmBtn);\n\n    card.appendChild(buttonsDiv);\n\n    // Close on overlay click (optional)\n    overlay.addEventListener('click', (e) => {\n        if (e.target === overlay) {\n            overlay.remove();\n            if (config.onCancel) config.onCancel();\n        }\n    });\n\n    overlay.appendChild(card);\n    document.body.appendChild(overlay);\n\n    // Focus confirm button\n    confirmBtn.focus();\n}\n\n/**\n * Show confirmation dialog (with Cancel and Confirm buttons)\n * @param {string} message - Confirmation message\n * @param {Function} onConfirm - Callback if user confirms\n * @param {Function} onCancel - Callback if user cancels\n */\nfunction showConfirmModal(message, onConfirm, onCancel) {\n    showAlertModal(message, 'warning', {\n        confirmText: 'Confirm',\n        cancelText: 'Cancel',\n        showCancel: true,\n        onConfirm,\n        onCancel\n    });\n}\n\n/**\n * Show error alert\n * @param {string} message - Error message\n */\nfunction showErrorModal(message) {\n    showAlertModal(message, 'error', {\n        confirmText: 'OK',\n        title: 'Error'\n    });\n}\n\n/**\n * Show success alert\n * @param {string} message - Success message\n */\nfunction showSuccessModal(message) {\n    showAlertModal(message, 'success', {\n        confirmText: 'OK',\n        title: 'Success'\n    });\n}\n\n/**\n * Show info alert\n * @param {string} message - Info message\n */\nfunction showInfoModal(message) {\n    showAlertModal(message, 'info', {\n        confirmText: 'OK',\n        title: 'Information'\n    });\n}\n\n/**\n * Get default title based on alert type\n */\nfunction getTitleByType(type) {\n    const titles = {\n        'info': 'Information',\n        'success': 'Success',\n        'warning': 'Confirm',\n        'error': 'Error'\n    };\n    return titles[type] || 'Alert';\n}\n\n// Add animation keyframes to document\nif (!document.getElementById('alert-modal-styles')) {\n    const style = document.createElement('style');\n    style.id = 'alert-modal-styles';\n    style.textContent = `\n        @keyframes slideUp {\n            from {\n                opacity: 0;\n                transform: translateY(20px);\n            }\n            to {\n                opacity: 1;\n                transform: translateY(0);\n            }\n        }\n        \n        .alert-modal-overlay {\n            font-family: 'Inter', system-ui, -apple-system, sans-serif;\n        }\n        \n        .alert-modal-title-info {\n            color: #3b82f6 !important;\n        }\n        .alert-modal-title-success {\n            color: #10b981 !important;\n        }\n        .alert-modal-title-warning {\n            color: #f59e0b !important;\n        }\n        .alert-modal-title-error {\n            color: #dc2626 !important;\n        }\n    `;\n    document.head.appendChild(style);\n}\n"
+/**
+ * Alert Modal System
+ * Replaces all alert() calls with card-based UI modals
+ * Reuses existing .floating-card styling from dashboard.css
+ */
+
+'use strict';
+
+/**
+ * Show an alert card modal with optional action buttons
+ * @param {string} message - Alert message to display
+ * @param {string} type - Type of alert: 'info' | 'success' | 'warning' | 'error' (default: 'info')
+ * @param {Object} options - Optional configuration
+ */
+function showAlertModal(message, type = 'info', options = {}) {
+    const defaults = {
+        title: getTitleByType(type),
+        confirmText: 'OK',
+        cancelText: 'Cancel',
+        onConfirm: null,
+        onCancel: null,
+        showCancel: type === 'warning' || type === 'error'
+    };
+    const config = { ...defaults, ...options };
+
+    // Create overlay — z-index 99999 to appear ABOVE notification dropdown (z-index 9998)
+    const overlay = document.createElement('div');
+    overlay.className = 'alert-modal-overlay';
+    overlay.style.cssText = [
+        'position:fixed',
+        'inset:0',
+        'background:rgba(0,0,0,0.3)',
+        'backdrop-filter:blur(2px)',
+        '-webkit-backdrop-filter:blur(2px)',
+        'z-index:99999',
+        'display:flex',
+        'align-items:center',
+        'justify-content:center',
+    ].join(';');
+
+    // Create card
+    const card = document.createElement('div');
+    card.className = 'alert-modal-card';
+    card.style.cssText = [
+        'background:white',
+        'border-radius:0.75rem',
+        'box-shadow:0 10px 40px rgba(0,0,0,0.15)',
+        'max-width:400px',
+        'padding:2rem',
+        'animation:slideUp 0.3s ease',
+    ].join(';');
+
+    // Title
+    const title = document.createElement('h2');
+    title.className = 'alert-modal-title alert-modal-title-' + type;
+    title.textContent = config.title;
+    title.style.cssText = 'margin:0 0 1rem 0;font-size:1.125rem;font-weight:600;color:#1f2937;';
+    card.appendChild(title);
+
+    // Message
+    const msg = document.createElement('p');
+    msg.className = 'alert-modal-message';
+    msg.textContent = message;
+    msg.style.cssText = 'margin:0 0 1.5rem 0;font-size:0.95rem;color:#4b5563;line-height:1.5;';
+    card.appendChild(msg);
+
+    // Buttons container
+    const buttonsDiv = document.createElement('div');
+    buttonsDiv.className = 'alert-modal-buttons';
+    buttonsDiv.style.cssText = 'display:flex;gap:0.75rem;justify-content:flex-end;';
+
+    // Cancel button (if needed)
+    if (config.showCancel) {
+        const cancelBtn = document.createElement('button');
+        cancelBtn.className = 'alert-modal-btn alert-modal-btn-secondary';
+        cancelBtn.textContent = config.cancelText;
+        cancelBtn.style.cssText = [
+            'padding:0.625rem 1.25rem',
+            'border:1px solid #d1d5db',
+            'background:white',
+            'color:#374151',
+            'border-radius:0.5rem',
+            'cursor:pointer',
+            'font-size:0.875rem',
+            'font-weight:500',
+            "font-family:'Inter',sans-serif",
+            'transition:all 0.15s',
+        ].join(';');
+        cancelBtn.onmouseover = function() { this.style.background = '#f3f4f6'; };
+        cancelBtn.onmouseout  = function() { this.style.background = 'white'; };
+        cancelBtn.addEventListener('click', function() {
+            overlay.remove();
+            if (config.onCancel) config.onCancel();
+        });
+        buttonsDiv.appendChild(cancelBtn);
+    }
+
+    // Confirm button
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'alert-modal-btn alert-modal-btn-' + type;
+    confirmBtn.textContent = config.confirmText;
+    const bgColor = type === 'error' ? '#dc2626' : type === 'warning' ? '#f59e0b' : '#10b981';
+    const bgColorHover = type === 'error' ? '#b91c1c' : type === 'warning' ? '#d97706' : '#059669';
+    confirmBtn.style.cssText = [
+        'padding:0.625rem 1.25rem',
+        'border:none',
+        'background:' + bgColor,
+        'color:white',
+        'border-radius:0.5rem',
+        'cursor:pointer',
+        'font-size:0.875rem',
+        'font-weight:500',
+        "font-family:'Inter',sans-serif",
+        'transition:all 0.15s',
+    ].join(';');
+    confirmBtn.onmouseover = function() { this.style.background = bgColorHover; };
+    confirmBtn.onmouseout  = function() { this.style.background = bgColor; };
+    confirmBtn.addEventListener('click', function() {
+        overlay.remove();
+        if (config.onConfirm) config.onConfirm();
+    });
+    buttonsDiv.appendChild(confirmBtn);
+
+    card.appendChild(buttonsDiv);
+
+    // Close on overlay click
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+            overlay.remove();
+            if (config.onCancel) config.onCancel();
+        }
+    });
+
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    // Focus confirm button
+    confirmBtn.focus();
+}
+
+/**
+ * Show confirmation dialog (with Cancel and Confirm buttons)
+ */
+function showConfirmModal(message, onConfirm, onCancel) {
+    showAlertModal(message, 'warning', {
+        confirmText: 'Confirm',
+        cancelText: 'Cancel',
+        showCancel: true,
+        onConfirm: onConfirm,
+        onCancel: onCancel
+    });
+}
+
+/**
+ * Show error alert
+ */
+function showErrorModal(message) {
+    showAlertModal(message, 'error', {
+        confirmText: 'OK',
+        title: 'Error'
+    });
+}
+
+/**
+ * Show success alert
+ */
+function showSuccessModal(message) {
+    showAlertModal(message, 'success', {
+        confirmText: 'OK',
+        title: 'Success'
+    });
+}
+
+/**
+ * Show info alert
+ */
+function showInfoModal(message) {
+    showAlertModal(message, 'info', {
+        confirmText: 'OK',
+        title: 'Information'
+    });
+}
+
+/**
+ * Get default title based on alert type
+ */
+function getTitleByType(type) {
+    var titles = {
+        'info': 'Information',
+        'success': 'Success',
+        'warning': 'Confirm',
+        'error': 'Error'
+    };
+    return titles[type] || 'Alert';
+}
+
+// Add animation keyframes to document
+if (!document.getElementById('alert-modal-styles')) {
+    var style = document.createElement('style');
+    style.id = 'alert-modal-styles';
+    style.textContent = [
+        '@keyframes slideUp {',
+        '  from { opacity: 0; transform: translateY(20px); }',
+        '  to { opacity: 1; transform: translateY(0); }',
+        '}',
+        '.alert-modal-overlay { font-family: "Inter", system-ui, -apple-system, sans-serif; }',
+        '.alert-modal-title-info { color: #3b82f6 !important; }',
+        '.alert-modal-title-success { color: #10b981 !important; }',
+        '.alert-modal-title-warning { color: #f59e0b !important; }',
+        '.alert-modal-title-error { color: #dc2626 !important; }',
+    ].join('\n');
+    document.head.appendChild(style);
+}
