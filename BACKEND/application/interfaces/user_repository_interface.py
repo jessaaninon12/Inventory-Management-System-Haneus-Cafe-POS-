@@ -61,3 +61,18 @@ class UserRepositoryInterface(ABC):
     def delete(self, user_id):
         """Delete a user by primary key. Returns True on success, False if not found."""
         pass
+
+    @abstractmethod
+    def set_temporary_password(self, user_id, hashed_password, require_change=True):
+        """Store a hashed reset CODE and flag the user for forced password change."""
+        pass
+
+    @abstractmethod
+    def get_temporary_password_hash(self, user_id):
+        """Return the stored temporary_password_hash for a user, or empty string."""
+        pass
+
+    @abstractmethod
+    def get_require_password_change(self, user_id):
+        """Return True if user must change password on next login."""
+        pass

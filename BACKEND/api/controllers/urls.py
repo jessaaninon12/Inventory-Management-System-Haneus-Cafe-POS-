@@ -12,6 +12,7 @@ from api.controllers.user_controller import (
     LoginController,
     ProfileDetailController,
     RegisterController,
+    VerifyResetCodeController,
     # Admin user management
     AdminUserListController,
     AdminUserDetailController,
@@ -82,6 +83,7 @@ urlpatterns = [
     path("auth/login/", LoginController.as_view(), name="login"),
     path("auth/check-username/", CheckUsernameController.as_view(), name="check-username"),
     path("auth/change-temporary-password/", ChangeTemporaryPasswordController.as_view(), name="auth-change-temp-password"),
+    path("auth/verify-reset-code/", VerifyResetCodeController.as_view(), name="auth-verify-reset-code"),
     path("auth/forgot-password/", ForgotPasswordController.as_view(), name="auth-forgot-password"),
     path("auth/reset-password-with-token/", ResetPasswordWithTokenController.as_view(), name="auth-reset-password-with-token"),
 

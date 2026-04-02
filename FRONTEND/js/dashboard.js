@@ -426,12 +426,22 @@ function _approveUser(userId, notifId) {
     'Approve this admin user?',
     async () => {
       try {
-        const response = await fetch(`${API_BASE}/admin/approve-user/${userId}/`, {
+        const response = await fetch(`${API_BASE}/admin/approval-requests/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'approve', user_id: userId }),
         });
         const data = await response.json();
         if (response.ok && data.success) {
+          // Instant UI transform — show REQUEST GRANTED
+          const detail = document.getElementById('notifDetailPanel');
+          if (detail) {
+            detail.innerHTML = `
+              <div class="notif-detail-content" style="text-align:center;padding:2rem;">
+                <span style="background:#dcfce7;color:#15803d;padding:0.3rem 0.75rem;border-radius:999px;font-size:0.85rem;font-weight:700;">REQUEST GRANTED</span>
+                <p style="margin-top:1rem;color:var(--mocha);font-size:0.875rem;">User has been approved and can now login.</p>
+              </div>`;
+          }
           const notifs = _loadStore();
           const idx = notifs.findIndex(n => n.id === notifId);
           if (idx >= 0) notifs.splice(idx, 1);
@@ -455,13 +465,22 @@ function _rejectUser(userId, notifId) {
     'Reject this admin user and remove their account?',
     async () => {
       try {
-        const response = await fetch(`${API_BASE}/admin/reject-user/${userId}/`, {
+        const response = await fetch(`${API_BASE}/admin/approval-requests/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ delete_user: true }),
+          body: JSON.stringify({ action: 'reject', user_id: userId, delete_user: true }),
         });
         const data = await response.json();
         if (response.ok && data.success) {
+          // Instant UI transform — show REQUEST REJECTED
+          const detail = document.getElementById('notifDetailPanel');
+          if (detail) {
+            detail.innerHTML = `
+              <div class="notif-detail-content" style="text-align:center;padding:2rem;">
+                <span style="background:#fee2e2;color:#b91c1c;padding:0.3rem 0.75rem;border-radius:999px;font-size:0.85rem;font-weight:700;">REQUEST REJECTED</span>
+                <p style="margin-top:1rem;color:var(--mocha);font-size:0.875rem;">User has been rejected and removed from the system.</p>
+              </div>`;
+          }
           const notifs = _loadStore();
           const idx = notifs.findIndex(n => n.id === notifId);
           if (idx >= 0) notifs.splice(idx, 1);

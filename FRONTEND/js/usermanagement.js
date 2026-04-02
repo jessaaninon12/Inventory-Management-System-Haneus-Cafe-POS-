@@ -487,15 +487,15 @@ async function openResetPasswordModal(userId) {
     }
 
     const data = await res.json();
-    const tempPassword = data.temporary_password;
+    const resetCode = data.reset_code;
 
-    // Show modal with temp password
+    // Show modal with reset CODE
     document.getElementById('resetPwMessage').textContent =
-      `Password reset initiated. A temporary 12-character password has been generated.`;
-    document.getElementById('tempPasswordDisplay').value = tempPassword;
+      'A 6-digit reset CODE has been generated. Share it with the user.';
+    document.getElementById('tempPasswordDisplay').value = resetCode;
     document.getElementById('resetPasswordModal').style.display = 'flex';
 
-    showAlert('Password reset successful! Share the temporary password with the user.', true);
+    showAlert('Reset CODE generated! Share it with the user.', true);
   } catch (err) {
     console.error(err);
     showAlert('Network error. Could not reset password.', false);
@@ -506,7 +506,7 @@ function copyTempPassword() {
   const field = document.getElementById('tempPasswordDisplay');
   field.select();
   document.execCommand('copy');
-  showAlert('Password copied to clipboard!', true);
+  showAlert('CODE copied to clipboard!', true);
 }
 
 /* ── Bootstrap ───────────────────────────────────── */

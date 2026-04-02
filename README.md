@@ -108,7 +108,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
     │
     ├── config/
     │   ├── settings.py                ← All Django settings (DB, DRF, CORS, email, cache)
-    │   ├── urls.py                    ← Root URL config — mounts /api/
+    │   ├── urls.py                    ← Root URL config + FRONTEND static serving (dev)
     │   ├── wsgi.py                    ← WSGI entry point
     │   └── asgi.py                    ← ASGI entry point
     │
@@ -133,7 +133,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
     │   │   ├── dashboard_controller.py← Dashboard stats + chart
     │   │   ├── password_reset_controller.py  ← Forgot/reset password
     │   │   └── admin_approval_controller.py  ← Admin registration approval
-    │   └── migrations/                ← api app migrations (0001–0007)
+    │   └── migrations/                ← api app migrations (0001–0009)
     │
     ├── application/                   ← Business logic layer
     │   ├── dtos/                      ← Data Transfer Objects (UserDTO, ProductDTO, etc.)
@@ -149,7 +149,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
         │   ├── db_context.py
         │   └── db_init.py
         ├── repositories/              ← Concrete implementations of repository interfaces
-        ├── migrations/                ← infrastructure app migrations (0001–0008)
+        ├── migrations/                ← infrastructure app migrations (0001–0009)
         └── management/commands/       ← Custom management commands
 ```
 
@@ -176,6 +176,10 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 **Database**
 - MySQL 8.0 via XAMPP (default)
 - SQL Server 19 via MSSQL + ODBC Driver 17 (optional, set `DB_ENGINE=mssql`)
+
+**MSSQL Compatibility Notes:**
+- All model indexes use ascending field names only (no `-` prefix) for MSSQL compatibility
+- `AdminApprovalRequest.user` uses `SET_NULL` instead of `CASCADE` to avoid MSSQL constraint conflicts
 
 **API**
 - REST (JSON over HTTP)
@@ -240,10 +244,12 @@ DJANGO_DEBUG=True
 ### 5. Start the development server
 
 ```bash
-python manage.py runserver
+python manage.py runserver 8000
 ```
 
 Server will be available at `http://localhost:8000`.
+
+> **Note:** In DEBUG mode, Django also serves FRONTEND files (HTML/CSS/JS/images) via a catch-all route in `config/urls.py`. This means you can access `http://localhost:8000/login.html` directly without needing a separate web server (Live Server, Nginx, etc.).
 
 ---
 
@@ -271,24 +277,27 @@ The database `haneuscafedb` is created automatically by `setup_db.py` or by runn
 
 ### Migration History
 
-**api app migrations:**
+**api app migrations (0001–0009):**
 - `0001_initial` — User model (AbstractUser extension)
-- `0002_user_avatar_url_user_phone` — Added phone, avatar_url
+- `0002_user_avatar_url_user_phone` — Added phone, avatar_url, bio
 - `0003_user_user_type` — Added user_type (Admin/Staff)
 - `0004_user_password_reset_fields` — Added require_password_change, temporary_password_hash
 - `0005_product_supplier_order` — Added supplier fields to Product, Sale model
-- `0006_passwordresettoken` — PasswordResetToken model
+- `0006_passwordresettoken` — PasswordResetToken, AdminApprovalRequest, DeletedRecordsBackup models
 - `0007_add_performance_indexes` — DB indexes for performance
+- `0008_add_userrejected_model` — User rejection tracking
+- `0009_fix_approval_indexes_mssql` — Remove MSSQL-incompatible `-` prefix from indexes, `AdminApprovalRequest.user` → `SET_NULL`
 
-**infrastructure app migrations:**
+**infrastructure app migrations (0001–0009):**
 - `0001_initial` — UserAdminModel, UserStaffModel, ProductModel, OrderModel, OrderItemModel
 - `0002_useradminmodel` — UserAdmin role table
-- `0003_salemodel` — SaleModel table
-- `0004_saleitemmodel` — SaleItemModel table
-- `0005_alter_salemodel` — SaleModel field updates
-- `0006_alter_productmodel` — ProductModel field updates
-- `0007_salemodel_fields` — Additional sale fields (receipt_number, cashier_name, etc.)
+- `0003_salemodel` — SaleModel, SaleItemModel tables
+- `0004_saleitemmodel_cost_price` — SaleItemModel cost_price field
+- `0005_alter_saleitemmodel` — SaleItemModel field updates
+- `0006_alter_productmodel` — ProductModel image_url to TEXT
+- `0007_salemodel_receipt_fields` — Additional sale fields (receipt_number, cashier_name, etc.)
 - `0008_add_performance_indexes` — Composite indexes for dashboard queries
+- `0009_productmodel_supplier_fields` — Supplier name/contact fields on ProductModel
 
 ### Seeding Process
 
@@ -302,14 +311,17 @@ No automated seeder — products and users are created through the application (
 |---|---|---|
 | Django Backend (dev server) | 8000 | `http://localhost:8000` |
 | Django Admin Panel | 8000 | `http://localhost:8000/admin/` |
+| **Frontend Login** | **8000** | **`http://localhost:8000/login.html`** |
+| **Frontend Register** | **8000** | **`http://localhost:8000/register.html`** |
 | Scalar API Docs v1 (canonical) | 8000 | `http://localhost:8000/api/scaler/v1` |
 | Scalar API Docs (legacy alias) | 8000 | `http://localhost:8000/api/docs/` |
 | OpenAPI 3.0 Schema (YAML) | 8000 | `http://localhost:8000/api/schema/` |
 | ReDoc API Documentation | 8000 | `http://localhost:8000/api/redoc/` |
 | API Root | 8000 | `http://localhost:8000/api/` |
-| Frontend (browser) | N/A | Open `FRONTEND/login.html` directly or serve via VS Code Live Server on `http://localhost:5500` |
 | MySQL Database | 3306 | `127.0.0.1:3306` (XAMPP) |
 | SQL Server Database | 1433 | `localhost:1433` (SSMS) |
+
+> **Frontend Serving (dev):** In DEBUG mode, Django serves all FRONTEND/ files via a catch-all route. No Live Server or separate web server needed — just run `python manage.py runserver 8000` and access any page at `http://localhost:8000/<filename>.html`.
 
 ---
 
@@ -358,9 +370,13 @@ python manage.py show_deleted_records --type=sale
 **Authentication & Access Control**
 - Role-based system: Admin (full access) and Staff (limited access)
 - Secure login with session stored in localStorage
-- Password reset via email (token-based, SHA-256 hashed, 60-min expiry)
+- **Unified 6-step Reset Password Wizard** (two paths):
+  - **Email Reset:** Enter email → receive 6-digit code → enter code → set new password
+  - **Reset via CODE:** Enter username + admin-provided 6-digit CODE → set new password
+- Token-based email reset (SHA-256 hashed, 60-min expiry)
 - Admin-initiated temporary password reset with forced change on next login
 - Admin registration requires approval from an existing Admin
+- Verify reset code endpoint: `POST /api/auth/verify-reset-code/`
 
 **Dashboard**
 - Real-time KPIs: total revenue, number of orders, product count, profit
@@ -946,9 +962,31 @@ POST /api/auth/register/
 
 ---
 
+## K. Recent Fixes (April 2026)
+
+### 1. MSSQL Migration Compatibility ✅
+- Removed `-` prefix from all model index fields (MSSQL rejects descending index syntax)
+- Changed `AdminApprovalRequest.user` from `CASCADE` to `SET_NULL` (avoids MSSQL multi-path cascade error)
+- Added migrations `0008` and `0009` for api app, `0009` for infrastructure app
+
+### 2. Frontend Serving via Django ✅
+- Added catch-all `re_path` in `config/urls.py` to serve FRONTEND/ files in DEBUG mode
+- `http://localhost:8000/login.html` now works without a separate web server
+- Route comes LAST to avoid shadowing API/admin routes
+
+### 3. Unified Reset Password Wizard ✅
+- Replaced simple forgot-password modal with a 6-step wizard in `login.html`
+- Two paths: **Email Reset** (3 steps) and **Reset via CODE** (2 steps)
+- Horizontal sliding animation via `translateX()` on `#resetTrack`
+- Fixed CSS text visibility (white text on brown card background)
+- Fixed flex layout overflow (inputs/buttons no longer clipped on right edge)
+- Added `POST /api/auth/verify-reset-code/` endpoint for CODE verification
+
+---
+
 **Project Status: 67% Complete | All Backend Work Finished | 5/8 Frontend Tasks Done**
 
-Generated: 2026-03-26 | Version: 1.0
+Generated: 2026-03-26 | Updated: 2026-04-02 | Version: 2.0
 
 
 ## J.1 Frontend Status
