@@ -717,6 +717,11 @@ body {
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.3);
+    margin: auto !important;
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    transform: none !important;
   }
 
   .welcome-msg {

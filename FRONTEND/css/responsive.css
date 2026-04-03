@@ -24,6 +24,21 @@ html {
   text-size-adjust: 100%;
 }
 
+/* Force visible scrollbars across all scrollable elements */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+  background: var(--cream, #f5ede3);
+  display: block !important; /* ensure visibility */
+}
+::-webkit-scrollbar-thumb {
+  background: var(--latte, #e1c8b2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary, #c47b42);
+}
+
 body {
   overflow-x: hidden;
   min-width: 320px;
@@ -65,9 +80,12 @@ input[type="radio"] {
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  overflow-y: auto;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto !important;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -380,10 +398,15 @@ td.wrap, th.wrap { white-space: normal; }
     max-height: 90vh;
   }
 
-  /* Modals slide up from bottom on mobile landscape */
-  .modal-overlay, .login-overlay {
+  /* Modals slide up from bottom on mobile landscape — exclude login overlay */
+  .modal-overlay {
     align-items: flex-end;
     padding: 0;
+  }
+  .login-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1rem !important;
   }
 
   .table-container, .table-wrapper, .table-responsive {
@@ -434,10 +457,15 @@ td.wrap, th.wrap { white-space: normal; }
   }
   th, td { padding: 0.5rem 0.625rem; font-size: 0.8rem; }
 
-  /* Modals — bottom sheet on small mobile */
-  .modal-overlay, .login-overlay {
+  /* Modals — bottom sheet on small mobile — exclude login overlay */
+  .modal-overlay {
     align-items: flex-end;
     padding: 0;
+  }
+  .login-overlay {
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1rem !important;
   }
   .modal-card, .modal-content, .floating-card, .modal-box {
     border-radius: 20px 20px 0 0;

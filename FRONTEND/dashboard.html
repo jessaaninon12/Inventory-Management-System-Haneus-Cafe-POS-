@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Haneus Cafe Admin Dashboard</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="css/sidebar.css">
@@ -13,6 +14,7 @@
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/payment-modals.css">
 </head>
+
 <body>
   <script>
     if (localStorage.getItem('user_type') === 'Staff') {
@@ -20,276 +22,304 @@
     }
   </script>
   <!-- rest of the page -->
-<div class="app-container">
+  <div class="app-container">
 
-  <!-- Mobile sidebar overlay -->
-  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-  <!--Sidebar-->
-  <aside id="main-sidebar">
-    <div class="sidebar-inner">
-      <div class="sidebar-logo-row">
-        <h2 class="sidebar-title">Haneus Cafe</h2>
-        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+    <!--Sidebar-->
+    <aside id="main-sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-logo-row">
+          <h2 class="sidebar-title">Haneus Cafe</h2>
+          <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+        </div>
+        <nav>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Main</p>
+            <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="staff">
+            <p class="sidebar-section-title">Main</p>
+            <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="staff">
+            <p class="sidebar-section-title">POS</p>
+            <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Inventory</p>
+            <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Stock</p>
+            <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+            <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Sales</p>
+            <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Users</p>
+            <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Settings</p>
+            <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+            <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+          </div>
+        </nav>
       </div>
-      <nav>
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Main</p>
-          <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="staff">
-          <p class="sidebar-section-title">Main</p>
-          <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="staff">
-          <p class="sidebar-section-title">POS</p>
-          <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Inventory</p>
-          <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Stock</p>
-          <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
-          <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Sales</p>
-          <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Users</p>
-          <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
-        </div>
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Settings</p>
-          <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
-          <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
-        </div>
-      </nav>
-    </div>
-  </aside>
+    </aside>
 
-  <div class="main-wrapper">
+    <div class="main-wrapper">
 
-    <header>
-      <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
-        <i data-lucide="panel-left"></i>
-      </button>
+      <header>
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
+          <i data-lucide="panel-left"></i>
+        </button>
 
-      <!-- Product Search with Flyout -->
-      <div id="headerSearchWrap" style="position:relative;flex:1;max-width:380px;">
-        <div style="display:flex;align-items:center;gap:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:999px;padding:0.5rem 1rem;">
-          <i data-lucide="search" style="width:16px;height:16px;color:var(--mocha);flex-shrink:0;"></i>
-          <input type="text" id="headerSearchInput" placeholder="Search products…" style="flex:1;border:none;background:transparent;outline:none;font-size:0.85rem;color:var(--espresso);font-family:'Inter',sans-serif;" />
-          <select id="headerSearchSort" style="border:none;background:transparent;font-size:0.72rem;color:var(--mocha);cursor:pointer;outline:none;font-family:'Inter',sans-serif;">
-            <option value="">Sort</option>
-            <option value="name-asc">A → Z</option>
-            <option value="name-desc">Z → A</option>
-            <option value="price-asc">Price ↑</option>
-            <option value="price-desc">Price ↓</option>
-            <option value="stock-asc">Stock ↑</option>
-            <option value="stock-desc">Stock ↓</option>
-          </select>
+        <!-- Product Search with Flyout -->
+        <div id="headerSearchWrap" style="position:relative;flex:1;max-width:380px;">
+          <div
+            style="display:flex;align-items:center;gap:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:999px;padding:0.5rem 1rem;">
+            <i data-lucide="search" style="width:16px;height:16px;color:var(--mocha);flex-shrink:0;"></i>
+            <input type="text" id="headerSearchInput" placeholder="Search products…"
+              style="flex:1;border:none;background:transparent;outline:none;font-size:0.85rem;color:var(--espresso);font-family:'Inter',sans-serif;" />
+            <select id="headerSearchSort"
+              style="border:none;background:transparent;font-size:0.72rem;color:var(--mocha);cursor:pointer;outline:none;font-family:'Inter',sans-serif;">
+              <option value="">Sort</option>
+              <option value="name-asc">A → Z</option>
+              <option value="name-desc">Z → A</option>
+              <option value="price-asc">Price ↑</option>
+              <option value="price-desc">Price ↓</option>
+              <option value="stock-asc">Stock ↑</option>
+              <option value="stock-desc">Stock ↓</option>
+            </select>
+          </div>
+          <div id="headerSearchDropdown"
+            style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);max-height:340px;overflow-y:auto;z-index:9998;border:1px solid rgba(225,200,178,0.3);">
+          </div>
+          <div id="headerSearchDetail"
+            style="display:none;position:absolute;top:calc(100% + 6px);left:calc(100% + 8px);width:380px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);z-index:9999;border:1px solid rgba(225,200,178,0.3);">
+          </div>
         </div>
-        <div id="headerSearchDropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);max-height:340px;overflow-y:auto;z-index:9998;border:1px solid rgba(225,200,178,0.3);"></div>
-        <div id="headerSearchDetail" style="display:none;position:absolute;top:calc(100% + 6px);left:calc(100% + 8px);width:380px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);z-index:9999;border:1px solid rgba(225,200,178,0.3);"></div>
-      </div>
 
-      <div class="header-actions">
-        <button class="btn btn-outline">Haneus Cafe</button>
-        <!-- Notification Bell -->
-        <div class="notif-wrapper" id="notifWrapper">
-          <button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications">
-            <i data-lucide="bell" style="width:20px;height:20px;"></i>
-            <span class="notif-badge" id="notifBadge">0</span>
-          </button>
-          <div class="notif-dropdown" id="notifDropdown">
-            <div class="notif-dd-header">
-              <span class="notif-dd-title">Notifications</span>
-              <div class="notif-dd-actions">
-                <button class="notif-act-btn" id="markAllReadBtn">Mark all read</button>
-                <button class="notif-act-btn notif-act-clear" id="clearAllBtn">Clear all</button>
+        <div class="header-actions">
+          <button class="btn btn-outline">Haneus Cafe</button>
+          <!-- Notification Bell -->
+          <div class="notif-wrapper" id="notifWrapper">
+            <button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications">
+              <i data-lucide="bell" style="width:20px;height:20px;"></i>
+              <span class="notif-badge" id="notifBadge">0</span>
+            </button>
+            <div class="notif-dropdown" id="notifDropdown">
+              <div class="notif-dd-header">
+                <span class="notif-dd-title">Notifications</span>
+                <div class="notif-dd-actions">
+                  <button class="notif-act-btn" id="markAllReadBtn">Mark all read</button>
+                  <button class="notif-act-btn notif-act-clear" id="clearAllBtn">Clear all</button>
+                </div>
+              </div>
+              <div class="notif-dd-body">
+                <div class="notif-list" id="notifList">
+                  <p style="padding:1.25rem;color:var(--mocha);font-size:0.875rem;">Loading…</p>
+                </div>
+                <div class="notif-detail-panel" id="notifDetailPanel">
+                  <p style="color:var(--mocha);font-size:0.875rem;padding:1.25rem;">Select a notification to view
+                    details.</p>
+                </div>
               </div>
             </div>
-            <div class="notif-dd-body">
-              <div class="notif-list" id="notifList">
-                <p style="padding:1.25rem;color:var(--mocha);font-size:0.875rem;">Loading…</p>
+          </div>
+          <!-- Profile Flyout -->
+          <div class="profile-flyout-wrapper" id="profileFlyoutWrapper" style="position:relative;">
+            <img id="headerProfileImg"
+              src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg"
+              alt="User" class="avatar" style="cursor:pointer;" onclick="toggleProfileFlyout()" />
+            <div id="profileFlyout"
+              style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:260px;z-index:9999;padding:1.25rem;">
+              <div style="text-align:center;margin-bottom:0.75rem;">
+                <img id="flyoutProfileImg"
+                  src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg"
+                  alt="Profile"
+                  style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #ddd;" />
               </div>
-              <div class="notif-detail-panel" id="notifDetailPanel">
-                <p style="color:var(--mocha);font-size:0.875rem;padding:1.25rem;">Select a notification to view details.</p>
+              <div style="text-align:center;margin-bottom:0.25rem;font-weight:600;font-size:0.95rem;"
+                id="flyoutUsername">Loading...</div>
+              <div style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:0.25rem;" id="flyoutUserId">ID: —
+              </div>
+              <div style="text-align:center;font-size:0.8rem;color:#c47b42;font-weight:500;margin-bottom:0.75rem;"
+                id="flyoutAccountType">—</div>
+              <div style="border-top:1px solid #eee;padding-top:0.75rem;display:flex;gap:0.5rem;">
+                <a href="profile.html"
+                  style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#f5f5f5;font-size:0.8rem;color:#333;text-decoration:none;">Profile</a>
+                <a href="#" onclick="event.preventDefault();localStorage.clear();window.location.href='login.html'"
+                  style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#fef2f2;font-size:0.8rem;color:#dc2626;text-decoration:none;">Logout</a>
               </div>
             </div>
           </div>
         </div>
-        <!-- Profile Flyout -->
-        <div class="profile-flyout-wrapper" id="profileFlyoutWrapper" style="position:relative;">
-          <img id="headerProfileImg" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="User" class="avatar" style="cursor:pointer;" onclick="toggleProfileFlyout()" />
-          <div id="profileFlyout" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:260px;z-index:9999;padding:1.25rem;">
-            <div style="text-align:center;margin-bottom:0.75rem;">
-              <img id="flyoutProfileImg" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="Profile" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #ddd;" />
-            </div>
-            <div style="text-align:center;margin-bottom:0.25rem;font-weight:600;font-size:0.95rem;" id="flyoutUsername">Loading...</div>
-            <div style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:0.25rem;" id="flyoutUserId">ID: —</div>
-            <div style="text-align:center;font-size:0.8rem;color:#c47b42;font-weight:500;margin-bottom:0.75rem;" id="flyoutAccountType">—</div>
-            <div style="border-top:1px solid #eee;padding-top:0.75rem;display:flex;gap:0.5rem;">
-              <a href="profile.html" style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#f5f5f5;font-size:0.8rem;color:#333;text-decoration:none;">Profile</a>
-              <a href="#" onclick="event.preventDefault();localStorage.clear();window.location.href='login.html'" style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#fef2f2;font-size:0.8rem;color:#dc2626;text-decoration:none;">Logout</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </header>
+      </header>
 
-    <main>
+      <main>
 
-      <!-- ═══════════════════════════════════════════════════════════
+        <!-- ═══════════════════════════════════════════════════════════
            DASHBOARD SECTION (only)
       ═══════════════════════════════════════════════════════════ -->
-      <div id="dashboard-section">
+        <div id="dashboard-section">
 
-        <!-- Welcome text sa babaw -->
-        <div style="display:flex; flex-direction:column; gap:1rem; margin-bottom:2rem; @media(min-width:768px){flex-direction:row;align-items:center;justify-content:space-between;}">
-          <div>
-            <h1>Welcome, Admin</h1>
-            <p id="orders-today" style="color:var(--mocha); margin-top:0.25rem;">Loading...</p>
-          </div>
-          <div style="display:flex;align-items:center;gap:0.75rem;background:white;padding:0.625rem 1rem;border-radius:0.5rem;border:1px solid var(--latte);box-shadow:0 2px 6px rgba(0,0,0,0.06);white-space:nowrap;">
-            <i data-lucide="calendar" style="color:rgba(110,79,62,0.8);width:20px;height:20px;"></i>
-            <span id="date-range" style="font-size:0.875rem;font-weight:500;"></span>
-          </div>
-        </div>
-
-        <!-- summary cards row 1 -->
-        <div class="grid-1-2-3" style="margin-bottom:2rem;">
-          <div class="card card-primary">
-            <p style="opacity:0.9;font-size:0.875rem;">Total Sales</p>
-            <div id="total-sales" class="stat-value">$0</div>
-            <i data-lucide="trending-up" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
-          </div>
-          <div class="card card-mocha">
-            <p style="opacity:0.9;font-size:0.875rem;">Total Sales Return</p>
-            <div id="total-sales-returns" class="stat-value">$0</div>
-            <i data-lucide="trending-down" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
-          </div>
-          <div class="card card-cappuccino">
-            <p style="opacity:0.9;font-size:0.875rem;">Total Products</p>
-            <div id="total-products" class="stat-value">0</div>
-            <i data-lucide="box" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
-          </div>
-        </div>
-
-        <!-- ubos stats -->
-        <div class="grid-1-2-3" style="margin-bottom:2rem;">
-          <div class="card">
-            <div id="profit" class="stat-value">$0</div>
-            <p style="color:var(--mocha);">Profit</p>
-            <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
-              <span id="profit-change" style="font-weight:500;">0%</span>
-              <span style="color:var(--mocha);">vs last week</span>
+          <!-- Welcome text sa babaw -->
+          <div
+            style="display:flex; flex-direction:column; gap:1rem; margin-bottom:2rem; @media(min-width:768px){flex-direction:row;align-items:center;justify-content:space-between;}">
+            <div>
+              <h1>Welcome, Admin</h1>
+              <p id="orders-today" style="color:var(--mocha); margin-top:0.25rem;">Loading...</p>
+            </div>
+            <div
+              style="display:flex;align-items:center;gap:0.75rem;background:white;padding:0.625rem 1rem;border-radius:0.5rem;border:1px solid var(--latte);box-shadow:0 2px 6px rgba(0,0,0,0.06);white-space:nowrap;">
+              <i data-lucide="calendar" style="color:rgba(110,79,62,0.8);width:20px;height:20px;"></i>
+              <span id="date-range" style="font-size:0.875rem;font-weight:500;"></span>
             </div>
           </div>
-          <div class="card">
-            <div id="total-expenses" class="stat-value">$0</div>
-            <p style="color:var(--mocha);">Total Expenses</p>
-            <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
-              <span id="expenses-change" style="font-weight:500;">0%</span>
-              <span style="color:var(--mocha);">vs last week</span>
-            </div>
-          </div>
-          <div class="card">
-            <div id="total-payment-returns" class="stat-value">$0</div>
-            <p style="color:var(--mocha);">Total Payment Returns</p>
-            <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
-              <span id="returns-change" style="font-weight:500;">0%</span>
-              <span style="color:var(--mocha);">vs last week</span>
-            </div>
-          </div>
-        </div>
 
-        <!-- charts ug top selling -->
-        <div class="grid-1-3" style="margin-bottom:2rem;">
-          <div class="bar-chart-container">
-            <div class="chart-header">
-              <h3 style="font-weight:600;font-size:1.125rem;">Sales & Purchase</h3>
-              <div class="period-buttons">
-                <button class="period-btn">1D</button>
-                <button class="period-btn">1W</button>
-                <button class="period-btn">1M</button>
-                <button class="period-btn">3M</button>
-                <button class="period-btn">6M</button>
-                <button class="period-btn active">1Y</button>
+          <!-- summary cards row 1 -->
+          <div class="grid-1-2-3" style="margin-bottom:2rem;">
+            <div class="card card-primary">
+              <p style="opacity:0.9;font-size:0.875rem;">Total Sales</p>
+              <div id="total-sales" class="stat-value">$0</div>
+              <i data-lucide="trending-up" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
+            </div>
+            <div class="card card-mocha">
+              <p style="opacity:0.9;font-size:0.875rem;">Total Sales Return</p>
+              <div id="total-sales-returns" class="stat-value">$0</div>
+              <i data-lucide="trending-down" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
+            </div>
+            <div class="card card-cappuccino">
+              <p style="opacity:0.9;font-size:0.875rem;">Total Products</p>
+              <div id="total-products" class="stat-value">0</div>
+              <i data-lucide="box" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
+            </div>
+          </div>
+
+          <!-- ubos stats -->
+          <div class="grid-1-2-3" style="margin-bottom:2rem;">
+            <div class="card">
+              <div id="profit" class="stat-value">$0</div>
+              <p style="color:var(--mocha);">Profit</p>
+              <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
+                <span id="profit-change" style="font-weight:500;">0%</span>
+                <span style="color:var(--mocha);">vs last week</span>
               </div>
             </div>
-            <div id="bar-chart" class="bar-chart">
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
-              <div class="bar" style="height:5%;"></div>
+            <div class="card">
+              <div id="total-expenses" class="stat-value">$0</div>
+              <p style="color:var(--mocha);">Total Expenses</p>
+              <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
+                <span id="expenses-change" style="font-weight:500;">0%</span>
+                <span style="color:var(--mocha);">vs last week</span>
+              </div>
             </div>
-            <div class="month-labels">
-              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span>
-              <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
-              <span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+            <div class="card">
+              <div id="total-payment-returns" class="stat-value">$0</div>
+              <p style="color:var(--mocha);">Total Payment Returns</p>
+              <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
+                <span id="returns-change" style="font-weight:500;">0%</span>
+                <span style="color:var(--mocha);">vs last week</span>
+              </div>
             </div>
           </div>
 
-          <!-- top selling naa sa kilid -->
-          <div style="background:var(--espresso); color:var(--latte); border-radius:0.75rem; padding:1.5rem; box-shadow:0 4px 10px rgba(74,47,33,0.15); border:1px solid rgba(225,200,178,0.2);">
-            <h3 style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
-              <span style="font-size:1.25rem;">🏆</span> Top Selling
-            </h3>
-            <div id="top-selling-list" style="display:flex; flex-direction:column; gap:1.25rem;">
-              <p style="opacity:0.7;font-size:0.875rem;">Loading...</p>
+          <!-- charts ug top selling -->
+          <div class="grid-1-3" style="margin-bottom:2rem;">
+            <div class="bar-chart-container">
+              <div class="chart-header">
+                <h3 style="font-weight:600;font-size:1.125rem;">Sales & Purchase</h3>
+                <div class="period-buttons">
+                  <button class="period-btn">1D</button>
+                  <button class="period-btn">1W</button>
+                  <button class="period-btn">1M</button>
+                  <button class="period-btn">3M</button>
+                  <button class="period-btn">6M</button>
+                  <button class="period-btn active">1Y</button>
+                </div>
+              </div>
+              <div id="bar-chart" class="bar-chart">
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+                <div class="bar" style="height:5%;"></div>
+              </div>
+              <div class="month-labels">
+                <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span>
+                <span>May</span><span>Jun</span><span>Jul</span><span>Aug</span>
+                <span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+              </div>
             </div>
-            <button style="margin-top:1.5rem; width:100%; padding:0.625rem; background:rgba(225,200,178,0.1); color:var(--latte); border:1px solid rgba(225,200,178,0.3); border-radius:0.5rem; font-weight:500; cursor:pointer;">
-              View All Products
-            </button>
-          </div>
-        </div>
 
-        <!-- ubos: low stock and resell -->
-        <div class="grid-1-2-3">
-          <div class="card">
-            <h3 style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem;">Low Stock Products</h3>
-            <div id="low-stock-list">
-              <p style="color:var(--mocha);font-size:0.875rem;">Loading...</p>
+            <!-- top selling naa sa kilid -->
+            <div
+              style="background:var(--espresso); color:var(--latte); border-radius:0.75rem; padding:1.5rem; box-shadow:0 4px 10px rgba(74,47,33,0.15); border:1px solid rgba(225,200,178,0.2);">
+              <h3
+                style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem; display:flex; align-items:center; gap:0.5rem;">
+                <span style="font-size:1.25rem;">🏆</span> Top Selling
+              </h3>
+              <div id="top-selling-list" style="display:flex; flex-direction:column; gap:1.25rem;">
+                <p style="opacity:0.7;font-size:0.875rem;">Loading...</p>
+              </div>
+              <button
+                style="margin-top:1.5rem; width:100%; padding:0.625rem; background:rgba(225,200,178,0.1); color:var(--latte); border:1px solid rgba(225,200,178,0.3); border-radius:0.5rem; font-weight:500; cursor:pointer;">
+                View All Products
+              </button>
             </div>
           </div>
-          <div class="card">
-            <h3 style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem;">Recent Sales</h3>
-            <div id="recent-sales-list">
-              <p style="color:var(--mocha);font-size:0.875rem;">Loading...</p>
+
+          <!-- ubos: low stock and resell -->
+          <div class="grid-1-2-3">
+            <div class="card">
+              <h3 style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem;">Low Stock Products</h3>
+              <div id="low-stock-list">
+                <p style="color:var(--mocha);font-size:0.875rem;">Loading...</p>
+              </div>
+            </div>
+            <div class="card">
+              <h3 style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem;">Recent Sales</h3>
+              <div id="recent-sales-list">
+                <p style="color:var(--mocha);font-size:0.875rem;">Loading...</p>
+              </div>
             </div>
           </div>
-        </div>
 
-      </div><!-- /#dashboard-section -->
+        </div><!-- /#dashboard-section -->
 
-    </main>
+      </main>
+    </div>
   </div>
-</div>
 
   <!-- CASH PAYMENT MODAL -->
   <div id="cash-payment-modal" class="payment-modal-overlay" onclick="closeCashModal(event)">
     <div class="payment-modal" onclick="event.stopPropagation()">
       <div class="payment-modal-content">
         <div style="margin-bottom:1.5rem;text-align:center;">
-          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="cash-modal-order-num">#00001</strong></div>
-          <div style="font-size:0.9rem;color:#666;margin-bottom:1rem;">Customer #: <strong id="cash-modal-customer-num">CUST-00001</strong></div>
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong
+              id="cash-modal-order-num">#00001</strong></div>
+          <div style="font-size:0.9rem;color:#666;margin-bottom:1rem;">Customer #: <strong
+              id="cash-modal-customer-num">CUST-00001</strong></div>
         </div>
         <div style="margin-bottom:1.5rem;">
-          <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#333;">Amount Customer Gives</label>
-          <input type="number" id="cash-modal-amount" class="payment-modal-input" placeholder="₱0.00" min="0" step="0.01" />
+          <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#333;">Amount
+            Customer Gives</label>
+          <input type="number" id="cash-modal-amount" class="payment-modal-input" placeholder="₱0.00" min="0"
+            step="0.01" />
         </div>
       </div>
       <div class="payment-modal-actions">
@@ -304,14 +334,18 @@
     <div class="payment-modal" onclick="event.stopPropagation()">
       <div class="payment-modal-content">
         <div style="margin-bottom:1.5rem;text-align:center;">
-          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="gcash-modal-order-num">#00001</strong></div>
-          <div style="font-size:0.9rem;color:#666;margin-bottom:1.5rem;">Customer #: <strong id="gcash-modal-customer-num">CUST-00001</strong></div>
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong
+              id="gcash-modal-order-num">#00001</strong></div>
+          <div style="font-size:0.9rem;color:#666;margin-bottom:1.5rem;">Customer #: <strong
+              id="gcash-modal-customer-num">CUST-00001</strong></div>
         </div>
-        <div id="gcash-modal-qr" style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:0.5rem;padding:1.5rem;text-align:center;background:#f9f9f9;">
+        <div id="gcash-modal-qr"
+          style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:0.5rem;padding:1.5rem;text-align:center;background:#f9f9f9;">
         </div>
         <div style="text-align:center;margin-bottom:1.5rem;">
           <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Scan to Pay via GCash</div>
-          <div style="font-size:1.25rem;font-weight:600;color:#333;">Amount: <span id="gcash-modal-amount">₱0.00</span></div>
+          <div style="font-size:1.25rem;font-weight:600;color:#333;">Amount: <span id="gcash-modal-amount">₱0.00</span>
+          </div>
         </div>
       </div>
       <div class="payment-modal-actions">
@@ -400,4 +434,5 @@
   <script src="js/sidebar-toggle.js"></script>
   <script src="js/header-common.js"></script>
 </body>
+
 </html>

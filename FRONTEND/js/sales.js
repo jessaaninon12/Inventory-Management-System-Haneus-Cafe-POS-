@@ -98,18 +98,19 @@ function _renderOrderRows() {
       ? `<button class="btn btn-small btn-edit" onclick="completeOrder(${o.id})">Complete</button>` : '';
     return `
       <tr data-order-id="${orderId}" data-status="${o.status.toLowerCase()}">
-        <td>#${orderId}</td>
-        <td>${o.customer_name || 'Walk-in'}</td>
-        <td>${dateStr}</td>
-        <td>${itemCount} item${itemCount !== 1 ? 's' : ''}</td>
-        <td class="amount">${formatPeso(o.total)}</td>
-        <td><span class="status ${statusCls}">${o.status}</span></td>
-        <td class="actions">
+        <td data-label="Order #">#${orderId}</td>
+        <td data-label="Customer">${o.customer_name || 'Walk-in'}</td>
+        <td data-label="Date">${dateStr}</td>
+        <td data-label="Items">${itemCount} item${itemCount !== 1 ? 's' : ''}</td>
+        <td data-label="Total" class="amount">${formatPeso(o.total)}</td>
+        <td data-label="Status"><span class="status ${statusCls}">${o.status}</span></td>
+        <td data-label="Actions" class="actions">
           <button class="btn btn-small btn-view" onclick="openOrderModal(${o.id})">View</button>
           ${completeBtn}
           ${refundBtn}
         </td>
       </tr>`;
+
   }).join('');
 }
 

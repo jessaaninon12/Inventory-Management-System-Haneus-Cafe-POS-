@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --primary:      #c47b42;
   --primary-dark: #a35f2e;
   --espresso:     #4a2f21;
@@ -22,7 +22,9 @@ body {
 /* ── Layout ─────────────────────────────────────────────────────── */
 .layout {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /* -- Sidebar -------------------------------------------------------------------
@@ -87,11 +89,14 @@ body {
 .nav-link.sidebar-active svg { color: #FEA54E; }
 
 /* ── Main ───────────────────────────────────────────────────────── */
-main {
+main.main-content {
   flex: 1;
   padding: 1.5rem;
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   height: 100vh;
+  height: 100dvh;
+  -webkit-overflow-scrolling: touch;
   transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
 }
 
@@ -192,18 +197,19 @@ h1      { font-size: 1.6rem; margin-bottom: 0.25rem; }
 .table-container {
   background: white;
   border-radius: 0.75rem;
-  overflow-x: auto;          /* horizontal scroll on small screens */
-  overflow-y: hidden;
+  overflow: auto !important;          /* horizontal and vertical scroll on small screens */
+  max-height: calc(100dvh - 220px);
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
   -webkit-overflow-scrolling: touch;
 }
 
-table { width: 100%; border-collapse: collapse; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
 
 th, td {
   padding: 1rem 1.25rem;
   text-align: left;
   border-bottom: 1px solid var(--latte);
+  white-space: nowrap;
 }
 
 th {
@@ -483,9 +489,10 @@ textarea { resize: vertical; }
   border-radius: 999px;
 }
 
-/* ──────────────────────────────────────────────────────────────────────
-   RESPONSIVE BREAKPOINTS
-   ────────────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE — Table card-view + scroll fixes
+   Desktop: table view | Mobile: card view
+   ══════════════════════════════════════════════════════════════════ */
 
 /* ── Tablet / Small Desktop (≤ 1024px) ──────────────────────────── */
 @media (max-width: 1024px) {
@@ -520,7 +527,7 @@ textarea { resize: vertical; }
   .search-wrap { max-width: 100%; min-width: 0; }
   .filter-group { justify-content: flex-start; flex-wrap: wrap; }
 
-  /* Table scrolls horizontally — min-width ensures columns don’t squish */
+  /* Table scrolls horizontally — min-width ensures columns don't squish */
   .table-container { border-radius: 0.5rem; }
   table { min-width: 520px; }
   th, td { padding: 0.75rem 0.875rem; font-size: 0.85rem; }
@@ -537,6 +544,21 @@ textarea { resize: vertical; }
   .btn-primary,
   .btn-outline,
   .btn-danger  { padding: 0.5rem 1rem; }
+}
+
+/* ── Mobile Portrait (≤ 480px) ────────────────────── */
+@media (max-width: 480px) {
+  main { padding: 0.75rem; }
+  h1 { font-size: 1.2rem; }
+  .subtitle { font-size: 0.85rem; }
+
+  .toolbar { gap: 0.5rem; }
+  .filter-group { gap: 0.2rem; }
+  .filter-btn { padding: 0.3rem 0.6rem; font-size: 0.78rem; }
+
+  .pagination-container { margin-top: 1rem; }
+  .pagination { flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem 0.625rem; }
+  .page-btn { padding: 0.375rem 0.625rem; font-size: 0.8rem; min-width: 32px; }
 }
 
 /* ── Large Phone / iPhone Plus & Pixel Max (≤ 430px) ────────────── */
