@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --primary: #c47b42;
   --primary-dark: #a35f2e;
   --espresso: #4a2f21;
@@ -128,7 +128,15 @@ aside.sidebar-icon-rail .nav-link svg { margin-right: 0; width: 20px; height: 20
   color: #FEA54E;
 }
 
-main { flex: 1; padding: 1.5rem; }
+main {
+  flex: 1;
+  padding: 1.5rem;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto !important;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+}
 
 header {
   background: white;
@@ -185,11 +193,15 @@ h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
 .btn-outline   { background: white; border: 1px solid var(--latte); color: var(--espresso); }
 .btn-outline:hover { background: var(--latte); }
 
-.table-container {
+/* ── Table Area ──────────────────────────────────────────────── */
+.table-wrapper {
   background: white;
   border-radius: 0.75rem;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  overflow: auto !important;          /* Ensured scroll for small screens */
+  max-height: calc(100dvh - 280px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  margin-bottom: 1.5rem;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
@@ -602,8 +614,90 @@ th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
+
+/* ════════════════════════════════════════════════════════════════
+   RESPONSIVE — TASK_UIRESPONSIVE.md implementation
+   Desktop/Tablet: scrollable table | Mobile: card view
+════════════════════════════════════════════════════════════════ */
+
+/* TABLE SCROLL — always enabled */
+.table-container {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+table { min-width: 640px; }
+
+/* Sticky thead for long tables */
+thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--cream);
+}
+
+/* ── Tablet (768px – 1024px) ── */
+@media (min-width: 768px) and (max-width: 1024px) {
+  main { padding: 1.25rem; }
+  .controls { flex-wrap: wrap; gap: 0.75rem; }
+  .search-input { min-width: 160px; }
+  th, td { padding: 0.75rem 0.875rem; font-size: 0.875rem; }
+  .ms-floating-card { max-width: 95vw; }
+  .pagination { flex-wrap: wrap; }
+}
+
+/* ── Mobile Landscape (481px – 767px) ── */
+@media (min-width: 481px) and (max-width: 767px) {
   main { padding: 1rem; }
   .controls { flex-direction: column; align-items: stretch; }
-  .stock-input-group { justify-content: center; }
+  .search-input { min-width: 0; width: 100%; }
+  th, td { padding: 0.65rem 0.75rem; font-size: 0.82rem; }
+  .ms-fc-body { padding: 1rem; }
 }
+
+/* ── Mobile Portrait (≤ 480px) ── */
+@media (max-width: 480px) {
+  main { padding: 0.75rem; }
+  h1 { font-size: 1.2rem; }
+
+  .controls { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.875rem 0.875rem 0.625rem; }
+  .search-input { min-width: 0; width: 100%; font-size: 16px; }
+  .btn { width: 100%; justify-content: center; }
+
+
+  /* Modal bottom sheet */
+  .ms-modal-overlay { align-items: flex-end; padding: 0; }
+  .ms-floating-card {
+    max-width: 100%;
+    border-radius: 1.25rem 1.25rem 0 0;
+    max-height: 90vh;
+  }
+  .ms-fc-header { padding: 0.875rem 1.25rem; }
+  .ms-fc-body { padding: 1rem 1.25rem; }
+  .ms-fc-footer { padding: 0.875rem 1.25rem; flex-direction: column; gap: 0.5rem; }
+  .ms-fc-footer .btn { width: 100%; }
+
+  /* Low stock panel */
+  .ls-modal-overlay { padding: 0; align-items: flex-end; }
+  .ls-modal-card { max-width: 100%; border-radius: 0.875rem 0.875rem 0 0; max-height: 80vh; }
+
+  .pagination { flex-wrap: wrap; gap: 0.25rem; padding: 0.5rem 0.625rem; }
+  .page-btn { padding: 0.375rem 0.625rem; font-size: 0.8rem; min-width: 32px; }
+}
+
+/* ── 414px and below ── */
+@media (max-width: 414px) {
+  h1 { font-size: 1.1rem; }
+}
+
+/* ── 360px and below ── */
+@media (max-width: 360px) {
+  main { padding: 0.5rem; }
+  .controls { padding: 0.75rem 0.625rem; }
+}
+
+/* ── 320px ── */
+@media (max-width: 320px) {
+  main { padding: 0.375rem; }
+}
+

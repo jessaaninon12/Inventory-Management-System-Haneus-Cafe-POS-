@@ -72,7 +72,7 @@ function setText(id, text) {
 function statusBadge(status) {
   const map = {
     Completed: "background:#dcfce7;color:#15803d;",
-    Pending:   "background:#fef3c7;color:#92400e;",
+    Pending: "background:#fef3c7;color:#92400e;",
     Cancelled: "background:#fee2e2;color:#b91c1c;",
   };
   const style = map[status] || map.Pending;
@@ -425,11 +425,11 @@ loadDashboard();
 const NOTIF_STORE_KEY = 'haneus_notif_store';
 let _selectedNotifId = null;
 
-function _loadStore()   { try { return JSON.parse(localStorage.getItem(NOTIF_STORE_KEY) || '[]'); } catch { return []; } }
+function _loadStore() { try { return JSON.parse(localStorage.getItem(NOTIF_STORE_KEY) || '[]'); } catch { return []; } }
 function _saveStore(ns) { localStorage.setItem(NOTIF_STORE_KEY, JSON.stringify(ns)); }
 
 function _updateBadge(notifs) {
-  const badge  = document.getElementById('notifBadge');
+  const badge = document.getElementById('notifBadge');
   if (!badge) return;
   const unread = notifs.filter(n => !n.read).length;
   badge.textContent = unread > 9 ? '9+' : String(unread);
@@ -438,31 +438,31 @@ function _updateBadge(notifs) {
 
 async function _buildNotifications() {
   try {
-    const res      = await fetch(`${API_BASE}/products/low-stock/`);
+    const res = await fetch(`${API_BASE}/products/low-stock/`);
     const products = await res.json();
-    const store    = _loadStore();
+    const store = _loadStore();
     const storeMap = {};
     store.forEach(n => { storeMap[n.id] = n; });
 
     const fresh = products.map(p => {
-      const type = p.stock <= 0                        ? 'out_of_stock'
-                 : p.stock <= p.low_stock_threshold / 2 ? 'critical' : 'low_stock';
+      const type = p.stock <= 0 ? 'out_of_stock'
+        : p.stock <= p.low_stock_threshold / 2 ? 'critical' : 'low_stock';
       const title = p.stock <= 0 ? 'Out of Stock' : type === 'critical' ? 'Critical Stock' : 'Low Stock Alert';
-      const msg   = p.stock <= 0
+      const msg = p.stock <= 0
         ? `${p.name} is out of stock and needs immediate restocking.`
         : `${p.name} has only ${p.stock} unit(s) left. Reorder point: ${p.low_stock_threshold}.`;
       return {
-        id          : `ls_${p.id}`,
+        id: `ls_${p.id}`,
         type,
         title,
-        message     : msg,
-        productId   : p.id,
-        productName : p.name,
-        stock       : p.stock,
-        threshold   : p.low_stock_threshold,
-        category    : p.category,
-        timestamp   : new Date().toISOString(),
-        read        : storeMap[`ls_${p.id}`]?.read ?? false,
+        message: msg,
+        productId: p.id,
+        productName: p.name,
+        stock: p.stock,
+        threshold: p.low_stock_threshold,
+        category: p.category,
+        timestamp: new Date().toISOString(),
+        read: storeMap[`ls_${p.id}`]?.read ?? false,
       };
     });
 
@@ -474,18 +474,18 @@ async function _buildNotifications() {
         if (approvalRes.ok) {
           const approvalData = await approvalRes.json();
           const approvals = (approvalData.requests || []).map(req => ({
-            id          : `approval_${req.id}`,
-            type        : 'approval_pending',
-            title       : 'Admin Approval Needed',
-            message     : `${req.user_name} (${req.email}) is awaiting approval.`,
-            userId      : req.user_id,
-            userName    : req.user_name,
-            userEmail   : req.email,
-            requestId   : req.id,
-            status      : req.status,
-            createdAt   : req.created_at,
-            timestamp   : req.created_at,
-            read        : storeMap[`approval_${req.id}`]?.read ?? false,
+            id: `approval_${req.id}`,
+            type: 'approval_pending',
+            title: 'Admin Approval Needed',
+            message: `${req.user_name} (${req.email}) is awaiting approval.`,
+            userId: req.user_id,
+            userName: req.user_name,
+            userEmail: req.email,
+            requestId: req.id,
+            status: req.status,
+            createdAt: req.created_at,
+            timestamp: req.created_at,
+            read: storeMap[`approval_${req.id}`]?.read ?? false,
           }));
           fresh.push(...approvals);
         }
@@ -517,7 +517,7 @@ function _renderNotifList(notifs) {
     const isApproval = n.type === 'approval_pending';
     const dotColor = isApproval ? 'info' : (n.type === 'out_of_stock' ? 'danger' : n.type === 'critical' ? 'warning' : 'caution');
     const preview = isApproval ? n.userName : n.productName;
-    
+
     return `
       <div class="notif-item ${n.read ? 'read' : ''} ${_selectedNotifId === n.id ? 'selected' : ''}"
            onclick="_selectNotif('${n.id}')">
@@ -542,12 +542,12 @@ function _selectNotif(id) {
   _updateBadge(notifs);
   _renderNotifList(notifs);
 
-  const detail   = document.getElementById('notifDetailPanel');
+  const detail = document.getElementById('notifDetailPanel');
   if (!detail) return;
-  
+
   // Handle approval notifications
   if (n.type === 'approval_pending') {
-    const typeBg    = '#dbeafe';
+    const typeBg = '#dbeafe';
     const typeColor = '#0284c7';
     const safeUserId = n.userId || 0;
     const safeNotifId = String(n.id || '').replace(/'/g, '');
@@ -573,7 +573,7 @@ function _selectNotif(id) {
       </div>`;
     // Use event listeners (not onclick) so buttons work reliably regardless of DOM state
     const approveBtn = document.getElementById(`approveBtn_${safeUserId}`);
-    const rejectBtn  = document.getElementById(`rejectBtn_${safeUserId}`);
+    const rejectBtn = document.getElementById(`rejectBtn_${safeUserId}`);
     if (approveBtn) {
       approveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -589,7 +589,7 @@ function _selectNotif(id) {
   } else {
     // Handle stock notifications
     const typeColor = n.type === 'out_of_stock' ? '#b91c1c' : n.type === 'critical' ? '#92400e' : '#b45309';
-    const typeBg    = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
+    const typeBg = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
     detail.innerHTML = `
       <div class="notif-detail-content">
         <span style="background:${typeBg};color:${typeColor};padding:0.2rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${n.title}</span>
@@ -691,7 +691,7 @@ function _rejectUser(userId, notifId) {
 }
 
 // Bell toggle
-document.getElementById('notifBellBtn')?.addEventListener('click', function(e) {
+document.getElementById('notifBellBtn')?.addEventListener('click', function (e) {
   e.stopPropagation();
   const dd = document.getElementById('notifDropdown');
   if (!dd) return;
@@ -702,7 +702,7 @@ document.getElementById('notifBellBtn')?.addEventListener('click', function(e) {
 
 // Close on outside click
 document.addEventListener('click', e => {
-  const w  = document.getElementById('notifWrapper');
+  const w = document.getElementById('notifWrapper');
   const dd = document.getElementById('notifDropdown');
   if (w && dd && !w.contains(e.target)) dd.classList.remove('open');
 });
@@ -733,7 +733,7 @@ document.getElementById('clearAllBtn')?.addEventListener('click', () => {
     const res = await fetch(`${API_BASE}/products/low-stock/`);
     if (!res.ok) return;
     const products = await res.json();
-    const store    = _loadStore();
+    const store = _loadStore();
     const storeMap = {};
     store.forEach(n => { storeMap[n.id] = n; });
     // Count unread from previous store

@@ -142,12 +142,12 @@ function renderTable() {
 
   tbody.innerHTML = pageUsers.map(u => `
     <tr>
-      <td>${escHtml(u.username || '—')}</td>
-      <td>${escHtml(fullName(u))}</td>
-      <td>${escHtml(u.email || '—')}</td>
-      <td>${escHtml(u.bio || '—')}</td>
-      <td>${typeBadge(u.user_type)}</td>
-      <td class="actions">
+      <td data-label="Username">${escHtml(u.username || '—')}</td>
+      <td data-label="Full Name">${escHtml(fullName(u))}</td>
+      <td data-label="Email">${escHtml(u.email || '—')}</td>
+      <td data-label="Role Desc">${escHtml(u.bio || '—')}</td>
+      <td data-label="Type">${typeBadge(u.user_type)}</td>
+      <td data-label="Actions" class="actions">
         <button class="btn btn-view"  onclick="openViewModal(${u.id},'${u.user_type}')">View</button>
         <button class="btn btn-edit"  onclick="openEditModal(${u.id},'${u.user_type}')">Edit</button>
         <button class="btn btn-danger" onclick="openDeleteModal(${u.id},'${u.user_type}','${escAttr(u.username)}')">Delete</button>

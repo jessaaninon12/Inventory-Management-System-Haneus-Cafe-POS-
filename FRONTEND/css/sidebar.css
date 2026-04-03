@@ -12,6 +12,8 @@
 .app-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -27,6 +29,7 @@
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   z-index: 1001;
   transition: width 0.28s cubic-bezier(0.4,0,0.2,1),
               min-width 0.28s cubic-bezier(0.4,0,0.2,1),

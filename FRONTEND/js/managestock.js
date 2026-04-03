@@ -124,11 +124,11 @@ function renderTable(products) {
     const category = escHtml(p.category || 'Uncategorized');
     return `
       <tr data-product-id="${p.id}">
-        <td><span class="product-name">${escHtml(p.name)}</span></td>
-        <td><span class="category-tag">${category}</span></td>
-        <td><span class="updated-time">${updated}</span></td>
-        <td><span class="status-badge ${status.cls}">${status.label}</span></td>
-        <td>
+        <td data-label="Product"><span class="product-name">${escHtml(p.name)}</span></td>
+        <td data-label="Category"><span class="category-tag">${category}</span></td>
+        <td data-label="Updated"><span class="updated-time">${updated}</span></td>
+        <td data-label="Status"><span class="status-badge ${status.cls}">${status.label}</span></td>
+        <td data-label="Actions">
           <div class="action-icons">
             <button class="action-btn action-view" title="View" onclick="openViewModal(${p.id})">
               <i data-lucide="eye"></i>
@@ -142,6 +142,7 @@ function renderTable(products) {
           </div>
         </td>
       </tr>`;
+
   }).join('');
   lucide.createIcons();
 }
