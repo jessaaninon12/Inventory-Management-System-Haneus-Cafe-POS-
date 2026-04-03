@@ -8,9 +8,14 @@ let currentRefundingOrder = null;
 
 // ── Pagination state ───────────────────────────────────────────────
 let salesCurrentPage      = 1;
-const salesItemsPerPage   = 15;
+const salesItemsPerPage   = 30;
 let salesTotalPages        = 1;
 let currentFilteredOrders = [];
+
+// Request control
+let _salesAbort = null;      // AbortController for loadOrders
+let _analyticsAbort = null;  // AbortController for loadAnalytics
+let _salesDebounce = null;   // Debounce timer for filters
 
 function formatPeso(val) {
   const n = parseFloat(val) || 0;
@@ -29,27 +34,35 @@ function _fmtDate(isoStr) {
 
 // ---------- Summary cards ----------
 async function loadAnalytics() {
+  if (_analyticsAbort) _analyticsAbort.abort();
+  _analyticsAbort = new AbortController();
   try {
-    const res = await fetch(`${API}/sales/analytics/`);
+    const res = await fetch(`${API}/sales/analytics/`, { signal: _analyticsAbort.signal });
     if (!res.ok) throw new Error();
     const d = await res.json();
     document.getElementById('salesToday').textContent   = formatPeso(d.todays_sales);
     document.getElementById('salesWeek').textContent    = formatPeso(d.this_week_sales);
     document.getElementById('pendingOrders').textContent = d.pending_orders;
     document.getElementById('avgOrder').textContent     = formatPeso(d.average_order);
-  } catch (e) { console.error('Analytics load failed', e); }
+  } catch (e) {
+    if (e.name === 'AbortError') return;
+    console.error('Analytics load failed', e);
+  }
 }
 
 // ---------- Sales table — reads from POS endpoint ----------
 async function loadOrders() {
+  if (_salesAbort) _salesAbort.abort();
+  _salesAbort = new AbortController();
   const tbody = document.getElementById('ordersTableBody');
   try {
     // Load POS transactions from SaleModel
-    const res = await fetch(`${API}/sales/view/`);
+    const res = await fetch(`${API}/sales/view/`, { signal: _salesAbort.signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     allOrders = await res.json();
     renderOrders(allOrders);
   } catch (e) {
+    if (e.name === 'AbortError') return;
     console.error('Sales load failed', e);
     tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Failed to load sales. Make sure the backend is running.</td></tr>';
   }
@@ -128,7 +141,10 @@ function goToSalesPage(page) {
 }
 
 // ---------- Filters ----------
-document.querySelector('.search-input')?.addEventListener('input', applyFilters);
+document.querySelector('.search-input')?.addEventListener('input', function() {
+  clearTimeout(_salesDebounce);
+  _salesDebounce = setTimeout(applyFilters, 300);
+});
 document.querySelectorAll('.controls select').forEach(sel => sel.addEventListener('change', applyFilters));
 
 function applyFilters() {

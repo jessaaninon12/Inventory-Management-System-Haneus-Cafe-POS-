@@ -84,6 +84,8 @@ main.main-wrapper {
   gap: 1rem;
   margin-bottom: 1.25rem;
   min-height: 40px;
+  position: relative;
+  z-index: 10;          /* above profile-card banner stacking context */
 }
 
 .profile-toast {
@@ -376,7 +378,16 @@ input:focus, textarea:focus {
   cursor: pointer;
   color: var(--mocha);
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
 }
+.eye-btn:hover { color: var(--primary); background: rgba(196,123,66,0.08); }
+.eye-btn svg { display: block; flex-shrink: 0; }
+/* When showing password, icon turns primary color to hint at active state */
+.eye-btn[data-visible="true"] { color: var(--primary); }
 .pw-rules {
   font-size: 0.8rem;
   color: var(--mocha);

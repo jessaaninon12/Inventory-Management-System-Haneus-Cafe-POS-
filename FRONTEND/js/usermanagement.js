@@ -29,6 +29,8 @@ const API = 'http://127.0.0.1:8000/api';
 let allUsers          = [];
 let filteredUsers     = [];
 let activeFilter      = 'all';
+let _pendingEditImage = null;  // Task 8: pending image file for edit
+let _pendingCreateImage = null;  // Task 8: pending image file for create
 
 let editingUserId     = null;
 let editingUserType   = null;
@@ -41,6 +43,10 @@ let patchingUserType  = null;
 let currentPage = 1;
 const itemsPerPage = 10;
 let totalPages = 1;
+
+// Request control
+let _usersAbort = null;   // AbortController for request cancellation
+let _userDebounce = null; // Debounce timer for search
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 function typeBadge(type) {
@@ -180,12 +186,16 @@ function applyFilter() {
 
 /* ── Fetch Users ─────────────────────────────────────────────────── */
 async function loadUsers() {
+  // Cancel any in-flight request before starting a new one
+  if (_usersAbort) _usersAbort.abort();
+  _usersAbort = new AbortController();
+
   const tbody = document.getElementById('userTableBody');
   tbody.innerHTML = '叭叭<td colspan="6" class="empty-cell">Loading users…叭叭';
   try {
     const [adminRes, staffRes] = await Promise.all([
-      fetch(`${API}/users/admin/view/`),
-      fetch(`${API}/users/staff/view/`),
+      fetch(`${API}/users/admin/view/`, { signal: _usersAbort.signal }),
+      fetch(`${API}/users/staff/view/`, { signal: _usersAbort.signal }),
     ]);
 
     const adminData = adminRes.ok ? await adminRes.json() : [];
@@ -199,6 +209,7 @@ async function loadUsers() {
     allUsers = [...admins, ...staff];
     applyFilter();
   } catch (err) {
+    if (err.name === 'AbortError') return; // Cancelled — ignore
     console.error('Failed to load users:', err);
     tbody.innerHTML = '叭叭<td colspan="6" class="empty-cell" style="color:#dc2626;">Failed to load users. Is the backend running?叭叭';
   }
@@ -276,6 +287,43 @@ async function openViewModal(id, type) {
 /* ── CREATE modal ───────────────────────────────────────────────── */
 function openCreateModal() {
   document.getElementById('createForm').reset();
+  _pendingCreateImage = null;  // Task 8: reset pending image
+
+  // Task 8: Inject image upload into create modal
+  let createImgArea = document.getElementById('createImageArea');
+  if (!createImgArea) {
+    const createForm = document.getElementById('createForm');
+    if (createForm) {
+      createImgArea = document.createElement('div');
+      createImgArea.id = 'createImageArea';
+      createImgArea.style.cssText = 'text-align:center;margin-bottom:1rem;';
+      createForm.insertBefore(createImgArea, createForm.firstChild);
+    }
+  }
+  if (createImgArea) {
+    createImgArea.innerHTML = `
+      <img id="createUserImgPreview" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="Profile"
+           style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #ddd;margin-bottom:0.5rem;" />
+      <div>
+        <label style="cursor:pointer;font-size:0.8rem;color:#c47b42;font-weight:500;">
+          Add Photo <input type="file" id="createUserImgInput" accept="image/*" style="display:none;" />
+        </label>
+      </div>
+    `;
+    document.getElementById('createUserImgInput')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        _pendingCreateImage = file;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const preview = document.getElementById('createUserImgPreview');
+          if (preview) preview.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
   document.getElementById('createModal').style.display = 'flex';
 }
 
@@ -295,6 +343,22 @@ async function submitCreate(e) {
     confirm_password: document.getElementById('cConfirmPassword').value,
     user_type:        type,
   };
+
+  // Task 8: Upload image if selected
+  if (_pendingCreateImage) {
+    try {
+      const fd = new FormData();
+      fd.append('file', _pendingCreateImage);
+      const uploadRes = await fetch(`${API}/upload/`, { method: 'POST', body: fd });
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        const imgUrl = `http://127.0.0.1:8000${uploadData.url}`;
+        body.avatar_url = imgUrl;
+        body.profile_picture_url = imgUrl;
+      }
+      _pendingCreateImage = null;
+    } catch (e) { console.warn('Image upload failed:', e); }
+  }
 
   try {
     const res = await fetch(endpoint, {
@@ -331,12 +395,55 @@ async function openEditModal(id, type) {
 
     editingUserId   = id;
     editingUserType = type;
+    _pendingEditImage = null;  // Task 8: reset pending image
 
     document.getElementById('eFirstName').value = u.first_name || '';
     document.getElementById('eLastName').value  = u.last_name  || '';
     document.getElementById('eEmail').value     = u.email      || '';
     document.getElementById('ePhone').value     = u.phone      || '';
     document.getElementById('eBio').value       = u.bio        || '';
+
+    // Task 8: Show current profile picture in edit modal
+    const picUrl = u.profile_picture_url || u.avatar_url || '';
+    const picSrc = picUrl
+      ? (picUrl.startsWith('http') ? picUrl : `http://127.0.0.1:8000${picUrl}`)
+      : 'https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg';
+
+    // Inject image preview into edit modal if not already there
+    let editImgArea = document.getElementById('editImageArea');
+    if (!editImgArea) {
+      const editForm = document.getElementById('editForm');
+      if (editForm) {
+        editImgArea = document.createElement('div');
+        editImgArea.id = 'editImageArea';
+        editImgArea.style.cssText = 'text-align:center;margin-bottom:1rem;';
+        editForm.insertBefore(editImgArea, editForm.firstChild);
+      }
+    }
+    if (editImgArea) {
+      editImgArea.innerHTML = `
+        <img id="editUserImgPreview" src="${picSrc}" alt="Profile"
+             onerror="this.src='https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg'"
+             style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #ddd;margin-bottom:0.5rem;" />
+        <div>
+          <label style="cursor:pointer;font-size:0.8rem;color:#c47b42;font-weight:500;">
+            Change Photo <input type="file" id="editUserImgInput" accept="image/*" style="display:none;" />
+          </label>
+        </div>
+      `;
+      document.getElementById('editUserImgInput')?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          _pendingEditImage = file;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            const preview = document.getElementById('editUserImgPreview');
+            if (preview) preview.src = ev.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
 
     // Wire the reset password button for this user
     const resetBtn = document.getElementById('editResetPasswordBtn');
@@ -363,6 +470,22 @@ async function submitEdit(e) {
     phone:      document.getElementById('ePhone').value.trim(),
     bio:        document.getElementById('eBio').value.trim(),
   };
+
+  // Task 8: Upload image if selected
+  if (_pendingEditImage) {
+    try {
+      const fd = new FormData();
+      fd.append('file', _pendingEditImage);
+      const uploadRes = await fetch(`${API}/upload/`, { method: 'POST', body: fd });
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        const imgUrl = `http://127.0.0.1:8000${uploadData.url}`;
+        body.avatar_url = imgUrl;
+        body.profile_picture_url = imgUrl;
+      }
+      _pendingEditImage = null;
+    } catch (e) { console.warn('Image upload failed:', e); }
+  }
 
   try {
     const res = await fetch(endpoint, {

@@ -10,6 +10,10 @@ drf-spectacular>=0.27
 # Image processing
 Pillow>=10.0
 
+# Static analysis
+pylint>=3.0
+pylint-django>=2.5
+
 # Database drivers — install the one matching your DB_ENGINE:
 # MySQL (XAMPP):   pip install mysqlclient
 # PostgreSQL:      pip install psycopg2-binary

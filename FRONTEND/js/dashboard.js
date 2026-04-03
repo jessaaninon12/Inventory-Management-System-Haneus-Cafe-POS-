@@ -3,6 +3,58 @@ lucide.createIcons();
 
 const API_BASE = "http://127.0.0.1:8000/api";
 
+// Guard flags — tell header-common.js to skip profile flyout + notification init
+window._dashboardProfileInit = true;
+window._dashboardNotifInit = true;
+
+// ── Task 10: Profile flyout toggle + populate ────────────────────────
+function toggleProfileFlyout() {
+  const flyout = document.getElementById('profileFlyout');
+  if (flyout) flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+}
+// Close flyout on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.getElementById('profileFlyoutWrapper');
+  const flyout = document.getElementById('profileFlyout');
+  if (flyout && wrapper && !wrapper.contains(e.target)) {
+    flyout.style.display = 'none';
+  }
+});
+
+// Populate profile flyout from localStorage + API
+(async function initProfileFlyout() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user?.id;
+    // Set from localStorage immediately
+    const nameEl = document.getElementById('flyoutUsername');
+    const idEl = document.getElementById('flyoutUserId');
+    const typeEl = document.getElementById('flyoutAccountType');
+    if (nameEl) nameEl.textContent = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || 'User';
+    if (idEl) idEl.textContent = `ID: #${userId || '—'}`;
+    if (typeEl) typeEl.textContent = user.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee';
+
+    // Fetch full profile for image
+    if (userId) {
+      const res = await fetch(`${API_BASE}/profile/${userId}/`);
+      if (res.ok) {
+        const p = await res.json();
+        const picUrl = p.profile_picture_url || p.avatar_url || '';
+        if (picUrl) {
+          const src = picUrl.startsWith('http') ? picUrl : `http://127.0.0.1:8000${picUrl}`;
+          const headerImg = document.getElementById('headerProfileImg');
+          const flyoutImg = document.getElementById('flyoutProfileImg');
+          if (headerImg) headerImg.src = src;
+          if (flyoutImg) flyoutImg.src = src;
+        }
+        // Update name from API data
+        if (nameEl) nameEl.textContent = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'User';
+        if (typeEl) typeEl.textContent = p.account_type_label || (p.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee');
+      }
+    }
+  } catch (e) { console.warn('Profile flyout init error:', e); }
+}());
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -121,18 +173,26 @@ document.querySelectorAll(".period-btn").forEach((btn) => {
   });
 });
 
+// Store full datasets for View All modals (Task 7)
+window._dashTopSelling = [];
+window._dashLowStock = [];
+window._dashRecentSales = [];
+
 function renderTopSelling(items) {
   const container = document.getElementById("top-selling-list");
   if (!container) return;
+  window._dashTopSelling = items;
 
   if (!items.length) {
     container.innerHTML = '<p style="opacity:0.7;font-size:0.875rem;">No sales data yet.</p>';
     return;
   }
 
+  // Task 7: Show only first 6 items, View All if > 6
+  const show = items.slice(0, 6);
   const maxRevenue = Math.max(...items.map((i) => parseFloat(i.total_revenue) || 0), 1);
 
-  container.innerHTML = items
+  container.innerHTML = show
     .map((item) => {
       const revenue = parseFloat(item.total_revenue) || 0;
       const pct = Math.round((revenue / maxRevenue) * 100);
@@ -146,18 +206,25 @@ function renderTopSelling(items) {
         </div>`;
     })
     .join("");
+
+  // View All button
+  const viewAllBtn = container.closest("div")?.querySelector("button");
+  if (viewAllBtn) viewAllBtn.style.display = items.length > 6 ? "" : "none";
 }
 
 function renderLowStock(items) {
   const container = document.getElementById("low-stock-list");
   if (!container) return;
+  window._dashLowStock = items;
 
   if (!items.length) {
     container.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;">All products are well stocked.</p>';
     return;
   }
 
-  container.innerHTML = items
+  // Task 7: Show only first 6 items
+  const show = items.slice(0, 6);
+  let html = show
     .map(
       (p) => `
       <div class="product-item">
@@ -171,18 +238,27 @@ function renderLowStock(items) {
       </div>`
     )
     .join("");
+
+  // Task 7: View All if > 6
+  if (items.length > 6) {
+    html += `<button onclick="openDashLowStockModal()" style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;">View All (${items.length})</button>`;
+  }
+  container.innerHTML = html;
 }
 
 function renderRecentSales(sales) {
   const container = document.getElementById("recent-sales-list");
   if (!container) return;
+  window._dashRecentSales = sales;
 
   if (!sales.length) {
     container.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;">No recent sales.</p>';
     return;
   }
 
-  container.innerHTML = sales
+  // Task 7: Show only first 6 items
+  const show = sales.slice(0, 6);
+  let html = show
     .map(
       (s) => `
       <div class="product-item" style="margin-bottom:0.75rem;">
@@ -197,7 +273,122 @@ function renderRecentSales(sales) {
       </div>`
     )
     .join("");
+
+  // Task 7: View All if > 6
+  if (sales.length > 6) {
+    html += `<button onclick="openDashRecentSalesModal()" style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;">View All (${sales.length})</button>`;
+  }
+  container.innerHTML = html;
 }
+
+// ── Task 7: View All Modals ─────────────────────────────────────
+
+function _createDashModal(id) {
+  let modal = document.getElementById(id);
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;justify-content:center;align-items:center;';
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  return modal;
+}
+
+// Top Selling View All — shows top 25
+function openDashTopSellingModal() {
+  const items = (window._dashTopSelling || []).slice(0, 25);
+  const modal = _createDashModal('dashTopSellingModal');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:600px;max-height:80vh;animation:fadeInUp .2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
+        <h2 style="font-size:1rem;font-weight:600;margin:0;">🏆 Top ${items.length} Best Sellers</h2>
+        <button onclick="document.getElementById('dashTopSellingModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+          <thead><tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:0.5rem;">#</th><th style="text-align:left;padding:0.5rem;">Product</th><th style="text-align:right;padding:0.5rem;">Qty</th><th style="text-align:right;padding:0.5rem;">Revenue</th></tr></thead>
+          <tbody>
+            ${items.map((item, i) => `
+              <tr style="border-bottom:1px solid #f5f5f5;">
+                <td style="padding:0.5rem;">${i + 1}</td>
+                <td style="padding:0.5rem;">${item.product_name}</td>
+                <td style="text-align:right;padding:0.5rem;">${item.total_quantity}</td>
+                <td style="text-align:right;padding:0.5rem;">${formatCurrency(item.total_revenue)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// Low Stock View All — shows 30 latest
+function openDashLowStockModal() {
+  const items = (window._dashLowStock || []).slice(0, 30);
+  const modal = _createDashModal('dashLowStockModal');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:600px;max-height:80vh;animation:fadeInUp .2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
+        <h2 style="font-size:1rem;font-weight:600;margin:0;">⚠️ Low Stock Products (${items.length})</h2>
+        <button onclick="document.getElementById('dashLowStockModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
+        ${items.map(p => `
+          <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid #f5f5f5;">
+            <div style="flex:1;"><p style="font-weight:500;">${p.name}</p><p style="font-size:0.8rem;color:#999;">ID: #${p.id}</p></div>
+            <span style="color:#b91c1c;font-weight:600;">${p.stock} left</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// Recent Sales View All — shows 30 latest
+function openDashRecentSalesModal() {
+  const items = (window._dashRecentSales || []).slice(0, 30);
+  const modal = _createDashModal('dashRecentSalesModal');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:700px;max-height:80vh;animation:fadeInUp .2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
+        <h2 style="font-size:1rem;font-weight:600;margin:0;">📋 Recent Sales (${items.length})</h2>
+        <button onclick="document.getElementById('dashRecentSalesModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+          <thead><tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:0.5rem;">#</th><th style="text-align:left;padding:0.5rem;">Order</th><th style="text-align:left;padding:0.5rem;">Customer</th><th style="text-align:center;padding:0.5rem;">Status</th><th style="text-align:right;padding:0.5rem;">Total</th></tr></thead>
+          <tbody>
+            ${items.map((s, i) => `
+              <tr style="border-bottom:1px solid #f5f5f5;">
+                <td style="padding:0.5rem;">${i + 1}</td>
+                <td style="padding:0.5rem;">${s.product_name || s.order_id}</td>
+                <td style="padding:0.5rem;">${s.customer_name}</td>
+                <td style="text-align:center;padding:0.5rem;">${statusBadge(s.status)}</td>
+                <td style="text-align:right;padding:0.5rem;">${formatCurrency(s.total)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// Wire the existing "View All Products" button to top selling modal
+document.addEventListener('DOMContentLoaded', () => {
+  const topSellingSection = document.getElementById('top-selling-list');
+  if (topSellingSection) {
+    const viewAllBtn = topSellingSection.closest('div')?.querySelector('button');
+    if (viewAllBtn) {
+      viewAllBtn.addEventListener('click', openDashTopSellingModal);
+    }
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Fetch and render

@@ -35,12 +35,27 @@ from application.dtos.user_dto import (
     UpdateUserDTO,
 )
 from application.services.user_service import UserService
+from application.services.reset_risk_service import ResetRiskService
 from infrastructure.repositories.user_repository import UserRepository
+from infrastructure.repositories.reset_attempt_repository import ResetAttemptRepository
 
 
 def _get_service():
     """Instantiate UserService with its concrete repository."""
     return UserService(UserRepository())
+
+
+def _get_risk_service():
+    """Instantiate ResetRiskService with its concrete repository."""
+    return ResetRiskService(ResetAttemptRepository())
+
+
+def _get_client_ip(request):
+    """Extract client IP address from request headers."""
+    x_forwarded = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded:
+        return x_forwarded.split(",")[0].strip()
+    return request.META.get("REMOTE_ADDR", "")
 
 
 class CheckUsernameController(APIView):
@@ -238,8 +253,12 @@ class AdminResetPasswordController(APIView):
     )
     def post(self, request, pk):
         service = _get_service()
+        risk_service = _get_risk_service()
+        ip = _get_client_ip(request)
         try:
             plain_code, _hashed = service.reset_user_password(pk)
+            # Log successful admin reset attempt
+            risk_service.record_attempt(pk, "email_reset", ip, was_successful=True)
             return Response(
                 {"success": True, "reset_code": plain_code},
                 status=status.HTTP_200_OK,
@@ -262,6 +281,8 @@ class VerifyResetCodeController(APIView):
     )
     def post(self, request):
         service = _get_service()
+        risk_service = _get_risk_service()
+        ip = _get_client_ip(request)
         user_id = request.data.get("user_id")
         code = request.data.get("code", "").strip()
 
@@ -276,8 +297,20 @@ class VerifyResetCodeController(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Risk assessment before allowing verification
+        risk = risk_service.assess_risk(user_id, ip)
+        if not risk.is_allowed:
+            risk_service.record_attempt(user_id, "code_verify", ip, was_successful=False)
+            return Response(
+                {"error": "Too many reset attempts. Please try again later.",
+                 "risk_level": risk.level},
+                status=status.HTTP_429_TOO_MANY_REQUESTS,
+            )
+
         try:
             valid = service.verify_reset_code(user_id, code)
+            # Record attempt outcome
+            risk_service.record_attempt(user_id, "code_verify", ip, was_successful=valid)
             if valid:
                 return Response({"success": True, "message": "CODE verified successfully."})
             else:
@@ -286,6 +319,7 @@ class VerifyResetCodeController(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
         except ValueError as e:
+            risk_service.record_attempt(user_id, "code_verify", ip, was_successful=False)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -303,6 +337,8 @@ class ChangeTemporaryPasswordController(APIView):
     )
     def post(self, request):
         service = _get_service()
+        risk_service = _get_risk_service()
+        ip = _get_client_ip(request)
         user_id = request.data.get("user_id")
         code = request.data.get("code", "").strip()
         new_password = request.data.get("new_password", "")
@@ -329,10 +365,13 @@ class ChangeTemporaryPasswordController(APIView):
                 return Response(
                     {"error": "User not found."}, status=status.HTTP_404_NOT_FOUND
                 )
+            # Record successful password change
+            risk_service.record_attempt(user_id, "password_change", ip, was_successful=True)
             return Response(
                 {"success": True, "message": "Password updated successfully."}
             )
         except ValueError as e:
+            risk_service.record_attempt(user_id, "password_change", ip, was_successful=False)
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 

@@ -14,6 +14,10 @@ const itemsPerPage     = 12;
 let totalPages         = 1;
 let currentFilteredList = [];
 
+// ── Request control ────────────────────────────────────────────────
+let _productsAbort = null;  // AbortController for request cancellation
+let _debounceTimer = null;  // Debounce timer for search
+
 function escHtml(s) {
   return String(s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
@@ -51,14 +55,20 @@ document.getElementById('pImage')?.addEventListener('change', function () {
 });
 
 async function loadProducts() {
+  // Cancel any in-flight request before starting a new one
+  if (_productsAbort) _productsAbort.abort();
+  _productsAbort = new AbortController();
+
   const grid = document.getElementById('productsGrid');
   grid.innerHTML = '<p style="color:var(--mocha);padding:2rem;">Loading products...</p>';
   try {
-    const res  = await fetch(`${API}/products/view/`);
+    const res  = await fetch(`${API}/products/view/?page=1&limit=100`, { signal: _productsAbort.signal });
     const data = await res.json();
-    allProducts = data.results || data;
+    // Handle paginated response format
+    allProducts = data.products || data.results || data;
     applyFilterSort();
-  } catch {
+  } catch (err) {
+    if (err.name === 'AbortError') return; // Cancelled — ignore
     grid.innerHTML = '<p style="color:#dc2626;padding:2rem;">Failed to load products. Is the backend running?</p>';
   }
 }
@@ -197,7 +207,10 @@ window.addEventListener('click', e => {
   if (e.target === document.getElementById('pvModal')) closeProductViewModal();
 });
 
-document.getElementById('productSearch')?.addEventListener('input',  applyFilterSort);
+document.getElementById('productSearch')?.addEventListener('input', function() {
+  clearTimeout(_debounceTimer);
+  _debounceTimer = setTimeout(applyFilterSort, 300);
+});
 document.getElementById('productSort')?.addEventListener('change', applyFilterSort);
 
 function openCreateModal() {
@@ -285,15 +298,21 @@ async function submitProductForm() {
   saveBtn.textContent = 'Saving…';
 
   try {
-    // Convert file to base64 DataURL if provided, otherwise keep existing or null
+    // Upload image file via /api/upload/ if provided, otherwise keep existing or null
     let imageUrl = null;
     if (imageFile) {
-      imageUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload  = e => resolve(e.target.result);
-        reader.onerror = () => reject(new Error('Failed to read image file.'));
-        reader.readAsDataURL(imageFile);
-      });
+      try {
+        const fd = new FormData();
+        fd.append('file', imageFile);
+        const uploadRes = await fetch(`${API}/upload/`, { method: 'POST', body: fd });
+        if (!uploadRes.ok) throw new Error('Image upload failed');
+        const uploadData = await uploadRes.json();
+        const urlPath = uploadData.url.startsWith('/') ? uploadData.url : '/' + uploadData.url;
+        imageUrl = `${window.location.origin}${urlPath}`;
+      } catch (uploadErr) {
+        console.error('Image upload error:', uploadErr);
+        showErrorModal('Failed to upload image. Product will be saved without image.');
+      }
     } else if (editingProductId) {
       // Keep the existing image_url when editing without a new file
       const existing = allProducts.find(x => x.id === editingProductId);
