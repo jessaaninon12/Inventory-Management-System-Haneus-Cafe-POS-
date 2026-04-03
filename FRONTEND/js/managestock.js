@@ -154,12 +154,97 @@ document.querySelector('.search-input')?.addEventListener('input', function() {
   });
 });
 
+// ── Task 9: Sorting Controls ──────────────────────────────────
+let currentSort = { field: 'name', direction: 'asc' };
+
+function sortProducts(field, direction) {
+  currentSort = { field, direction };
+  const sorted = [...loadedProducts].sort((a, b) => {
+    let valA, valB;
+    switch (field) {
+      case 'name':
+        valA = (a.name || '').toLowerCase();
+        valB = (b.name || '').toLowerCase();
+        return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      case 'date':
+        valA = new Date(a.updated_at || 0).getTime();
+        valB = new Date(b.updated_at || 0).getTime();
+        return direction === 'asc' ? valA - valB : valB - valA;
+      case 'stock':
+        valA = a.stock || 0;
+        valB = b.stock || 0;
+        return direction === 'asc' ? valA - valB : valB - valA;
+      case 'category':
+        valA = (a.category || '').toLowerCase();
+        valB = (b.category || '').toLowerCase();
+        return direction === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+      default:
+        return 0;
+    }
+  });
+  renderTable(sorted);
+  updateSortIndicators();
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.classList.remove('sort-active');
+    if (btn.dataset.field === currentSort.field && btn.dataset.direction === currentSort.direction) {
+      btn.classList.add('sort-active');
+    }
+  });
+}
+
+// Inject sort controls into the page (after search bar area)
+document.addEventListener('DOMContentLoaded', () => {
+  const searchContainer = document.querySelector('.search-container') || document.querySelector('.search-input')?.parentElement;
+  if (!searchContainer) return;
+
+  const sortBar = document.createElement('div');
+  sortBar.className = 'sort-controls';
+  sortBar.style.cssText = 'display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;margin-top:0.75rem;padding:0.5rem 0;';
+  sortBar.innerHTML = `
+    <span style="font-size:0.8rem;color:#888;font-weight:500;">Sort:</span>
+    <button class="sort-btn sort-active" data-field="name" data-direction="asc" style="padding:0.35rem 0.75rem;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.8rem;transition:all 0.2s;">A–Z</button>
+    <button class="sort-btn" data-field="name" data-direction="desc" style="padding:0.35rem 0.75rem;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.8rem;transition:all 0.2s;">Z–A</button>
+    <button class="sort-btn" data-field="date" data-direction="desc" style="padding:0.35rem 0.75rem;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.8rem;transition:all 0.2s;">Newest</button>
+    <button class="sort-btn" data-field="date" data-direction="asc" style="padding:0.35rem 0.75rem;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.8rem;transition:all 0.2s;">Oldest</button>
+    <button class="sort-btn" data-field="stock" data-direction="asc" style="padding:0.35rem 0.75rem;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.8rem;transition:all 0.2s;">Stock ↑</button>
+    <button class="sort-btn" data-field="stock" data-direction="desc" style="padding:0.35rem 0.75rem;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:0.8rem;transition:all 0.2s;">Stock ↓</button>
+  `;
+
+  // Insert after the search area
+  const headerEl = document.querySelector('header') || searchContainer.parentElement;
+  if (headerEl && headerEl.parentElement) {
+    headerEl.parentElement.insertBefore(sortBar, headerEl.nextSibling);
+  }
+
+  // Style for active sort button
+  const style = document.createElement('style');
+  style.textContent = `.sort-btn.sort-active { background: #c47b42 !important; color: white !important; border-color: #c47b42 !important; }`;
+  document.head.appendChild(style);
+
+  // Wire sort button clicks
+  sortBar.querySelectorAll('.sort-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      sortProducts(btn.dataset.field, btn.dataset.direction);
+    });
+  });
+});
+
 // ── View Modal ───────────────────────────────────────────────
 function openViewModal(productId) {
   const p = loadedProducts.find(x => x.id === productId);
   if (!p) return;
   const status = getStockStatus(p);
+  const fallback = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400';
+  const imgSrc = p.image_url || fallback;
   document.getElementById('viewModalContent').innerHTML = `
+    <div style="text-align:center;margin-bottom:1rem;">
+      <img src="${escHtml(imgSrc)}" alt="${escHtml(p.name)}"
+           onerror="this.src='${fallback}'"
+           style="width:120px;height:120px;object-fit:cover;border-radius:0.75rem;border:1px solid #ddd;" />
+    </div>
     <div class="ms-detail-row"><span class="ms-detail-label">Product Name</span><span class="ms-detail-val">${escHtml(p.name)}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Category</span><span class="ms-detail-val">${escHtml(p.category || 'Uncategorized')}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Current Stock</span><span class="ms-detail-val">${p.stock} ${escHtml(p.unit || '')}</span></div>

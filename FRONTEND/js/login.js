@@ -294,17 +294,17 @@ document.getElementById('btnSendEmailCode').addEventListener('click', async func
   btn.textContent = 'Sending...';
 
   try {
-    var res = await fetch(API_BASE + '/api/auth/forgot-password/', {
+    var res = await fetch(API_BASE + '/api/auth/send-reset-code/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email }),
     });
     var data = await res.json();
 
-    if (res.ok) {
+    if (res.ok && data.success) {
       _wizState.email = email;
       document.getElementById('emailCodeSentTo').textContent =
-        'A code was sent to ' + email + '. Enter it below.';
+        'A 6-digit code was sent to ' + email + '. Check your inbox and enter it below.';
       goResetStep('e2');
     } else {
       _showErr('emailResetError', data.error || 'Failed to send reset code.');
@@ -332,17 +332,15 @@ document.getElementById('btnVerifyEmailCode').addEventListener('click', async fu
   btn.textContent = 'Verifying...';
 
   try {
-    // Use the token-based verify endpoint
-    var res = await fetch(API_BASE + '/api/auth/reset-password-with-token/', {
+    var res = await fetch(API_BASE + '/api/auth/verify-reset-code/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: code, new_password: '', email: _wizState.email, verify_only: true }),
+      body: JSON.stringify({ email: _wizState.email, code: code }),
     });
     var data = await res.json();
 
-    // If the API validates the code, move on
-    if (res.ok || data.success) {
-      _wizState.emailToken = code;
+    if (res.ok && data.success) {
+      _wizState.emailToken = code;  // store verified code
       goResetStep('e3');
     } else {
       _showErr('emailCodeError', data.error || 'Invalid code. Please try again.');
@@ -361,7 +359,7 @@ document.getElementById('btnEmailChangePw').addEventListener('click', async func
   var confirmPw = document.getElementById('emailConfirmPw').value;
 
   if (!newPw || !confirmPw) { _showErr('emailPwError', 'Both password fields are required.'); return; }
-  if (newPw.length < 6) { _showErr('emailPwError', 'Password must be at least 6 characters.'); return; }
+  if (newPw.length < 8) { _showErr('emailPwError', 'Password must be at least 8 characters.'); return; }
   if (newPw !== confirmPw) { _showErr('emailPwError', 'Passwords do not match.'); return; }
 
   var btn = this;
@@ -369,16 +367,20 @@ document.getElementById('btnEmailChangePw').addEventListener('click', async func
   btn.textContent = 'Updating...';
 
   try {
-    var res = await fetch(API_BASE + '/api/auth/reset-password-with-token/', {
+    var res = await fetch(API_BASE + '/api/auth/reset-password-with-code/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: _wizState.emailToken, new_password: newPw }),
+      body: JSON.stringify({
+        email: _wizState.email,
+        code: _wizState.emailToken,
+        new_password: newPw,
+      }),
     });
     var data = await res.json();
 
     if (res.ok && data.success) {
       closeResetWizard();
-      errorMsg.textContent = 'Password changed successfully! Please log in.';
+      errorMsg.textContent = 'Password changed successfully! Please log in with your new password.';
       errorMsg.style.display = 'block';
       errorMsg.style.background = 'rgba(40,167,69,0.18)';
       errorMsg.style.borderColor = 'rgba(40,167,69,0.4)';

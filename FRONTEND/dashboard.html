@@ -9,6 +9,7 @@
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/payment-modals.css">
 </head>
@@ -76,14 +77,28 @@
       <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
         <i data-lucide="panel-left"></i>
       </button>
-      <div class="search-container">
-        <i data-lucide="search" class="search-icon"></i>
-        <input type="text" class="search-input" placeholder="Search products, orders..." />
+
+      <!-- Product Search with Flyout -->
+      <div id="headerSearchWrap" style="position:relative;flex:1;max-width:380px;">
+        <div style="display:flex;align-items:center;gap:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:999px;padding:0.5rem 1rem;">
+          <i data-lucide="search" style="width:16px;height:16px;color:var(--mocha);flex-shrink:0;"></i>
+          <input type="text" id="headerSearchInput" placeholder="Search products…" style="flex:1;border:none;background:transparent;outline:none;font-size:0.85rem;color:var(--espresso);font-family:'Inter',sans-serif;" />
+          <select id="headerSearchSort" style="border:none;background:transparent;font-size:0.72rem;color:var(--mocha);cursor:pointer;outline:none;font-family:'Inter',sans-serif;">
+            <option value="">Sort</option>
+            <option value="name-asc">A → Z</option>
+            <option value="name-desc">Z → A</option>
+            <option value="price-asc">Price ↑</option>
+            <option value="price-desc">Price ↓</option>
+            <option value="stock-asc">Stock ↑</option>
+            <option value="stock-desc">Stock ↓</option>
+          </select>
+        </div>
+        <div id="headerSearchDropdown" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);max-height:340px;overflow-y:auto;z-index:9998;border:1px solid rgba(225,200,178,0.3);"></div>
+        <div id="headerSearchDetail" style="display:none;position:absolute;top:calc(100% + 6px);left:calc(100% + 8px);width:380px;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);z-index:9999;border:1px solid rgba(225,200,178,0.3);"></div>
       </div>
 
       <div class="header-actions">
         <button class="btn btn-outline">Haneus Cafe</button>
-        <button class="btn btn-primary"><i data-lucide="plus"></i> Add New</button>
         <!-- Notification Bell -->
         <div class="notif-wrapper" id="notifWrapper">
           <button class="notif-bell-btn" id="notifBellBtn" aria-label="Notifications">
@@ -108,7 +123,22 @@
             </div>
           </div>
         </div>
-        <img src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="User" class="avatar" />
+        <!-- Profile Flyout -->
+        <div class="profile-flyout-wrapper" id="profileFlyoutWrapper" style="position:relative;">
+          <img id="headerProfileImg" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="User" class="avatar" style="cursor:pointer;" onclick="toggleProfileFlyout()" />
+          <div id="profileFlyout" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:260px;z-index:9999;padding:1.25rem;">
+            <div style="text-align:center;margin-bottom:0.75rem;">
+              <img id="flyoutProfileImg" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="Profile" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #ddd;" />
+            </div>
+            <div style="text-align:center;margin-bottom:0.25rem;font-weight:600;font-size:0.95rem;" id="flyoutUsername">Loading...</div>
+            <div style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:0.25rem;" id="flyoutUserId">ID: —</div>
+            <div style="text-align:center;font-size:0.8rem;color:#c47b42;font-weight:500;margin-bottom:0.75rem;" id="flyoutAccountType">—</div>
+            <div style="border-top:1px solid #eee;padding-top:0.75rem;display:flex;gap:0.5rem;">
+              <a href="profile.html" style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#f5f5f5;font-size:0.8rem;color:#333;text-decoration:none;">Profile</a>
+              <a href="#" onclick="event.preventDefault();localStorage.clear();window.location.href='login.html'" style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#fef2f2;font-size:0.8rem;color:#dc2626;text-decoration:none;">Logout</a>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -368,5 +398,6 @@
   <script src="js/alert-modal.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/sidebar-toggle.js"></script>
+  <script src="js/header-common.js"></script>
 </body>
 </html>

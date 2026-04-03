@@ -1,25 +1,27 @@
 /* =================================================================
    supplier.js — Supplier card grid with add / edit / delete.
-   Data is stored in-memory (extend to use an API when available).
+   Data persisted in localStorage. Extend to use API when available.
 ================================================================= */
 'use strict';
 
 lucide.createIcons();
 
-// ── Seed data ──────────────────────────────────────────────────
-let suppliers = [
-  {
-    id: 1,
-    company:  'Zaldy Co and Friend',
-    owner:    'John Adrian James Tabamo Pabuto',
-    email:    'jamesadrianpabuto@gmail.com',
-    phone:    '(63+) 9010123921',
-    address:  'BRGY Balbautog Sitio Uwagan Purok Insan',
-    products: ['Paracetamol', 'Grass'],
-    image:    '',
-  }
-];
-let nextId = 2;
+// ── LocalStorage Persistence (Task 7) ──────────────────────────
+const STORAGE_KEY = 'haneus_suppliers';
+
+function loadSuppliers() {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch { return []; }
+}
+
+function saveSuppliers() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(suppliers));
+}
+
+let suppliers = loadSuppliers();
+let nextId = suppliers.length ? Math.max(...suppliers.map(s => s.id)) + 1 : 1;
 let editingId   = null;
 let deletingId  = null;
 
@@ -202,6 +204,7 @@ function submitSupplierForm() {
     suppliers.push({ id: nextId++, company, owner, email, phone, address, products, image });
   }
 
+  saveSuppliers();  // Task 7: Persist to localStorage
   closeSupplierModal();
   renderSuppliers(suppliers);
 }
@@ -224,6 +227,7 @@ function closeDeleteModal() {
 
 function confirmDelete() {
   suppliers = suppliers.filter(s => s.id !== deletingId);
+  saveSuppliers();  // Task 7: Persist to localStorage
   closeDeleteModal();
   renderSuppliers(suppliers);
 }

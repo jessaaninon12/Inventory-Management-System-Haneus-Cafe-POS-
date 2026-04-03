@@ -85,15 +85,16 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 │   │   ├── alert-modal.js             ← Shared: custom alert utility
 │   │   ├── login.js                   ← Login POST + forgot password + forced change modal
 │   │   ├── register.js                ← Registration POST + input normalization
-│   │   ├── dashboard.js               ← Dashboard metrics + bar chart
-│   │   ├── pos.js                     ← POS engine: cart, VAT 12%, receipt PNG
-│   │   ├── products.js                ← Product CRUD + client-side pagination
+│   │   ├── dashboard.js               ← Dashboard metrics + bar chart + View All modals
+│   │   ├── staffdashboard.js          ← Staff dashboard — dynamic greetings, weekly analytics, modals
+│   │   ├── pos.js                     ← POS engine: cart, VAT 12%, receipt PNG, AbortController
+│   │   ├── products.js                ← Product CRUD + pagination + AbortController + debounce
 │   │   ├── createproduct.js           ← Create/edit product form
-│   │   ├── sales.js                   ← Sales table + client-side pagination
-│   │   ├── managestock.js             ← Stock adjust + server-side pagination
+│   │   ├── sales.js                   ← Sales table + pagination + AbortController + debounce
+│   │   ├── managestock.js             ← Stock adjust + server-side pagination + sort controls (A-Z, Date, Stock)
 │   │   ├── lowstock.js                ← Low-stock listing
 │   │   ├── profile.js                 ← Profile view/edit + picture upload
-│   │   ├── usermanagement.js          ← User CRUD + pagination + reset password
+│   │   ├── usermanagement.js          ← User CRUD + pagination + AbortController + reset password
 │   │   ├── supplier.js                ← Supplier reference frontend
 │   │   └── reset-password.js          ← Token-based password reset
 │   └── images/
@@ -107,7 +108,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
     ├── .env.example                   ← Backend environment variable template
     │
     ├── config/
-    │   ├── settings.py                ← All Django settings (DB, DRF, CORS, email, cache)
+    │   ├── settings.py                ← All Django settings (DB, DRF, CORS, email, cache, throttle)
     │   ├── urls.py                    ← Root URL config + FRONTEND static serving (dev)
     │   ├── wsgi.py                    ← WSGI entry point
     │   └── asgi.py                    ← ASGI entry point
@@ -131,6 +132,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
     │   │   ├── sale_controller.py     ← POS sale create/view/compute
     │   │   ├── sales_analytics_controller.py ← Analytics
     │   │   ├── dashboard_controller.py← Dashboard stats + chart
+    │   │   ├── staff_dashboard_controller.py ← Staff dashboard + weekly analytics
     │   │   ├── password_reset_controller.py  ← Forgot/reset password
     │   │   └── admin_approval_controller.py  ← Admin registration approval
     │   └── migrations/                ← api app migrations (0001–0009)
@@ -585,7 +587,7 @@ Need to add:
 - [ ] Sold-out products visible but not orderable
 - [ ] Pagination shows 30 items per page
 - [ ] POS accessible separately from account type
-- [ ] System handles thousands of API calls under load
+- [x] System handles thousands of API calls under load — **Backend Hardening complete**: no global throttle, compact responses, AbortController, caching
 - [ ] No changes to existing UI layout or theme
       
 
@@ -787,8 +789,24 @@ Database
 - ✅ Backward-compatible API responses
 - ✅ Optional fields (supplier info) don't break existing UI
 - ✅ DTOs and repositories support scaling
+- ✅ **Backend Hardening** — removed global throttle, enforced pagination on ALL product list endpoints
+- ✅ **Response Optimization** — `to_dict_compact()` strips base64 images from list views (3.4MB → 817 bytes)
+- ✅ **Frontend Request Control** — `AbortController` in products.js, sales.js, usermanagement.js, pos.js
+- ✅ **15-second LocMemCache** on product list endpoints to reduce DB load
+- ✅ **Debounced search/filter inputs** (300ms) to prevent API call flooding
 
-### 5. User Experience
+### 5. Staff Dashboard & Analytics
+- ✅ **Dynamic staff dashboard** — weekly earnings (Mon-Sun), growth %, payroll formula (₱450/day × days worked)
+- ✅ **75 rotating greetings** — 5 categories × 15 sentences with dynamic `<Firstname>` injection
+- ✅ **Date range selector** — click to open Weekly Analytics modal with date picker
+- ✅ **Best Sellers panel** — top 25 with View All modal (conditional: only if > 6 items)
+- ✅ **Recent Transactions panel** — 30 latest with View All modal
+- ✅ **Admin dashboard View All** — Top Selling, Low Stock, Recent Sales all support View All modals
+- ✅ **Manage Stock sorting** — A-Z, Z-A, Newest, Oldest, Stock ↑, Stock ↓
+- ✅ **AbortController refresh** — cancel stale requests on rapid refresh clicks
+- ✅ **Backend endpoints** — `GET /api/staff/dashboard/` + `GET /api/staff/dashboard/analytics/` with 30s cache
+
+### 6. User Experience
 - ✅ Real-time account type information
 - ✅ Clear password reset workflow
 - ✅ Persistent profile customization

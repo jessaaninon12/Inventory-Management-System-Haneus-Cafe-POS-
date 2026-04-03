@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --primary:       #c47b42;
   --primary-dark:  #a35f2e;
   --espresso:      #4a2f21;
@@ -559,6 +559,21 @@ h1 { font-size:1.875rem; font-weight:700; color:var(--espresso); }
   color: #233042;
   margin: 0;
   line-height: 1.35;
+  min-height: 1.5em;
+}
+
+/* Typing cursor animation */
+.dash-greeting-text h2.typing-cursor::after {
+  content: '|';
+  display: inline-block;
+  color: #c47b42;
+  font-weight: 300;
+  animation: blink-cursor 0.7s step-end infinite;
+  margin-left: 1px;
+}
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 .dash-name {
