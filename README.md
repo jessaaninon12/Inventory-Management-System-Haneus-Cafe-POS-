@@ -798,6 +798,13 @@ Database
 ### 5. Staff Dashboard & Analytics
 - ✅ **Dynamic staff dashboard** — weekly earnings (Mon-Sun), growth %, payroll formula (₱450/day × days worked)
 - ✅ **75 rotating greetings** — 5 categories × 15 sentences with dynamic `<Firstname>` injection
+
+### 6. Responsive UI & Mobile Scrolling Architecture
+- ✅ **True Mobile Viewport Adherence** — transitioned structural shells to use `100dvh` for pixel-perfect stability beneath mobile navigation chrome
+- ✅ **Nested Flexbox Scroll Control** — enforced `overflow-y: auto !important` safely insulated inside main-wrappers across all pages
+- ✅ **Profile Flex Compression Solved** — forced flex geometry constraints (`flex-shrink: 0`, `min-height: min-content`) to mathematically protect the `.profile-card` from clipping content out of bounds on small screens
+- ✅ **Always-Visible Native Scrollbars** — injected styled Webkit scrollbars (`::-webkit-scrollbar`) network-wide, ensuring standard table grids and pages clearly display scroll availability to mobile users
+- ✅ **Dynamic Bottom Sheet Optimization** — `.login-overlay` explicitly protected via isolated centring commands to override generalized overlay geometry on smaller heights
 - ✅ **Date range selector** — click to open Weekly Analytics modal with date picker
 - ✅ **Best Sellers panel** — top 25 with View All modal (conditional: only if > 6 items)
 - ✅ **Recent Transactions panel** — 30 latest with View All modal

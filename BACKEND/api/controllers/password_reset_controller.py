@@ -82,6 +82,14 @@ class ResetPasswordWithTokenController(APIView):
         user.set_password(new_password)
         user.save()
         reset_service.use_reset_token(token)
+
+        # Send password changed notification email (best-effort)
+        try:
+            _, email_service = _get_services()
+            user_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            email_service.send_password_changed_email(user.email, user_name)
+        except Exception:
+            pass  # Don't block the response
         
         return Response({
             "success": True,
@@ -116,7 +124,8 @@ class SendResetCodeController(APIView):
 
         if user:
             code = reset_service.create_6digit_code(user)
-            sent = email_service.send_6digit_code_email(user.email, code)
+            user_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            sent = email_service.send_6digit_code_email(user.email, code, user_name=user_name)
             if not sent:
                 # Log but don't expose to client
                 print(f"[SendResetCode] Failed to send code email to {user.email}")
@@ -127,11 +136,11 @@ class SendResetCodeController(APIView):
         })
 
 
-class VerifyResetCodeController(APIView):
+class VerifyEmailResetCodeController(APIView):
     """
-    POST /api/auth/verify-reset-code/
+    POST /api/auth/verify-email-reset-code/
     Check if a 6-digit code is valid WITHOUT consuming it.
-    Used by the wizard step to confirm the code before showing "new password" step.
+    Used by the email reset wizard step to confirm the code before showing "new password" step.
 
     Request:  { email, code }
     Response: { success: true } or { error: "..." }
@@ -176,7 +185,7 @@ class ResetPasswordWithCodeController(APIView):
         if not new_password or len(new_password) < 8:
             return Response({"error": "Password must be at least 8 characters."}, status=status.HTTP_400_BAD_REQUEST)
 
-        reset_service, _ = _get_services()
+        reset_service, email_service = _get_services()
         user = reset_service.verify_6digit_code(email, code)
         if not user:
             return Response({"error": "Invalid or expired code."}, status=status.HTTP_400_BAD_REQUEST)
@@ -184,6 +193,13 @@ class ResetPasswordWithCodeController(APIView):
         user.set_password(new_password)
         user.save()
         reset_service.use_6digit_code(email, code)
+
+        # Send password changed notification email
+        try:
+            user_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            email_service.send_password_changed_email(user.email, user_name)
+        except Exception:
+            pass  # Best-effort — don't block the response
 
         return Response({
             "success": True,

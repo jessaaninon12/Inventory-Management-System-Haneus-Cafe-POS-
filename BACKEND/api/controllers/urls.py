@@ -33,7 +33,7 @@ from api.controllers.password_reset_controller import (
     ForgotPasswordController,
     ResetPasswordWithTokenController,
     SendResetCodeController,
-    VerifyResetCodeController,
+    VerifyEmailResetCodeController,
     ResetPasswordWithCodeController,
 )
 
@@ -94,6 +94,7 @@ urlpatterns = [
     path("auth/forgot-password/", ForgotPasswordController.as_view(), name="auth-forgot-password"),
     path("auth/reset-password-with-token/", ResetPasswordWithTokenController.as_view(), name="auth-reset-password-with-token"),
     path("auth/send-reset-code/", SendResetCodeController.as_view(), name="auth-send-reset-code"),
+    path("auth/verify-email-reset-code/", VerifyEmailResetCodeController.as_view(), name="auth-verify-email-reset-code"),
     path("auth/reset-password-with-code/", ResetPasswordWithCodeController.as_view(), name="auth-reset-password-with-code"),
 
     # ── Profile ─────────────────────────────────────────────────────────

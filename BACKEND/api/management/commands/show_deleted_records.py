@@ -77,7 +77,7 @@ class Command(BaseCommand):
                 self.stdout.write(f'  Type: {record.record_type}')
                 self.stdout.write(f'  Original ID: {record.original_id}')
                 self.stdout.write(f'  Deleted At: {record.deleted_at}')
-                self.stdout.write(f'  Deleted By: {record.deleted_by.username if record.deleted_by else \"System\"}')
+                self.stdout.write(f'  Deleted By: {record.deleted_by.username if record.deleted_by else Unknown}')
                 self.stdout.write(f'  Data:')
                 
                 # Pretty-print JSON data

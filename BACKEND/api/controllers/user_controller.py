@@ -235,6 +235,17 @@ class ChangePasswordController(APIView):
             success = service.change_password(pk, dto)
             if not success:
                 return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Send password changed notification email (best-effort)
+            try:
+                from application.services.email_service import EmailService
+                from api.models import User
+                user_obj = User.objects.get(pk=pk)
+                user_name = f"{user_obj.first_name} {user_obj.last_name}".strip() or user_obj.username
+                EmailService().send_password_changed_email(user_obj.email, user_name)
+            except Exception:
+                pass  # Don't block the response
+
             return Response({"success": True, "message": "Password updated successfully."})
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -367,6 +378,17 @@ class ChangeTemporaryPasswordController(APIView):
                 )
             # Record successful password change
             risk_service.record_attempt(user_id, "password_change", ip, was_successful=True)
+
+            # Send password changed notification email (best-effort)
+            try:
+                from application.services.email_service import EmailService
+                from api.models import User
+                user_obj = User.objects.get(pk=user_id)
+                user_name = f"{user_obj.first_name} {user_obj.last_name}".strip() or user_obj.username
+                EmailService().send_password_changed_email(user_obj.email, user_name)
+            except Exception:
+                pass  # Don't block the response
+
             return Response(
                 {"success": True, "message": "Password updated successfully."}
             )

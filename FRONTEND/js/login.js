@@ -332,7 +332,7 @@ document.getElementById('btnVerifyEmailCode').addEventListener('click', async fu
   btn.textContent = 'Verifying...';
 
   try {
-    var res = await fetch(API_BASE + '/api/auth/verify-reset-code/', {
+    var res = await fetch(API_BASE + '/api/auth/verify-email-reset-code/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: _wizState.email, code: code }),
