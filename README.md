@@ -189,7 +189,7 @@ python manage.py createsuperuser_custom
 
 Start the backend:
 ```bash
-python manage.py runserver 8000
+python manage.py runserver or python manage.py runserver 8000
 ```
 
 | Service | Protocol | Access URL |
