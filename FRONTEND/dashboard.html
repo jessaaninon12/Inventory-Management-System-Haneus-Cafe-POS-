@@ -16,11 +16,7 @@
 </head>
 
 <body>
-  <script>
-    if (localStorage.getItem('user_type') === 'Staff') {
-      window.location.href = 'staffdashboard.html';
-    }
-  </script>
+  <script>(function(){try{var s=localStorage.getItem('user');if(!s){window.location.href='login.html';return;}var u=JSON.parse(s||'{}');if(u.user_type!=='Admin'){window.location.href='staffdashboard.html';}}catch(e){try{localStorage.clear();}catch{}window.location.href='login.html';}})();</script>
   <!-- rest of the page -->
   <div class="app-container">
 

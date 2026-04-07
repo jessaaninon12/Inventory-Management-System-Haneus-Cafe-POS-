@@ -48,6 +48,7 @@
   </style>
 </head>
 <body>
+<script>(function(){try{var s=localStorage.getItem('user');if(!s){window.location.href='login.html';return;}var u=JSON.parse(s||'{}');if(u.user_type!=='Staff'){window.location.href='dashboard.html';}}catch(e){try{localStorage.clear();}catch{}window.location.href='login.html';}})();</script>
 
 <div class="app-container">
 

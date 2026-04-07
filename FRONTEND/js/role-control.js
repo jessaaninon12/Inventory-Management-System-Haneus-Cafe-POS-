@@ -14,7 +14,7 @@ function applyRoleBasedAccess() {
   try {
     const userStr = localStorage.getItem('user');
     if (!userStr) {
-      console.warn('No user in localStorage — role access not applied');
+      window.location.href = 'login.html';
       return;
     }
 
@@ -27,7 +27,33 @@ function applyRoleBasedAccess() {
     });
 
   } catch (err) {
-    console.error('Error applying role-based access:', err);
+    try { localStorage.clear(); } catch {}
+    window.location.href = 'login.html';
+  }
+}
+
+function enforceAuth(requiredRole) {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      window.location.href = 'login.html';
+      return;
+    }
+    const user = JSON.parse(userStr);
+    const role = user.user_type;
+    if (requiredRole) {
+      if (requiredRole === 'Admin' && role !== 'Admin') {
+        window.location.href = 'staffdashboard.html';
+        return;
+      }
+      if (requiredRole === 'Staff' && role !== 'Staff') {
+        window.location.href = 'dashboard.html';
+        return;
+      }
+    }
+  } catch {
+    try { localStorage.clear(); } catch {}
+    window.location.href = 'login.html';
   }
 }
 
@@ -42,3 +68,4 @@ document.addEventListener('DOMContentLoaded', () => {
 // Export for use in other scripts
 window.applyRoleBasedAccess = applyRoleBasedAccess;
 window.initRoleBasedSidebar = initRoleBasedSidebar;
+window.enforceAuth = enforceAuth;
