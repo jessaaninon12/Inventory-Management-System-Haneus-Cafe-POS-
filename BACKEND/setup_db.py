@@ -110,9 +110,9 @@ def setup_postgresql():
 
     db_name = prompt("Database name", "haneuscafedb").lower()
     db_host = prompt("Host (e.g. localhost)", "localhost")
-    db_port = prompt("Port", "5432")
+    db_port = prompt("Port", "9999")
     db_user = prompt("Username", "postgres")
-    db_pass = prompt("Password (leave blank if none)", "")
+    db_pass = prompt("Password 9999 or (leave blank if none)", "9999")
 
     return {
         "DB_ENGINE": "postgresql",
