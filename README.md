@@ -192,6 +192,21 @@ Start the backend:
 python manage.py runserver or python manage.py runserver 8000
 ```
 
+
+pgAdmin Connection
+If you are trying to view the database in the pgAdmin app, here is how you fill out that "Existing Server" screen:
+
+Name: PostgreSQL 18
+Host name/address: localhost
+Port: 9999
+Maintenance database: postgres
+Username: postgres
+Password: 9999 (Check "Save password" so you don't have to type it again)
+
+
+
+
+
 | Service | Protocol | Access URL |
 |---|---|---|
 | Django Dev Server | HTTP | `http://localhost:8000` |
