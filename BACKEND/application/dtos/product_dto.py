@@ -89,6 +89,34 @@ class ProductDTO:
             "can_order": self.can_order,
         }
 
+    def to_dict_compact(self):
+        """Lightweight dict for list views — excludes base64 image_url (~200KB each).
+        Use to_dict() for detail views where full image data is needed.
+        """
+        # Only include image_url if it's a URL (not base64 data URI)
+        img = self.image_url
+        if img and str(img).startswith("data:"):
+            img = None  # Strip base64 from list response
+        return {
+            "id": self.id,
+            "name": self.name,
+            "category": self.category,
+            "price": str(self.price),
+            "cost": str(self.cost),
+            "stock": self.stock,
+            "unit": self.unit,
+            "description": self.description,
+            "low_stock_threshold": self.low_stock_threshold,
+            "image_url": img,
+            "stock_status": self.stock_status,
+            "created_at": str(self.created_at) if self.created_at else None,
+            "updated_at": str(self.updated_at) if self.updated_at else None,
+            "supplier_name": self.supplier_name,
+            "supplier_contact": self.supplier_contact,
+            "is_orderable": self.is_orderable,
+            "can_order": self.can_order,
+        }
+
 
 class CreateProductDTO:
     """Payload for creating a new product."""

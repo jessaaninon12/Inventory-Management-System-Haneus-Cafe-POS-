@@ -3,6 +3,58 @@ lucide.createIcons();
 
 const API_BASE = "http://127.0.0.1:8000/api";
 
+// Guard flags — tell header-common.js to skip profile flyout + notification init
+window._dashboardProfileInit = true;
+window._dashboardNotifInit = true;
+
+// ── Task 10: Profile flyout toggle + populate ────────────────────────
+function toggleProfileFlyout() {
+  const flyout = document.getElementById('profileFlyout');
+  if (flyout) flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+}
+// Close flyout on outside click
+document.addEventListener('click', (e) => {
+  const wrapper = document.getElementById('profileFlyoutWrapper');
+  const flyout = document.getElementById('profileFlyout');
+  if (flyout && wrapper && !wrapper.contains(e.target)) {
+    flyout.style.display = 'none';
+  }
+});
+
+// Populate profile flyout from localStorage + API
+(async function initProfileFlyout() {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userId = user?.id;
+    // Set from localStorage immediately
+    const nameEl = document.getElementById('flyoutUsername');
+    const idEl = document.getElementById('flyoutUserId');
+    const typeEl = document.getElementById('flyoutAccountType');
+    if (nameEl) nameEl.textContent = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || 'User';
+    if (idEl) idEl.textContent = `ID: #${userId || '—'}`;
+    if (typeEl) typeEl.textContent = user.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee';
+
+    // Fetch full profile for image
+    if (userId) {
+      const res = await fetch(`${API_BASE}/profile/${userId}/`);
+      if (res.ok) {
+        const p = await res.json();
+        const picUrl = p.profile_picture_url || p.avatar_url || '';
+        if (picUrl) {
+          const src = picUrl.startsWith('http') ? picUrl : `http://127.0.0.1:8000${picUrl}`;
+          const headerImg = document.getElementById('headerProfileImg');
+          const flyoutImg = document.getElementById('flyoutProfileImg');
+          if (headerImg) headerImg.src = src;
+          if (flyoutImg) flyoutImg.src = src;
+        }
+        // Update name from API data
+        if (nameEl) nameEl.textContent = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'User';
+        if (typeEl) typeEl.textContent = p.account_type_label || (p.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee');
+      }
+    }
+  } catch (e) { console.warn('Profile flyout init error:', e); }
+}());
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -20,7 +72,7 @@ function setText(id, text) {
 function statusBadge(status) {
   const map = {
     Completed: "background:#dcfce7;color:#15803d;",
-    Pending:   "background:#fef3c7;color:#92400e;",
+    Pending: "background:#fef3c7;color:#92400e;",
     Cancelled: "background:#fee2e2;color:#b91c1c;",
   };
   const style = map[status] || map.Pending;
@@ -121,18 +173,26 @@ document.querySelectorAll(".period-btn").forEach((btn) => {
   });
 });
 
+// Store full datasets for View All modals (Task 7)
+window._dashTopSelling = [];
+window._dashLowStock = [];
+window._dashRecentSales = [];
+
 function renderTopSelling(items) {
   const container = document.getElementById("top-selling-list");
   if (!container) return;
+  window._dashTopSelling = items;
 
   if (!items.length) {
     container.innerHTML = '<p style="opacity:0.7;font-size:0.875rem;">No sales data yet.</p>';
     return;
   }
 
+  // Task 7: Show only first 6 items, View All if > 6
+  const show = items.slice(0, 6);
   const maxRevenue = Math.max(...items.map((i) => parseFloat(i.total_revenue) || 0), 1);
 
-  container.innerHTML = items
+  container.innerHTML = show
     .map((item) => {
       const revenue = parseFloat(item.total_revenue) || 0;
       const pct = Math.round((revenue / maxRevenue) * 100);
@@ -146,18 +206,25 @@ function renderTopSelling(items) {
         </div>`;
     })
     .join("");
+
+  // View All button
+  const viewAllBtn = container.closest("div")?.querySelector("button");
+  if (viewAllBtn) viewAllBtn.style.display = items.length > 6 ? "" : "none";
 }
 
 function renderLowStock(items) {
   const container = document.getElementById("low-stock-list");
   if (!container) return;
+  window._dashLowStock = items;
 
   if (!items.length) {
     container.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;">All products are well stocked.</p>';
     return;
   }
 
-  container.innerHTML = items
+  // Task 7: Show only first 6 items
+  const show = items.slice(0, 6);
+  let html = show
     .map(
       (p) => `
       <div class="product-item">
@@ -171,18 +238,27 @@ function renderLowStock(items) {
       </div>`
     )
     .join("");
+
+  // Task 7: View All if > 6
+  if (items.length > 6) {
+    html += `<button onclick="openDashLowStockModal()" style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;">View All (${items.length})</button>`;
+  }
+  container.innerHTML = html;
 }
 
 function renderRecentSales(sales) {
   const container = document.getElementById("recent-sales-list");
   if (!container) return;
+  window._dashRecentSales = sales;
 
   if (!sales.length) {
     container.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;">No recent sales.</p>';
     return;
   }
 
-  container.innerHTML = sales
+  // Task 7: Show only first 6 items
+  const show = sales.slice(0, 6);
+  let html = show
     .map(
       (s) => `
       <div class="product-item" style="margin-bottom:0.75rem;">
@@ -197,7 +273,122 @@ function renderRecentSales(sales) {
       </div>`
     )
     .join("");
+
+  // Task 7: View All if > 6
+  if (sales.length > 6) {
+    html += `<button onclick="openDashRecentSalesModal()" style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;">View All (${sales.length})</button>`;
+  }
+  container.innerHTML = html;
 }
+
+// ── Task 7: View All Modals ─────────────────────────────────────
+
+function _createDashModal(id) {
+  let modal = document.getElementById(id);
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = id;
+    modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:10000;justify-content:center;align-items:center;';
+    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    document.body.appendChild(modal);
+  }
+  return modal;
+}
+
+// Top Selling View All — shows top 25
+function openDashTopSellingModal() {
+  const items = (window._dashTopSelling || []).slice(0, 25);
+  const modal = _createDashModal('dashTopSellingModal');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:600px;max-height:80vh;animation:fadeInUp .2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
+        <h2 style="font-size:1rem;font-weight:600;margin:0;">🏆 Top ${items.length} Best Sellers</h2>
+        <button onclick="document.getElementById('dashTopSellingModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+          <thead><tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:0.5rem;">#</th><th style="text-align:left;padding:0.5rem;">Product</th><th style="text-align:right;padding:0.5rem;">Qty</th><th style="text-align:right;padding:0.5rem;">Revenue</th></tr></thead>
+          <tbody>
+            ${items.map((item, i) => `
+              <tr style="border-bottom:1px solid #f5f5f5;">
+                <td style="padding:0.5rem;">${i + 1}</td>
+                <td style="padding:0.5rem;">${item.product_name}</td>
+                <td style="text-align:right;padding:0.5rem;">${item.total_quantity}</td>
+                <td style="text-align:right;padding:0.5rem;">${formatCurrency(item.total_revenue)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// Low Stock View All — shows 30 latest
+function openDashLowStockModal() {
+  const items = (window._dashLowStock || []).slice(0, 30);
+  const modal = _createDashModal('dashLowStockModal');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:600px;max-height:80vh;animation:fadeInUp .2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
+        <h2 style="font-size:1rem;font-weight:600;margin:0;">⚠️ Low Stock Products (${items.length})</h2>
+        <button onclick="document.getElementById('dashLowStockModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
+        ${items.map(p => `
+          <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid #f5f5f5;">
+            <div style="flex:1;"><p style="font-weight:500;">${p.name}</p><p style="font-size:0.8rem;color:#999;">ID: #${p.id}</p></div>
+            <span style="color:#b91c1c;font-weight:600;">${p.stock} left</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// Recent Sales View All — shows 30 latest
+function openDashRecentSalesModal() {
+  const items = (window._dashRecentSales || []).slice(0, 30);
+  const modal = _createDashModal('dashRecentSalesModal');
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:700px;max-height:80vh;animation:fadeInUp .2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
+        <h2 style="font-size:1rem;font-weight:600;margin:0;">📋 Recent Sales (${items.length})</h2>
+        <button onclick="document.getElementById('dashRecentSalesModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
+      </div>
+      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
+          <thead><tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:0.5rem;">#</th><th style="text-align:left;padding:0.5rem;">Order</th><th style="text-align:left;padding:0.5rem;">Customer</th><th style="text-align:center;padding:0.5rem;">Status</th><th style="text-align:right;padding:0.5rem;">Total</th></tr></thead>
+          <tbody>
+            ${items.map((s, i) => `
+              <tr style="border-bottom:1px solid #f5f5f5;">
+                <td style="padding:0.5rem;">${i + 1}</td>
+                <td style="padding:0.5rem;">${s.product_name || s.order_id}</td>
+                <td style="padding:0.5rem;">${s.customer_name}</td>
+                <td style="text-align:center;padding:0.5rem;">${statusBadge(s.status)}</td>
+                <td style="text-align:right;padding:0.5rem;">${formatCurrency(s.total)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+  modal.style.display = 'flex';
+}
+
+// Wire the existing "View All Products" button to top selling modal
+document.addEventListener('DOMContentLoaded', () => {
+  const topSellingSection = document.getElementById('top-selling-list');
+  if (topSellingSection) {
+    const viewAllBtn = topSellingSection.closest('div')?.querySelector('button');
+    if (viewAllBtn) {
+      viewAllBtn.addEventListener('click', openDashTopSellingModal);
+    }
+  }
+});
 
 // ---------------------------------------------------------------------------
 // Fetch and render
@@ -234,11 +425,11 @@ loadDashboard();
 const NOTIF_STORE_KEY = 'haneus_notif_store';
 let _selectedNotifId = null;
 
-function _loadStore()   { try { return JSON.parse(localStorage.getItem(NOTIF_STORE_KEY) || '[]'); } catch { return []; } }
+function _loadStore() { try { return JSON.parse(localStorage.getItem(NOTIF_STORE_KEY) || '[]'); } catch { return []; } }
 function _saveStore(ns) { localStorage.setItem(NOTIF_STORE_KEY, JSON.stringify(ns)); }
 
 function _updateBadge(notifs) {
-  const badge  = document.getElementById('notifBadge');
+  const badge = document.getElementById('notifBadge');
   if (!badge) return;
   const unread = notifs.filter(n => !n.read).length;
   badge.textContent = unread > 9 ? '9+' : String(unread);
@@ -247,31 +438,31 @@ function _updateBadge(notifs) {
 
 async function _buildNotifications() {
   try {
-    const res      = await fetch(`${API_BASE}/products/low-stock/`);
+    const res = await fetch(`${API_BASE}/products/low-stock/`);
     const products = await res.json();
-    const store    = _loadStore();
+    const store = _loadStore();
     const storeMap = {};
     store.forEach(n => { storeMap[n.id] = n; });
 
     const fresh = products.map(p => {
-      const type = p.stock <= 0                        ? 'out_of_stock'
-                 : p.stock <= p.low_stock_threshold / 2 ? 'critical' : 'low_stock';
+      const type = p.stock <= 0 ? 'out_of_stock'
+        : p.stock <= p.low_stock_threshold / 2 ? 'critical' : 'low_stock';
       const title = p.stock <= 0 ? 'Out of Stock' : type === 'critical' ? 'Critical Stock' : 'Low Stock Alert';
-      const msg   = p.stock <= 0
+      const msg = p.stock <= 0
         ? `${p.name} is out of stock and needs immediate restocking.`
         : `${p.name} has only ${p.stock} unit(s) left. Reorder point: ${p.low_stock_threshold}.`;
       return {
-        id          : `ls_${p.id}`,
+        id: `ls_${p.id}`,
         type,
         title,
-        message     : msg,
-        productId   : p.id,
-        productName : p.name,
-        stock       : p.stock,
-        threshold   : p.low_stock_threshold,
-        category    : p.category,
-        timestamp   : new Date().toISOString(),
-        read        : storeMap[`ls_${p.id}`]?.read ?? false,
+        message: msg,
+        productId: p.id,
+        productName: p.name,
+        stock: p.stock,
+        threshold: p.low_stock_threshold,
+        category: p.category,
+        timestamp: new Date().toISOString(),
+        read: storeMap[`ls_${p.id}`]?.read ?? false,
       };
     });
 
@@ -283,18 +474,18 @@ async function _buildNotifications() {
         if (approvalRes.ok) {
           const approvalData = await approvalRes.json();
           const approvals = (approvalData.requests || []).map(req => ({
-            id          : `approval_${req.id}`,
-            type        : 'approval_pending',
-            title       : 'Admin Approval Needed',
-            message     : `${req.user_name} (${req.email}) is awaiting approval.`,
-            userId      : req.user_id,
-            userName    : req.user_name,
-            userEmail   : req.email,
-            requestId   : req.id,
-            status      : req.status,
-            createdAt   : req.created_at,
-            timestamp   : req.created_at,
-            read        : storeMap[`approval_${req.id}`]?.read ?? false,
+            id: `approval_${req.id}`,
+            type: 'approval_pending',
+            title: 'Admin Approval Needed',
+            message: `${req.user_name} (${req.email}) is awaiting approval.`,
+            userId: req.user_id,
+            userName: req.user_name,
+            userEmail: req.email,
+            requestId: req.id,
+            status: req.status,
+            createdAt: req.created_at,
+            timestamp: req.created_at,
+            read: storeMap[`approval_${req.id}`]?.read ?? false,
           }));
           fresh.push(...approvals);
         }
@@ -326,7 +517,7 @@ function _renderNotifList(notifs) {
     const isApproval = n.type === 'approval_pending';
     const dotColor = isApproval ? 'info' : (n.type === 'out_of_stock' ? 'danger' : n.type === 'critical' ? 'warning' : 'caution');
     const preview = isApproval ? n.userName : n.productName;
-    
+
     return `
       <div class="notif-item ${n.read ? 'read' : ''} ${_selectedNotifId === n.id ? 'selected' : ''}"
            onclick="_selectNotif('${n.id}')">
@@ -351,12 +542,12 @@ function _selectNotif(id) {
   _updateBadge(notifs);
   _renderNotifList(notifs);
 
-  const detail   = document.getElementById('notifDetailPanel');
+  const detail = document.getElementById('notifDetailPanel');
   if (!detail) return;
-  
+
   // Handle approval notifications
   if (n.type === 'approval_pending') {
-    const typeBg    = '#dbeafe';
+    const typeBg = '#dbeafe';
     const typeColor = '#0284c7';
     const safeUserId = n.userId || 0;
     const safeNotifId = String(n.id || '').replace(/'/g, '');
@@ -382,7 +573,7 @@ function _selectNotif(id) {
       </div>`;
     // Use event listeners (not onclick) so buttons work reliably regardless of DOM state
     const approveBtn = document.getElementById(`approveBtn_${safeUserId}`);
-    const rejectBtn  = document.getElementById(`rejectBtn_${safeUserId}`);
+    const rejectBtn = document.getElementById(`rejectBtn_${safeUserId}`);
     if (approveBtn) {
       approveBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -398,7 +589,7 @@ function _selectNotif(id) {
   } else {
     // Handle stock notifications
     const typeColor = n.type === 'out_of_stock' ? '#b91c1c' : n.type === 'critical' ? '#92400e' : '#b45309';
-    const typeBg    = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
+    const typeBg = n.type === 'out_of_stock' ? '#fee2e2' : n.type === 'critical' ? '#fef3c7' : '#fef9c3';
     detail.innerHTML = `
       <div class="notif-detail-content">
         <span style="background:${typeBg};color:${typeColor};padding:0.2rem 0.65rem;border-radius:999px;font-size:0.75rem;font-weight:600;">${n.title}</span>
@@ -426,12 +617,22 @@ function _approveUser(userId, notifId) {
     'Approve this admin user?',
     async () => {
       try {
-        const response = await fetch(`${API_BASE}/admin/approve-user/${userId}/`, {
+        const response = await fetch(`${API_BASE}/admin/approval-requests/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'approve', user_id: userId }),
         });
         const data = await response.json();
         if (response.ok && data.success) {
+          // Instant UI transform — show REQUEST GRANTED
+          const detail = document.getElementById('notifDetailPanel');
+          if (detail) {
+            detail.innerHTML = `
+              <div class="notif-detail-content" style="text-align:center;padding:2rem;">
+                <span style="background:#dcfce7;color:#15803d;padding:0.3rem 0.75rem;border-radius:999px;font-size:0.85rem;font-weight:700;">REQUEST GRANTED</span>
+                <p style="margin-top:1rem;color:var(--mocha);font-size:0.875rem;">User has been approved and can now login.</p>
+              </div>`;
+          }
           const notifs = _loadStore();
           const idx = notifs.findIndex(n => n.id === notifId);
           if (idx >= 0) notifs.splice(idx, 1);
@@ -455,13 +656,22 @@ function _rejectUser(userId, notifId) {
     'Reject this admin user and remove their account?',
     async () => {
       try {
-        const response = await fetch(`${API_BASE}/admin/reject-user/${userId}/`, {
+        const response = await fetch(`${API_BASE}/admin/approval-requests/`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ delete_user: true }),
+          body: JSON.stringify({ action: 'reject', user_id: userId, delete_user: true }),
         });
         const data = await response.json();
         if (response.ok && data.success) {
+          // Instant UI transform — show REQUEST REJECTED
+          const detail = document.getElementById('notifDetailPanel');
+          if (detail) {
+            detail.innerHTML = `
+              <div class="notif-detail-content" style="text-align:center;padding:2rem;">
+                <span style="background:#fee2e2;color:#b91c1c;padding:0.3rem 0.75rem;border-radius:999px;font-size:0.85rem;font-weight:700;">REQUEST REJECTED</span>
+                <p style="margin-top:1rem;color:var(--mocha);font-size:0.875rem;">User has been rejected and removed from the system.</p>
+              </div>`;
+          }
           const notifs = _loadStore();
           const idx = notifs.findIndex(n => n.id === notifId);
           if (idx >= 0) notifs.splice(idx, 1);
@@ -481,7 +691,7 @@ function _rejectUser(userId, notifId) {
 }
 
 // Bell toggle
-document.getElementById('notifBellBtn')?.addEventListener('click', function(e) {
+document.getElementById('notifBellBtn')?.addEventListener('click', function (e) {
   e.stopPropagation();
   const dd = document.getElementById('notifDropdown');
   if (!dd) return;
@@ -492,7 +702,7 @@ document.getElementById('notifBellBtn')?.addEventListener('click', function(e) {
 
 // Close on outside click
 document.addEventListener('click', e => {
-  const w  = document.getElementById('notifWrapper');
+  const w = document.getElementById('notifWrapper');
   const dd = document.getElementById('notifDropdown');
   if (w && dd && !w.contains(e.target)) dd.classList.remove('open');
 });
@@ -523,7 +733,7 @@ document.getElementById('clearAllBtn')?.addEventListener('click', () => {
     const res = await fetch(`${API_BASE}/products/low-stock/`);
     if (!res.ok) return;
     const products = await res.json();
-    const store    = _loadStore();
+    const store = _loadStore();
     const storeMap = {};
     store.forEach(n => { storeMap[n.id] = n; });
     // Count unread from previous store

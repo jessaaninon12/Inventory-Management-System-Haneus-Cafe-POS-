@@ -1,8 +1,8 @@
 """
 Django settings for Haneus Cafe POS — Clean Architecture.
 
-Database: MySQL via XAMPP (default) or MSSQL via env.
-Set DB_ENGINE=mysql or DB_ENGINE=mssql in your .env file.
+Database: MySQL via XAMPP (default), MSSQL, or PostgreSQL via env.
+Set DB_ENGINE=mysql or DB_ENGINE=mssql or DB_ENGINE=postgresql in your .env file.
 """
 
 import os
@@ -110,6 +110,20 @@ if DB_ENGINE == "mssql":
             "ATOMIC_REQUESTS": True,
         }
     }
+elif DB_ENGINE == "postgresql":
+    # PostgreSQL via psycopg2
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "haneuscafedb"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "600")),
+            "ATOMIC_REQUESTS": True,
+        }
+    }
 else:
     # MySQL / MariaDB (XAMPP) — default
     DATABASES = {
@@ -197,20 +211,20 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
-    "PAGE_SIZE": 20,
-    "DEFAULT_THROTTLE_CLASSES": [
-        "rest_framework.throttling.AnonRateThrottle",
-        "rest_framework.throttling.UserRateThrottle",
-    ],
+    "PAGE_SIZE": 30,
+    # ── Throttle config ──────────────────────────────────────────
+    # NO global DEFAULT_THROTTLE_CLASSES — navigation endpoints must
+    # NOT be throttled. Sensitive endpoints (login, password reset)
+    # declare throttle_classes directly in their controllers.
     "DEFAULT_THROTTLE_RATES": {
-        "anon": os.environ.get("THROTTLE_ANON", "200/hour"),
-        "user": os.environ.get("THROTTLE_USER", "2000/hour"),
+        "anon": os.environ.get("THROTTLE_ANON", "1000/hour"),
+        "user": os.environ.get("THROTTLE_USER", "10000/hour"),
         # Sensitive endpoint scopes (used by api/throttles.py)
-        "login": os.environ.get("THROTTLE_LOGIN", "10/minute"),
-        "anon_login": os.environ.get("THROTTLE_ANON_LOGIN", "20/minute"),
-        "password_reset": os.environ.get("THROTTLE_PW_RESET", "3/hour"),
-        "anon_password_reset": os.environ.get("THROTTLE_ANON_PW_RESET", "5/hour"),
-        "admin_approval": os.environ.get("THROTTLE_ADMIN_APPROVAL", "30/minute"),
+        "login": os.environ.get("THROTTLE_LOGIN", "20/minute"),
+        "anon_login": os.environ.get("THROTTLE_ANON_LOGIN", "30/minute"),
+        "password_reset": os.environ.get("THROTTLE_PW_RESET", "10/hour"),
+        "anon_password_reset": os.environ.get("THROTTLE_ANON_PW_RESET", "10/hour"),
+        "admin_approval": os.environ.get("THROTTLE_ADMIN_APPROVAL", "60/minute"),
     },
 }
 
@@ -265,15 +279,15 @@ if not DEBUG:
 # ------------------------------------------------------------------
 EMAIL_BACKEND = os.environ.get(
     "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.smtp.EmailBackend",
+    "django.core.mail.backends.smtp.EmailBackend",
 )
 
-if not DEBUG:
-    # Production SMTP settings
-    EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
-    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
-    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
-    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
-    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+# SMTP settings — always loaded so .env controls everything
+EMAIL_HOST          = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT          = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS       = os.environ.get("EMAIL_USE_TLS", "True").lower() in ("true", "1", "yes")
+EMAIL_HOST_USER     = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "noreply@haneuscafe.com")
+

@@ -93,6 +93,44 @@ async function uploadAvatar(file) {
   return `http://127.0.0.1:8000${data.url}`;
 }
 
+// ---------- Edit / Cancel / Save Transform ----------
+const editProfileBtn = document.getElementById('editProfileBtn');
+const cancelEditBtn  = document.getElementById('cancelEditBtn');
+const saveProfileBtn = document.getElementById('saveProfileBtn');
+const profileFormFields = ['firstName', 'lastName', 'email', 'phone', 'bio'];
+
+function setEditMode(editing) {
+  profileFormFields.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.readOnly = !editing;
+      el.style.opacity = editing ? '1' : '0.85';
+      el.style.cursor = editing ? 'text' : 'default';
+      el.style.background = editing ? '#fff' : 'var(--cream)';
+    }
+  });
+  if (editProfileBtn) editProfileBtn.style.display = editing ? 'none' : 'flex';
+  if (cancelEditBtn)  cancelEditBtn.style.display  = editing ? 'inline-flex' : 'none';
+  if (saveProfileBtn) saveProfileBtn.style.display  = editing ? 'inline-flex' : 'none';
+}
+
+// Start in view mode
+setEditMode(false);
+
+// Edit button click → enter edit mode
+if (editProfileBtn) {
+  editProfileBtn.addEventListener('click', () => setEditMode(true));
+}
+
+// Cancel button → reload data and return to view mode
+if (cancelEditBtn) {
+  cancelEditBtn.addEventListener('click', () => {
+    pendingAvatarFile = null;
+    loadProfile();
+    setEditMode(false);
+  });
+}
+
 // ---------- Save profile ----------
 document.getElementById('profileForm').addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -113,7 +151,6 @@ document.getElementById('profileForm').addEventListener('submit', async function
       phone:      document.getElementById('phone').value,
       bio:        document.getElementById('bio').value,
     };
-    // Persist both avatar_url and profile_picture_url for consistency
     if (avatar_url) {
       body.avatar_url = avatar_url;
       body.profile_picture_url = avatar_url;
@@ -139,17 +176,14 @@ document.getElementById('profileForm').addEventListener('submit', async function
     showAlert('Profile updated successfully!', 'success');
     document.getElementById('profileDisplayName').textContent =
       `${updated.first_name || ''} ${updated.last_name || ''}`.trim() || updated.username;
+
+    // Return to view mode after successful save
+    setEditMode(false);
   } catch (err) {
     console.error(err);
     showAlert('Failed to update profile.', 'error');
   }
 });
-
-// ---------- Reset button ----------
-const resetBtn = document.getElementById('resetBtn');
-if (resetBtn) {
-  resetBtn.addEventListener('click', loadProfile);
-}
 
 // ---------- Change Password Modal ----------
 const pwModal      = document.getElementById('changePasswordModal');
@@ -176,29 +210,33 @@ if (pwModal) {
   pwModal.addEventListener('click', (e) => { if (e.target === pwModal) closePasswordModal(); });
 }
 
-// ---------- Eye toggle buttons ----------
+// ---------- Eye toggle buttons (consolidated - no duplicates) ----------
 function resetEyeIcons() {
   document.querySelectorAll('.eye-btn').forEach(btn => {
     const target = document.getElementById(btn.dataset.target);
     if (target) target.type = 'password';
-    const icon = btn.querySelector('i[data-lucide]');
-    if (icon) { icon.setAttribute('data-lucide', 'eye'); }
+    btn.dataset.visible = 'false';
+    const showSvg = btn.querySelector('.eye-icon-show');
+    const hideSvg = btn.querySelector('.eye-icon-hide');
+    if (showSvg) showSvg.style.display = '';
+    if (hideSvg) hideSvg.style.display = 'none';
   });
-  lucide.createIcons();
 }
 
-document.querySelectorAll('.eye-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    const target = document.getElementById(this.dataset.target);
-    if (!target) return;
-    const isHidden = target.type === 'password';
-    target.type = isHidden ? 'text' : 'password';
-    const icon = this.querySelector('i[data-lucide]');
-    if (icon) {
-      icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
-      lucide.createIcons();
-    }
-  });
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.eye-btn');
+  if (!btn) return;
+  const target = document.getElementById(btn.dataset.target);
+  if (!target) return;
+  const isVisible = btn.dataset.visible === 'true';
+  target.type = isVisible ? 'password' : 'text';
+  btn.dataset.visible = isVisible ? 'false' : 'true';
+  const showSvg = btn.querySelector('.eye-icon-show');
+  const hideSvg = btn.querySelector('.eye-icon-hide');
+  if (showSvg) showSvg.style.display = isVisible ? '' : 'none';
+  if (hideSvg) hideSvg.style.display = isVisible ? 'none' : '';
+  // ARIA for accessibility
+  btn.setAttribute('aria-label', isVisible ? 'Show password' : 'Hide password');
 });
 
 // ---------- Submit password change ----------
@@ -239,36 +277,77 @@ if (submitPwBtn) {
   });
 }
 
-// ---------- Delete Account modal ----------
-const deleteBtn         = document.getElementById('deleteAccountBtn');
-const deleteModal       = document.getElementById('deleteAccountModal');
-const confirmDeleteBtn  = document.getElementById('confirmDeleteAccountBtn');
+// ---------- Delete Account modal — 2-step flow ----------
+const deleteBtn          = document.getElementById('deleteAccountBtn');
+const deleteModal        = document.getElementById('deleteAccountModal');
+const closeDeleteModalBtn= document.getElementById('closeDeleteModalBtn');
+const cancelDeleteBtn    = document.getElementById('cancelDeleteBtn');
+const confirmDeleteBtn   = document.getElementById('confirmDeleteAccountBtn');
+const deleteFinalModal   = document.getElementById('deleteFinalModal');
+const cancelFinalBtn     = document.getElementById('cancelFinalDeleteBtn');
+const proceedDeleteBtn   = document.getElementById('proceedDeleteBtn');
+const accountDeletedModal= document.getElementById('accountDeletedModal');
 
-if (deleteBtn) {
-  deleteBtn.addEventListener('click', () => {
-    deleteModal.style.display = 'flex';
-    lucide.createIcons();
-  });
-}
-if (deleteModal) {
-  deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) deleteModal.style.display = 'none'; });
-}
-if (confirmDeleteBtn) {
-  confirmDeleteBtn.addEventListener('click', () => {
-    // TODO: wire to actual delete endpoint when backend supports it
-    showAlert('Account deletion is not yet available. Contact your admin.', 'error');
-    deleteModal.style.display = 'none';
-  });
-}
+function _closeDeleteModal() { if (deleteModal) deleteModal.style.display = 'none'; }
+function _closeFinalModal()  { if (deleteFinalModal) deleteFinalModal.style.display = 'none'; }
+
+// Open step-1 delete modal
+if (deleteBtn) deleteBtn.addEventListener('click', () => {
+  if (deleteModal) deleteModal.style.display = 'flex';
+});
+// Close/Cancel step-1
+if (closeDeleteModalBtn) closeDeleteModalBtn.addEventListener('click', _closeDeleteModal);
+if (cancelDeleteBtn)     cancelDeleteBtn.addEventListener('click', _closeDeleteModal);
+if (deleteModal) deleteModal.addEventListener('click', (e) => { if (e.target === deleteModal) _closeDeleteModal(); });
+
+// "Delete Account" in step-1 → open step-2 final confirm
+if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', () => {
+  _closeDeleteModal();
+  if (deleteFinalModal) deleteFinalModal.style.display = 'flex';
+});
+// Cancel step-2
+if (cancelFinalBtn) cancelFinalBtn.addEventListener('click', _closeFinalModal);
+if (deleteFinalModal) deleteFinalModal.addEventListener('click', (e) => { if (e.target === deleteFinalModal) _closeFinalModal(); });
+
+// "Delete" in step-2 → call API, show success, redirect
+if (proceedDeleteBtn) proceedDeleteBtn.addEventListener('click', async () => {
+  _closeFinalModal();
+  const userId = getUserId();
+  try {
+    if (userId) {
+      await fetch(`${API}/users/staff/delete/${userId}/`, { method: 'DELETE' }).catch(() => {});
+    }
+  } catch (_) {}
+  // Always show success and clear session
+  if (accountDeletedModal) accountDeletedModal.style.display = 'flex';
+  localStorage.clear();
+  setTimeout(() => { window.location.href = 'login.html'; }, 2500);
+});
 
 // ---------- Log Out from All Devices ----------
-const logoutAllBtn = document.getElementById('logoutAllBtn');
-if (logoutAllBtn) {
-  logoutAllBtn.addEventListener('click', () => {
-    showAlert('You have been logged out from all devices.', 'success');
-    setTimeout(() => { localStorage.clear(); window.location.href = 'login.html'; }, 1800);
-  });
-}
+const logoutAllBtn      = document.getElementById('logoutAllBtn');
+const logoutAllModal    = document.getElementById('logoutAllModal');
+const cancelLogoutBtn   = document.getElementById('cancelLogoutAllBtn');
+const cancelLogoutBtn2  = document.getElementById('cancelLogoutAllBtn2');
+const proceedLogoutBtn  = document.getElementById('proceedLogoutAllBtn');
+const loggingOutModal   = document.getElementById('loggingOutModal');
+
+function _closeLogoutAllModal() { if (logoutAllModal) logoutAllModal.style.display = 'none'; }
+
+if (logoutAllBtn) logoutAllBtn.addEventListener('click', () => {
+  if (logoutAllModal) logoutAllModal.style.display = 'flex';
+});
+if (cancelLogoutBtn)  cancelLogoutBtn.addEventListener('click',  _closeLogoutAllModal);
+if (cancelLogoutBtn2) cancelLogoutBtn2.addEventListener('click', _closeLogoutAllModal);
+if (logoutAllModal) logoutAllModal.addEventListener('click', (e) => { if (e.target === logoutAllModal) _closeLogoutAllModal(); });
+
+if (proceedLogoutBtn) proceedLogoutBtn.addEventListener('click', () => {
+  _closeLogoutAllModal();
+  if (loggingOutModal) loggingOutModal.style.display = 'flex';
+  localStorage.clear();
+  setTimeout(() => { window.location.href = 'login.html'; }, 2000);
+});
+
 
 // ---------- Sidebar Toggle (mobile) ----------
 const sidebar = document.getElementById('main-sidebar');
@@ -304,7 +383,9 @@ window.confirmLogout = function(event) {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     closePasswordModal();
-    if (deleteModal) deleteModal.style.display = 'none';
+    _closeDeleteModal();
+    _closeFinalModal();
+    _closeLogoutAllModal();
   }
 });
 

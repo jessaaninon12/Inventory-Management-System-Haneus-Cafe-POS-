@@ -12,6 +12,7 @@ Supports:
     - SQL Server via pyodbc
         Instances: default instance, SQLEXPRESS, LocalDB, any custom instance
         Auth modes: SQL Server Authentication → Windows Authentication (fallback)
+    - PostgreSQL via psycopg2
 
 Fallback strategy for SQL Server
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -28,6 +29,12 @@ Fallback strategy for MySQL
 1. Host specified in DB_HOST (.env)
 2. 127.0.0.1
 3. localhost
+
+Fallback strategy for PostgreSQL
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1. Host specified in DB_HOST (.env)
+2. localhost
+3. 127.0.0.1
 
 No exceptions propagate — warnings are printed and Django's own
 connection error will surface if all attempts fail.
@@ -52,6 +59,9 @@ _MSSQL_FALLBACK_SERVERS = [
 # MySQL host candidates tried in order when the configured host fails.
 _MYSQL_FALLBACK_HOSTS = ["127.0.0.1", "localhost"]
 
+# PostgreSQL host candidates tried in order when the configured host fails.
+_PGSQL_FALLBACK_HOSTS = ["localhost", "127.0.0.1"]
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Public entry point
@@ -75,6 +85,8 @@ def ensure_database_exists() -> None:
 
     if db_engine == "mssql":
         _ensure_mssql(db_name)
+    elif db_engine == "postgresql":
+        _ensure_postgresql(db_name)
     else:
         _ensure_mysql(db_name)
 
@@ -146,6 +158,71 @@ def _import_mysql_driver():
         "    pip install mysqlclient"
     )
     return None
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PostgreSQL
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _ensure_postgresql(db_name: str) -> None:
+    """Auto-create a PostgreSQL database, trying fallback hosts."""
+    try:
+        import psycopg2
+        from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+    except ImportError:
+        _warn(
+            "psycopg2 is not installed.  Install with:\n"
+            "    pip install psycopg2-binary"
+        )
+        return
+
+    db_user     = os.environ.get("DB_USER", "postgres")
+    db_password = os.environ.get("DB_PASSWORD", "")
+    db_host     = os.environ.get("DB_HOST", "localhost")
+    db_port     = int(os.environ.get("DB_PORT", "5432"))
+
+    # Try the configured host first, then common fallbacks.
+    host_candidates = _unique([db_host] + _PGSQL_FALLBACK_HOSTS)
+
+    for host in host_candidates:
+        conn = cursor = None
+        try:
+            # Connect to the default 'postgres' maintenance database.
+            conn = psycopg2.connect(
+                host=host,
+                port=db_port,
+                user=db_user,
+                password=db_password,
+                dbname="postgres",
+                connect_timeout=5,
+            )
+            conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            cursor = conn.cursor()
+
+            # Check if the database already exists.
+            cursor.execute(
+                "SELECT 1 FROM pg_database WHERE datname = %s;", (db_name,)
+            )
+            if cursor.fetchone() is None:
+                # Database does not exist — create it.
+                cursor.execute(f'CREATE DATABASE "{db_name}";')
+                _info(f"PostgreSQL: database '{db_name}' CREATED "
+                      f"(host: {host}:{db_port}).")
+            else:
+                _info(f"PostgreSQL: database '{db_name}' already exists "
+                      f"(host: {host}:{db_port}).")
+            return  # Success
+        except Exception as exc:  # noqa: BLE001
+            _debug(f"PostgreSQL host '{host}:{db_port}' failed — {exc}")
+        finally:
+            _close(cursor, conn)
+
+    _warn(
+        f"Could not auto-create PostgreSQL database '{db_name}'.\n"
+        f"  Tried hosts : {', '.join(host_candidates)} (port {db_port})\n"
+         "  Likely cause: PostgreSQL is not running, or credentials in .env are wrong.\n"
+         "  Fix         : Start PostgreSQL, then re-run `python manage.py migrate`."
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────────────

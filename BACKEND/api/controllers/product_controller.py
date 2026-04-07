@@ -20,6 +20,21 @@ from application.services.product_service import ProductService
 from infrastructure.repositories.product_repository import ProductRepository
 
 
+def _invalidate_product_cache():
+    """Clear all product-related caches after mutations."""
+    from django.core.cache import cache
+    # Clear known cache key patterns used by ProductViewListController
+    for page in range(1, 20):
+        for limit in [12, 15, 30, 50, 100]:
+            cache.delete(f"products:list:v2:{page}:{limit}")
+    # Also try delete_pattern for Redis-backed caches
+    if hasattr(cache, 'delete_pattern'):
+        try:
+            cache.delete_pattern("products:*")
+        except Exception:
+            pass
+
+
 def _get_service():
     return ProductService(ProductRepository())
 
@@ -32,33 +47,33 @@ class ProductListCreateController(APIView):
 
     @extend_schema(tags=["Products"], responses=ProductResponseSchema(many=True))
     def get(self, request):
+        from django.core.cache import cache
         service = _get_service()
-        # Check if pagination is requested
-        page_param = request.query_params.get("page")
-        limit_param = request.query_params.get("limit")
-        
-        if page_param or limit_param:
-            try:
-                page = int(page_param or 1)
-                limit = int(limit_param or 30)
-                page = max(page, 1)
-                limit = min(max(limit, 1), 100)  # Cap at 100 items per page
-            except (TypeError, ValueError):
-                return Response(
-                    {"error": "Invalid pagination parameters."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            result = service.get_products_paginated(page=page, limit=limit)
-            return Response({
-                "products": [p.to_dict() for p in result["products"]],
-                "total_count": result["total_count"],
-                "page": result["page"],
-                "limit": result["limit"],
-                "total_pages": result["total_pages"],
-            })
-        else:
-            products = service.get_all_products()
-            return Response([p.to_dict() for p in products])
+        try:
+            page = int(request.query_params.get("page", 1))
+            limit = int(request.query_params.get("limit", 30))
+            page = max(page, 1)
+            limit = min(max(limit, 1), 100)  # Cap at 100 items per page
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Invalid pagination parameters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Cache for 15 seconds to reduce DB load on rapid page switches
+        cache_key = f"products:list:v1:{page}:{limit}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+        result = service.get_products_paginated(page=page, limit=limit)
+        data = {
+            "products": [p.to_dict_compact() for p in result["products"]],
+            "total_count": result["total_count"],
+            "page": result["page"],
+            "limit": result["limit"],
+            "total_pages": result["total_pages"],
+        }
+        cache.set(cache_key, data, timeout=15)
+        return Response(data)
 
     @extend_schema(
         tags=["Products"],
@@ -66,6 +81,7 @@ class ProductListCreateController(APIView):
         responses={201: ProductResponseSchema, 400: ErrorSchema},
     )
     def post(self, request):
+        from django.core.cache import cache
         service = _get_service()
         try:
             dto = CreateProductDTO(
@@ -80,6 +96,8 @@ class ProductListCreateController(APIView):
                 image_url=request.data.get("image_url"),
             )
             product = service.create_product(dto)
+            # Invalidate product list cache
+            cache.delete_pattern("products:*") if hasattr(cache, 'delete_pattern') else None
             return Response(product.to_dict(), status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response(
@@ -169,31 +187,33 @@ class ProductViewListController(APIView):
 
     @extend_schema(tags=["Products v2"], responses=ProductResponseSchema(many=True))
     def get(self, request):
+        from django.core.cache import cache
         service = _get_service()
-        page_param = request.query_params.get("page")
-        limit_param = request.query_params.get("limit")
-
-        if page_param or limit_param:
-            try:
-                page = int(page_param or 1)
-                limit = int(limit_param or 30)
-                page = max(page, 1)
-                limit = min(max(limit, 1), 100)
-            except (TypeError, ValueError):
-                return Response(
-                    {"error": "Invalid pagination parameters."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            result = service.get_products_paginated(page=page, limit=limit)
-            return Response({
-                "products": [p.to_dict() for p in result["products"]],
-                "total_count": result["total_count"],
-                "page": result["page"],
-                "limit": result["limit"],
-                "total_pages": result["total_pages"],
-            })
-        products = service.get_all_products()
-        return Response([p.to_dict() for p in products])
+        try:
+            page = int(request.query_params.get("page", 1))
+            limit = int(request.query_params.get("limit", 30))
+            page = max(page, 1)
+            limit = min(max(limit, 1), 100)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "Invalid pagination parameters."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Cache for 15 seconds to reduce DB load on rapid page switches
+        cache_key = f"products:list:v2:{page}:{limit}"
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return Response(cached)
+        result = service.get_products_paginated(page=page, limit=limit)
+        data = {
+            "products": [p.to_dict_compact() for p in result["products"]],
+            "total_count": result["total_count"],
+            "page": result["page"],
+            "limit": result["limit"],
+            "total_pages": result["total_pages"],
+        }
+        cache.set(cache_key, data, timeout=15)
+        return Response(data)
 
 
 class ProductViewDetailController(APIView):
@@ -221,6 +241,7 @@ class ProductCreateController(APIView):
         responses={201: ProductResponseSchema, 400: ErrorSchema},
     )
     def post(self, request):
+        from django.core.cache import cache
         service = _get_service()
         try:
             dto = CreateProductDTO(
@@ -235,6 +256,7 @@ class ProductCreateController(APIView):
                 image_url=request.data.get("image_url"),
             )
             product = service.create_product(dto)
+            _invalidate_product_cache()
             return Response(product.to_dict(), status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response({"errors": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)
@@ -257,6 +279,7 @@ class ProductEditController(APIView):
             product = service.update_product(pk, dto)
             if product is None:
                 return Response({"error": "Product not found."}, status=status.HTTP_404_NOT_FOUND)
+            _invalidate_product_cache()
             return Response(product.to_dict())
         except ValueError as e:
             return Response({"errors": e.args[0]}, status=status.HTTP_400_BAD_REQUEST)

@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/responsive.css">
   <link rel="stylesheet" href="css/sales.css">
 </head>
 <body>
@@ -24,38 +25,41 @@
       </div>
 
       <nav>
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Main</p>
-          <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Inventory</p>
-          <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Stock</p>
-          <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
-          <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Sales</p>
-          <a href="sales.html" class="sidebar-link sidebar-active"><i data-lucide="dollar-sign"></i> Sales</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="admin">
-          <p class="sidebar-section-title">Users</p>
-          <a href="UserManagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
-        </div>
-
-        <div class="sidebar-nav-section" data-role="all">
-          <p class="sidebar-section-title">Settings</p>
-          <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
-          <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
-        </div>
-      </nav>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Main</p>
+    <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="staff">
+    <p class="sidebar-section-title">Main</p>
+    <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="staff">
+    <p class="sidebar-section-title">POS</p>
+    <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Inventory</p>
+    <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="all">
+    <p class="sidebar-section-title">Stock</p>
+    <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+    <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Sales</p>
+    <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">Users</p>
+    <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="all">
+    <p class="sidebar-section-title">Settings</p>
+    <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+    <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+  </div>
+</nav>
     </div>
   </aside>
 

@@ -12,6 +12,7 @@ from api.controllers.user_controller import (
     LoginController,
     ProfileDetailController,
     RegisterController,
+    VerifyResetCodeController,
     # Admin user management
     AdminUserListController,
     AdminUserDetailController,
@@ -31,6 +32,9 @@ from api.controllers.user_controller import (
 from api.controllers.password_reset_controller import (
     ForgotPasswordController,
     ResetPasswordWithTokenController,
+    SendResetCodeController,
+    VerifyEmailResetCodeController,
+    ResetPasswordWithCodeController,
 )
 
 from api.controllers.admin_approval_controller import (
@@ -69,6 +73,10 @@ from api.controllers.dashboard_controller import (
     DashboardController,
 )
 from api.controllers.sales_analytics_controller import SalesAnalyticsController
+from api.controllers.staff_dashboard_controller import (
+    StaffDashboardController,
+    StaffDashboardAnalyticsController,
+)
 from api.controllers.sale_controller import (
     SaleLatestCustomerNumberController,
     SaleListCreateController,
@@ -82,8 +90,12 @@ urlpatterns = [
     path("auth/login/", LoginController.as_view(), name="login"),
     path("auth/check-username/", CheckUsernameController.as_view(), name="check-username"),
     path("auth/change-temporary-password/", ChangeTemporaryPasswordController.as_view(), name="auth-change-temp-password"),
+    path("auth/verify-reset-code/", VerifyResetCodeController.as_view(), name="auth-verify-reset-code"),
     path("auth/forgot-password/", ForgotPasswordController.as_view(), name="auth-forgot-password"),
     path("auth/reset-password-with-token/", ResetPasswordWithTokenController.as_view(), name="auth-reset-password-with-token"),
+    path("auth/send-reset-code/", SendResetCodeController.as_view(), name="auth-send-reset-code"),
+    path("auth/verify-email-reset-code/", VerifyEmailResetCodeController.as_view(), name="auth-verify-email-reset-code"),
+    path("auth/reset-password-with-code/", ResetPasswordWithCodeController.as_view(), name="auth-reset-password-with-code"),
 
     # ── Profile ─────────────────────────────────────────────────────────
     path("profile/<int:pk>/", ProfileDetailController.as_view(), name="profile-detail"),
@@ -93,6 +105,10 @@ urlpatterns = [
     # ── Dashboard ─────────────────────────────────────────────────────
     path("dashboard/", DashboardController.as_view(), name="dashboard"),
     path("dashboard/chart/", DashboardChartController.as_view(), name="dashboard-chart"),
+
+    # ── Staff Dashboard ──────────────────────────────────────────────────
+    path("staff/dashboard/", StaffDashboardController.as_view(), name="staff-dashboard"),
+    path("staff/dashboard/analytics/", StaffDashboardAnalyticsController.as_view(), name="staff-dashboard-analytics"),
 
     # ── Products (legacy — kept for backward compatibility) ────────────────
     path("products/", ProductListCreateController.as_view(), name="product-list-v2"),

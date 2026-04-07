@@ -10,13 +10,8 @@
  * - staff: Limited access (Dashboard, Manage Stock, Profile only)
  */
 
-document.addEventListener('DOMContentLoaded', () => {
-  applyRoleBasedAccess();
-});
-
 function applyRoleBasedAccess() {
   try {
-    // Get user data from localStorage (set during login)
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       console.warn('No user in localStorage — role access not applied');
@@ -24,12 +19,8 @@ function applyRoleBasedAccess() {
     }
 
     const user = JSON.parse(userStr);
-
-    // user.user_type is "Admin" or "Staff" (from backend UserDTO.to_dict())
-    // Normalise to lowercase 'admin' or 'staff' for data-role comparisons
     const actualRole = (user.user_type === 'Admin') ? 'admin' : 'staff';
 
-    // Apply visibility to every element that carries a data-role attribute
     document.querySelectorAll('[data-role]').forEach(el => {
       const allowed = el.dataset.role.split(',').map(r => r.trim().toLowerCase());
       el.style.display = (allowed.includes('all') || allowed.includes(actualRole)) ? '' : 'none';
@@ -40,5 +31,14 @@ function applyRoleBasedAccess() {
   }
 }
 
+function initRoleBasedSidebar() {
+  applyRoleBasedAccess();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initRoleBasedSidebar();
+});
+
 // Export for use in other scripts
 window.applyRoleBasedAccess = applyRoleBasedAccess;
+window.initRoleBasedSidebar = initRoleBasedSidebar;

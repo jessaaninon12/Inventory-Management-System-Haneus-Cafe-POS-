@@ -1,11 +1,17 @@
 """
-Admin Approval API controller — handle approval/rejection of new admin user registrations.
+Admin Approval API controller — thin HTTP layer.
+All business logic lives in AdminApprovalService; this controller only handles
+request parsing and response formatting.
 
 Endpoints covered:
   GET    /api/admin/approval-requests/           — list pending approval requests
-  GET    /api/admin/check-approval-status/       — poll approval status by user_id (no auth required)
-  POST   /api/admin/approve-user/<pk>/           — approve a user registration
-  POST   /api/admin/reject-user/<pk>/            — reject a user registration
+  POST   /api/admin/approval-requests/           — approve or reject a request
+  GET    /api/admin/check-approval-status/       — poll approval status by user_id
+  POST   /api/admin/approve-user/<pk>/           — legacy: approve a user (reuses service)
+  POST   /api/admin/reject-user/<pk>/            — legacy: reject a user (reuses service)
+
+NOTE: This project uses AllowAny permissions (no token auth on API).
+      The admin's user ID is passed in the request body.
 """
 
 from drf_spectacular.utils import extend_schema
@@ -13,10 +19,16 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from api.models import AdminApprovalRequest, User
 from api.schema_serializers import ErrorSchema
 from api.throttles import AdminApprovalThrottle
-from infrastructure.repositories.user_repository import UserRepository
+from application.dtos.admin_approval_dto import ApprovalActionDTO
+from application.services.admin_approval_service import AdminApprovalService
+from infrastructure.repositories.admin_approval_repository import AdminApprovalRepository
+
+
+def _get_service():
+    """Instantiate AdminApprovalService with its concrete repository."""
+    return AdminApprovalService(AdminApprovalRepository())
 
 
 class CheckApprovalStatusController(APIView):
@@ -28,6 +40,7 @@ class CheckApprovalStatusController(APIView):
     Response: { status: 'pending' | 'approved' | 'rejected' }
     """
 
+    @extend_schema(tags=["Admin – Approvals"], responses={200: None, 400: ErrorSchema})
     def get(self, request):
         user_id = request.query_params.get("user_id")
         if not user_id:
@@ -36,201 +49,166 @@ class CheckApprovalStatusController(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         try:
-            user_id_int = int(user_id)
+            user_id = int(user_id)
         except (ValueError, TypeError):
             return Response(
                 {"error": "Invalid user_id."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            approval_request = AdminApprovalRequest.objects.get(user_id=user_id_int)
-            return Response({"status": approval_request.status})
-        except AdminApprovalRequest.DoesNotExist:
-            # No pending request found — check if user still exists
-            from api.models import User
-            if User.objects.filter(id=user_id_int).exists():
-                # User exists but no approval record → was approved and record may have been cleaned
-                return Response({"status": "approved"})
-            else:
-                # User record deleted → was rejected and removed
-                return Response({"status": "rejected"})
+        service = _get_service()
+        approval_status = service.get_approval_status(user_id)
+        return Response({"status": approval_status})
 
 
 class ApprovalRequestListController(APIView):
     """
-    GET /api/admin/approval-requests/
-    List all pending admin approval requests.
-    Cached for 30 seconds to prevent 429 from repeated badge polling.
-    Cache is cleared automatically when an approval decision is made.
-    
-    Response: { requests: [ { id, user_id, user_name, email, status, created_at }, ... ] }
+    GET  /api/admin/approval-requests/   — list all pending approval requests
+    POST /api/admin/approval-requests/   — approve or reject a request
+
+    GET Response:  { requests: [ { id, user_id, user_name, email, status, created_at }, ... ] }
+    POST Request:  { user_id: int, action: "approve"|"reject", delete_user: bool }
+    POST Response: { success: true, message: "...", approval: { ... } }
     """
 
     @extend_schema(tags=["Admin – Approvals"], responses={200: None})
     def get(self, request):
         from django.core.cache import cache
+
         cache_key = "admin:approval_requests:pending"
         cached = cache.get(cache_key)
         if cached is not None:
             return Response(cached)
 
-        pending = AdminApprovalRequest.objects.filter(
-            status="pending"
-        ).select_related("user").order_by("-created_at")
-        
-        data = [
-            {
-                "id": req.id,
-                "user_id": req.user.id,
-                "user_name": f"{req.user.first_name} {req.user.last_name}".strip() or req.user.username,
-                "email": req.user.email,
-                "status": req.status,
-                "created_at": req.created_at.isoformat(),
-            }
-            for req in pending
-        ]
-        
+        service = _get_service()
+        dtos = service.get_pending_requests()
+        data = [dto.to_dict() for dto in dtos]
         result = {"requests": data}
-        cache.set(cache_key, result, timeout=30)  # cache 30 seconds
+
+        cache.set(cache_key, result, timeout=30)
         return Response(result)
+
+    @extend_schema(
+        tags=["Admin – Approvals"],
+        request=None,
+        responses={200: None, 400: ErrorSchema, 404: ErrorSchema},
+    )
+    def post(self, request):
+        action = (request.data.get("action") or "").strip().lower()
+        user_id = request.data.get("user_id")
+        delete_user = request.data.get("delete_user", True)
+
+        if not action or action not in ("approve", "reject"):
+            return Response(
+                {"error": "Invalid or missing action. Expected 'approve' or 'reject'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if user_id is None:
+            return Response(
+                {"error": "user_id is required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            user_id = int(user_id)
+        except (ValueError, TypeError):
+            return Response(
+                {"error": "Invalid user_id."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Get the approver's user ID from request.user (if authenticated) or request body
+        decided_by_id = None
+        if request.user and request.user.is_authenticated:
+            decided_by_id = request.user.id
+
+        service = _get_service()
+        dto = ApprovalActionDTO(
+            user_id=user_id,
+            action=action,
+            decided_by_id=decided_by_id,
+            delete_user=delete_user,
+        )
+
+        try:
+            result_dto = service.approve_or_reject(dto)
+            message = (
+                "User approved successfully."
+                if action == "approve"
+                else "User rejected and removed from system."
+            )
+            return Response({
+                "success": True,
+                "message": message,
+                "approval": result_dto.to_dict(),
+            })
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class ApproveUserController(APIView):
     """
     POST /api/admin/approve-user/<pk>/
-    Approve a pending user registration (Admin user).
-    
-    Request:  {} (no body needed)
-    Response: { success: true, message: "User approved successfully." }
+    Legacy endpoint — approve a pending user registration.
     """
     throttle_classes = [AdminApprovalThrottle]
 
     @extend_schema(
         tags=["Admin – Approvals"],
         request=None,
-        responses={200: None, 404: ErrorSchema},
+        responses={200: None, 400: ErrorSchema, 404: ErrorSchema},
     )
     def post(self, request, pk):
-        try:
-            approval_request = AdminApprovalRequest.objects.get(user_id=pk)
-        except AdminApprovalRequest.DoesNotExist:
-            return Response(
-                {"error": "Approval request not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        
-        if approval_request.status != "pending":
-            return Response(
-                {"error": f"Request is already {approval_request.status}."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        # Get current authenticated user (the approver)
-        approver = request.user
-        if not approver or not approver.is_authenticated:
-            return Response(
-                {"error": "Authentication required."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        
-        # Check if approver is an Admin
-        if approver.user_type != "Admin":
-            return Response(
-                {"error": "Only Admin users can approve registrations."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        
-        # Update approval request
-        from django.utils import timezone
-        from django.core.cache import cache
-        approval_request.status = "approved"
-        approval_request.decided_at = timezone.now()
-        approval_request.decided_by = approver
-        approval_request.save()
-        # Invalidate cached approval list so badge updates immediately
-        cache.delete("admin:approval_requests:pending")
-        
-        return Response(
-            {
-                "success": True,
-                "message": "User approved successfully.",
-            }
+        decided_by_id = None
+        if request.user and request.user.is_authenticated:
+            decided_by_id = request.user.id
+
+        service = _get_service()
+        dto = ApprovalActionDTO(
+            user_id=pk,
+            action="approve",
+            decided_by_id=decided_by_id,
+            delete_user=True,
         )
+
+        try:
+            service.approve_or_reject(dto)
+            return Response({"success": True, "message": "User approved successfully."})
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RejectUserController(APIView):
     """
     POST /api/admin/reject-user/<pk>/
-    Reject a pending user registration and optionally delete the user.
-    
-    Request:  { delete_user: true|false }  (optional, defaults to true)
-    Response: { success: true, message: "User rejected and removed." }
+    Legacy endpoint — reject a pending user registration.
     """
     throttle_classes = [AdminApprovalThrottle]
 
     @extend_schema(
         tags=["Admin – Approvals"],
         request=None,
-        responses={200: None, 404: ErrorSchema},
+        responses={200: None, 400: ErrorSchema, 404: ErrorSchema},
     )
     def post(self, request, pk):
-        try:
-            approval_request = AdminApprovalRequest.objects.get(user_id=pk)
-        except AdminApprovalRequest.DoesNotExist:
-            return Response(
-                {"error": "Approval request not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-        
-        if approval_request.status != "pending":
-            return Response(
-                {"error": f"Request is already {approval_request.status}."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        # Get current authenticated user (the approver)
-        approver = request.user
-        if not approver or not approver.is_authenticated:
-            return Response(
-                {"error": "Authentication required."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-        
-        # Check if approver is an Admin
-        if approver.user_type != "Admin":
-            return Response(
-                {"error": "Only Admin users can reject registrations."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        
-        # Get the user to be rejected
-        user_to_reject = approval_request.user
         delete_user = request.data.get("delete_user", True) if request.data else True
-        
-        # Update approval request
-        from django.utils import timezone
-        from django.core.cache import cache
-        approval_request.status = "rejected"
-        approval_request.decided_at = timezone.now()
-        approval_request.decided_by = approver
-        approval_request.save()
-        # Invalidate cached approval list so badge updates immediately
-        cache.delete("admin:approval_requests:pending")
-        
-        # Optionally delete the user
-        if delete_user:
-            user_to_reject.delete()
-            return Response(
-                {
-                    "success": True,
-                    "message": "User rejected and removed from system.",
-                }
-            )
-        
-        return Response(
-            {
-                "success": True,
-                "message": "User rejected.",
-            }
+        decided_by_id = None
+        if request.user and request.user.is_authenticated:
+            decided_by_id = request.user.id
+
+        service = _get_service()
+        dto = ApprovalActionDTO(
+            user_id=pk,
+            action="reject",
+            decided_by_id=decided_by_id,
+            delete_user=delete_user,
         )
+
+        try:
+            service.approve_or_reject(dto)
+            message = "User rejected and removed from system." if delete_user else "User rejected."
+            return Response({"success": True, "message": message})
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

@@ -75,6 +75,7 @@ class UserRepository(UserRepositoryInterface):
             first_name=dto.first_name,
             last_name=dto.last_name,
             user_type=user_type,
+            is_active=(user_type != "Admin"),  # Admins require approval before active login
         )
         if user_type == "Admin":
             UserAdminModel.objects.create(user=orm_user)
@@ -136,6 +137,14 @@ class UserRepository(UserRepositoryInterface):
             return getattr(orm_user, "require_password_change", False)
         except UserModel.DoesNotExist:
             return False
+
+    def get_temporary_password_hash(self, user_id):
+        """Return the stored temporary_password_hash for a user, or empty string."""
+        try:
+            orm_user = UserModel.objects.get(pk=user_id)
+            return getattr(orm_user, "temporary_password_hash", "") or ""
+        except UserModel.DoesNotExist:
+            return ""
 
     def get_all_by_type(self, user_type):
         """Return all User entities matching the given user_type."""

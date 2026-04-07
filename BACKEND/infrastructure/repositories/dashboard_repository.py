@@ -207,11 +207,21 @@ class DashboardRepository(DashboardRepositoryInterface):
         sorted_items = sorted(
             combined.items(), key=lambda x: x[1]["total_revenue"], reverse=True
         )[:limit]
+
+        # Task 11: Look up product images by name
+        names = [name for name, _ in sorted_items]
+        img_map = dict(
+            ProductModel.objects
+            .filter(name__in=names)
+            .values_list("name", "image_url")
+        )
+
         return [
             {
                 "product_name": name,
                 "total_quantity": data["total_quantity"],
                 "total_revenue": str(round(data["total_revenue"], 2)),
+                "image_url": img_map.get(name, "") or "",
             }
             for name, data in sorted_items
         ]
@@ -247,6 +257,13 @@ class DashboardRepository(DashboardRepositoryInterface):
             # Use list() on prefetched queryset to avoid N+1 (do NOT call .first())
             items_list = list(sale.items.all())
             first_item = items_list[0] if items_list else None
+            # Look up product image from SaleItemModel → ProductModel FK
+            product_img = ""
+            if first_item and first_item.product_id:
+                try:
+                    product_img = first_item.product.image_url or ""
+                except Exception:
+                    product_img = ""
             results.append({
                 "id": sale.pk,
                 "order_id": sale.receipt_number or sale.sale_id,
@@ -256,7 +273,7 @@ class DashboardRepository(DashboardRepositoryInterface):
                 "total": str(round(float(sale.total), 2)),
                 "status": sale.status,
                 "date": str(sale.created_at) if sale.created_at else None,
-                "image_url": "",
+                "image_url": product_img,
             })
         # Fallback: also include order-based data if POS sales are few
         if len(results) < limit:

@@ -1,162 +1,214 @@
 /* =================================================================
-   sidebar-toggle.js — Unified sidebar toggler for all pages.
-
-   Required HTML elements per page:
-     <div id="sidebar-overlay" class="sidebar-overlay"></div>
-     <aside id="main-sidebar">
-       <button class="sidebar-close-btn">…</button>   (inside sidebar)
-     </aside>
-     <button id="sidebar-toggle-btn" class="sidebar-toggle-btn"> (in header)
-
-   DESKTOP (≥ 768px):
-     - Sidebar is always visible.
-     - sidebar-toggle-btn is hidden via CSS (sidebar.css display:none).
-     - sidebar-close-btn (inside sidebar) collapses to 64px icon-only rail.
-     - State is persisted across pages via localStorage key
-       'haneuscafe_sidebar_collapsed'.
-
-   MOBILE (< 768px):
-     - Sidebar is hidden by default (translateX -100%).
-     - sidebar-toggle-btn in header slides it in as a fixed overlay.
-     - sidebar-close-btn inside sidebar closes it.
-     - Clicking the backdrop overlay also closes it.
-     - Escape key closes it.
-     - Desktop collapse state is NOT applied on mobile.
+   sidebar-toggle.js  v3 — Bulletproof sidebar for ALL pages
+   ─────────────────────────────────────────────────────────────────
+   Design principles:
+   ① Document-level event delegation — NO element caching at boot.
+     Elements are looked up LIVE at every click. If any JS replaces
+     inner HTML (e.g. after an API fetch), the listener still fires.
+   ② matchMedia breakpoint — always in sync with CSS @media rules.
+   ③ Works on ALL pages: dashboard, profile, products, sales, etc.
+   ④ Desktop (≥1025px) : sidebar always visible, close-btn collapses
+     to 64px icon rail. Toggle-btn in header is HIDDEN by CSS.
+   ⑤ Tablet+Mobile (≤1024px): toggle-btn VISIBLE. Sidebar slides
+     in from left as a fixed overlay. Overlay backdrop closes it.
 ================================================================= */
-(function initSidebarToggle() {
+(function () {
   'use strict';
 
   var COLLAPSE_KEY = 'haneuscafe_sidebar_collapsed';
 
-  var sidebar   = document.getElementById('main-sidebar');
-  var overlay   = document.getElementById('sidebar-overlay');
-  var toggleBtn = document.getElementById('sidebar-toggle-btn');
-  var closeBtn  = document.querySelector('.sidebar-close-btn');
-  var wrapper   = document.querySelector('.main-wrapper') || document.querySelector('main');
-
-  if (!sidebar) return;
-
-  /* ── Helpers ─────────────────────────────────────────────── */
-
-  function isMobile() { return window.innerWidth < 768; }
-
-  /* Update icon on the sidebar close/expand button */
-  function updateCloseBtnIcon() {
-    if (!closeBtn) return;
-    var icon = closeBtn.querySelector('i[data-lucide]');
-    if (!icon) return;
-    var collapsed = sidebar.classList.contains('sidebar-collapsed');
-    icon.setAttribute('data-lucide', collapsed ? 'panel-left-open' : 'panel-left-close');
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+  /* ── Breakpoint (must match sidebar.css @media (max-width:1024px)) */
+  function isOverlay() {
+    return window.matchMedia('(max-width: 1024px)').matches;
   }
 
-  /* Update icon on the header toggle button (mobile) */
-  function updateToggleBtnIcon(isOpen) {
-    if (!toggleBtn) return;
-    var el = toggleBtn.querySelector('i[data-lucide]') || toggleBtn.querySelector('svg');
-    if (el && el.setAttribute) {
-      el.setAttribute('data-lucide', isOpen ? 'panel-left-close' : 'panel-left');
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+  /* ── Live element accessors — never stale ── */
+  function sidebar()   { return document.getElementById('main-sidebar'); }
+  function overlay()   { return document.getElementById('sidebar-overlay'); }
+  function toggleBtn() { return document.getElementById('sidebar-toggle-btn'); }
+  function mainWrap()  {
+    return document.querySelector('.main-wrapper') ||
+           document.querySelector('main') ||
+           document.querySelector('.content');
+  }
+
+  /* ── Open / Close (overlay mode — tablet + mobile) ── */
+  function openSidebar() {
+    var s = sidebar(), o = overlay();
+    if (!s) return;
+    s.classList.add('sidebar-open');
+    s.classList.remove('sidebar-collapsed');
+    if (o) o.classList.add('active');
+    document.body.style.overflow = 'hidden';
+    updateToggleIcon(true);
+  }
+
+  function closeSidebar() {
+    var s = sidebar(), o = overlay();
+    if (!s) return;
+    s.classList.remove('sidebar-open');
+    if (o) o.classList.remove('active');
+    document.body.style.overflow = '';
+    updateToggleIcon(false);
+  }
+
+  /* ── Collapse / Expand (desktop push-layout) ── */
+  function collapseSidebar() {
+    var s = sidebar(), w = mainWrap();
+    if (!s) return;
+    s.classList.add('sidebar-collapsed');
+    if (w) w.classList.add('main-wrapper--collapsed');
+    localStorage.setItem(COLLAPSE_KEY, '1');
+    updateCloseIcon(true);
+  }
+
+  function expandSidebar() {
+    var s = sidebar(), w = mainWrap();
+    if (!s) return;
+    s.classList.remove('sidebar-collapsed');
+    if (w) w.classList.remove('main-wrapper--collapsed');
+    localStorage.setItem(COLLAPSE_KEY, '0');
+    updateCloseIcon(false);
+  }
+
+  function toggleDesktop() {
+    var s = sidebar();
+    if (!s) return;
+    s.classList.contains('sidebar-collapsed') ? expandSidebar() : collapseSidebar();
+  }
+
+  /* ── Icon helpers — set SVG icon name via Lucide ── */
+  function setIcon(el, iconName) {
+    if (!el) return;
+    var svg = el.querySelector('svg[data-lucide]');
+    var tag = el.querySelector('i[data-lucide]');
+    if (svg) svg.setAttribute('data-lucide', iconName);
+    else if (tag) tag.setAttribute('data-lucide', iconName);
+    if (typeof lucide !== 'undefined') {
+      try { lucide.createIcons(); } catch (e) {}
     }
   }
 
-  /* ── Desktop collapse ────────────────────────────────────── */
-
-  function applyDesktopCollapse(collapsed) {
-    if (collapsed) {
-      sidebar.classList.add('sidebar-collapsed');
-      if (wrapper) wrapper.classList.add('main-wrapper--collapsed');
-    } else {
-      sidebar.classList.remove('sidebar-collapsed');
-      if (wrapper) wrapper.classList.remove('main-wrapper--collapsed');
-    }
-    localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
-    updateCloseBtnIcon();
+  function updateToggleIcon(isOpen) {
+    setIcon(toggleBtn(), isOpen ? 'panel-left-close' : 'panel-left');
   }
 
-  /* Restore desktop collapse state on page load */
-  if (!isMobile()) {
+  function updateCloseIcon(isCollapsed) {
+    var s = sidebar();
+    if (!s) return;
+    setIcon(s.querySelector('.sidebar-close-btn'),
+            isCollapsed ? 'panel-left-open' : 'panel-left-close');
+  }
+
+  /* ── Restore desktop collapse state ── */
+  function restoreDesktopState() {
+    if (isOverlay()) return;
+    var s = sidebar(), w = mainWrap();
+    if (!s) return;
     var saved = localStorage.getItem(COLLAPSE_KEY);
     if (saved === '1') {
-      /* Apply immediately (no animation on first load) */
-      sidebar.classList.add('sidebar-collapsed');
-      if (wrapper) wrapper.classList.add('main-wrapper--collapsed');
-    }
-    updateCloseBtnIcon();
-  }
-
-  /* ── Mobile overlay ──────────────────────────────────────── */
-
-  function openMobile() {
-    sidebar.classList.add('sidebar-open');
-    if (overlay) overlay.classList.add('active');
-    updateToggleBtnIcon(true);
-  }
-
-  function closeMobile() {
-    sidebar.classList.remove('sidebar-open');
-    if (overlay) overlay.classList.remove('active');
-    updateToggleBtnIcon(false);
-  }
-
-  /* ── Event wiring ─────────────────────────────────────────── */
-
-  /* sidebar-close-btn — desktop: toggle collapse; mobile: close overlay */
-  if (closeBtn) {
-    closeBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (!isMobile()) {
-        applyDesktopCollapse(!sidebar.classList.contains('sidebar-collapsed'));
-      } else {
-        closeMobile();
-      }
-    });
-  }
-
-  /* sidebar-toggle-btn in header — mobile: open/close overlay */
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', function (e) {
-      e.stopPropagation();
-      if (isMobile()) {
-        sidebar.classList.contains('sidebar-open') ? closeMobile() : openMobile();
-      } else {
-        /* On desktop the button is hidden via CSS, but as a fallback
-           also toggle collapse if somehow visible (e.g. during resize). */
-        applyDesktopCollapse(!sidebar.classList.contains('sidebar-collapsed'));
-      }
-    });
-  }
-
-  /* Overlay backdrop click — close mobile sidebar */
-  if (overlay) {
-    overlay.addEventListener('click', closeMobile);
-  }
-
-  /* Escape key — close mobile sidebar */
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && isMobile()) closeMobile();
-  });
-
-  /* Resize — maintain correct state when crossing breakpoint */
-  window.addEventListener('resize', function () {
-    if (!isMobile()) {
-      /* Returning to desktop — close mobile overlay if open */
-      sidebar.classList.remove('sidebar-open');
-      if (overlay) overlay.classList.remove('active');
-      /* Restore saved collapse state */
-      var s = localStorage.getItem(COLLAPSE_KEY);
-      applyDesktopCollapse(s === '1');
+      s.classList.add('sidebar-collapsed');
+      if (w) w.classList.add('main-wrapper--collapsed');
+      updateCloseIcon(true);
     } else {
-      /* Going to mobile — remove desktop-only classes */
-      sidebar.classList.remove('sidebar-collapsed');
-      if (wrapper) wrapper.classList.remove('main-wrapper--collapsed');
-      updateToggleBtnIcon(sidebar.classList.contains('sidebar-open'));
+      updateCloseIcon(false);
     }
-    updateCloseBtnIcon();
+  }
+
+  /* ══════════════════════════════════════════════════════════════
+     DOCUMENT-LEVEL EVENT DELEGATION
+     All clicks bubble up to document.body → check the target.
+     This is immune to DOM replacement and Lucide icon rebuilds.
+  ══════════════════════════════════════════════════════════════ */
+  document.addEventListener('click', function (e) {
+    var s = sidebar();
+    if (!s) return;
+
+    /* ── (A) Header toggle button — #sidebar-toggle-btn ── */
+    var toggleEl = e.target.closest('#sidebar-toggle-btn, .sidebar-toggle-btn');
+    if (toggleEl) {
+      e.stopPropagation();
+      if (isOverlay()) {
+        s.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
+      } else {
+        toggleDesktop();
+      }
+      return;
+    }
+
+    /* ── (B) Sidebar close button — .sidebar-close-btn (inside sidebar) ── */
+    var closeEl = e.target.closest('.sidebar-close-btn');
+    if (closeEl && s.contains(closeEl)) {
+      e.stopPropagation();
+      if (isOverlay()) {
+        closeSidebar();
+      } else {
+        toggleDesktop();
+      }
+      return;
+    }
+
+    /* ── (C) Overlay backdrop click — close sidebar ── */
+    var overlayEl = e.target.closest('#sidebar-overlay');
+    if (overlayEl) {
+      closeSidebar();
+      return;
+    }
+
+    /* ── (D) Click OUTSIDE sidebar on mobile → close if open ── */
+    if (isOverlay() && s.classList.contains('sidebar-open')) {
+      if (!s.contains(e.target)) {
+        closeSidebar();
+      }
+    }
+  }, true); /* useCapture=true so it fires before any stopPropagation */
+
+  /* ── Escape key closes overlay sidebar ── */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && isOverlay()) closeSidebar();
   });
 
-  /* Initialise icons */
-  updateCloseBtnIcon();
-  updateToggleBtnIcon(false);
+  /* ── Resize: re-sync state when crossing 1024px breakpoint ── */
+  var _rt;
+  window.addEventListener('resize', function () {
+    clearTimeout(_rt);
+    _rt = setTimeout(function () {
+      var s = sidebar(), o = overlay(), w = mainWrap();
+      if (!s) return;
+      if (!isOverlay()) {
+        /* Switched to desktop — remove mobile state */
+        s.classList.remove('sidebar-open');
+        if (o) { o.classList.remove('active'); }
+        document.body.style.overflow = '';
+        restoreDesktopState();
+      } else {
+        /* Switched to mobile/tablet — remove desktop collapse */
+        s.classList.remove('sidebar-collapsed');
+        if (w) w.classList.remove('main-wrapper--collapsed');
+        updateToggleIcon(s.classList.contains('sidebar-open'));
+      }
+    }, 80);
+  });
+
+  /* ── Bootstrap on DOM ready ── */
+  function boot() {
+    var s = sidebar();
+    if (!s) return;
+    restoreDesktopState();
+
+    /* Ensure toggle icon matches initial state */
+    setTimeout(function () {
+      if (isOverlay()) {
+        updateToggleIcon(s.classList.contains('sidebar-open'));
+      }
+      updateCloseIcon(s.classList.contains('sidebar-collapsed'));
+    }, 150); /* slight delay so Lucide finishes icon replacement */
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 
 }());

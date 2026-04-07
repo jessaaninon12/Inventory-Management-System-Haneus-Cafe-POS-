@@ -126,7 +126,7 @@ class AdminApprovalRequest(models.Model):
         ("rejected", "Rejected"),
     ]
     
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="approval_request")
+    user = models.OneToOneField(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="approval_request")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     created_at = models.DateTimeField(auto_now_add=True)
     decided_at = models.DateTimeField(null=True, blank=True)  # When approved/rejected
@@ -138,7 +138,7 @@ class AdminApprovalRequest(models.Model):
             # Speeds up listing pending requests: WHERE status='pending'
             models.Index(fields=["status"], name="idx_approval_status"),
             # Speeds up ordering by creation time for notification list
-            models.Index(fields=["status", "-created_at"], name="idx_approval_status_created"),
+            models.Index(fields=["status", "created_at"], name="idx_approval_status_created"),
         ]
     
     def __str__(self):
@@ -167,7 +167,7 @@ class DeletedRecordsBackup(models.Model):
             # Speeds up --type=user filter in show_deleted_records command
             models.Index(fields=["record_type"], name="idx_deleted_record_type"),
             # Speeds up time-based audit queries
-            models.Index(fields=["record_type", "-deleted_at"], name="idx_deleted_type_time"),
+            models.Index(fields=["record_type", "deleted_at"], name="idx_deleted_type_time"),
         ]
     
     def __str__(self):
@@ -197,3 +197,38 @@ class Sale(models.Model):
 
     def __str__(self):
         return f"{self.order_id} — {self.customer_name}"
+
+
+class ResetAttempt(models.Model):
+    """Track password reset attempts for risk-based scoring.
+    Lightweight alternative to ML-based anomaly detection.
+    """
+
+    ATTEMPT_TYPE_CHOICES = [
+        ("code_verify", "Code Verification"),
+        ("email_reset", "Email Reset"),
+        ("password_change", "Password Change"),
+    ]
+
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="reset_attempts",
+    )
+    attempt_type = models.CharField(
+        max_length=20, choices=ATTEMPT_TYPE_CHOICES, default="code_verify",
+    )
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    was_successful = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            # Speeds up risk scoring: count attempts per user in time range
+            models.Index(fields=["user", "created_at"], name="idx_reset_attempt_user_t"),
+            # Speeds up filtering by attempt type
+            models.Index(fields=["attempt_type"], name="idx_reset_attempt_type"),
+        ]
+
+    def __str__(self):
+        return f"ResetAttempt({self.user}, {self.attempt_type}, success={self.was_successful})"

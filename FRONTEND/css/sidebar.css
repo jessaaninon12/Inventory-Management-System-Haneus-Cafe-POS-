@@ -1,12 +1,19 @@
 /* ══════════════════════════════════════════════════════════════════
    UNIFIED SIDEBAR STYLES
    Used across all pages (Dashboard, Products, Stock, Supplier, Sales, etc)
+
+   Breakpoint strategy:
+     ≥ 1025px  → Desktop: sidebar is always visible, push layout, toggle button HIDDEN
+     768–1024px → Tablet: sidebar is overlay (toggle button VISIBLE)
+     < 768px   → Mobile: sidebar is overlay (toggle button VISIBLE)
 ═══════════════════════════════════════════════════════════════════ */
 
 /* Global layout container */
 .app-container {
   display: flex;
   height: 100vh;
+  height: 100dvh;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -22,6 +29,7 @@
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   z-index: 1001;
   transition: width 0.28s cubic-bezier(0.4,0,0.2,1),
               min-width 0.28s cubic-bezier(0.4,0,0.2,1),
@@ -54,7 +62,7 @@
 .sidebar-title {
   font-size: 1.25rem;
   font-weight: 700;
-  color: var(--cream);
+  color: var(--cream, #f5ede3);
   margin: 0;
 }
 
@@ -81,6 +89,7 @@
 .sidebar-close-btn svg {
   width: 15px;
   height: 15px;
+  pointer-events: none;
 }
 
 /* ── Sidebar Navigation ────────────────────────────────────────── */
@@ -152,44 +161,46 @@ nav {
   overflow-y: auto;
   overflow-x: hidden;
   transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
+  min-width: 0;
 }
 
 
-/* ── Sidebar Toggle Button — HIDDEN on desktop, visible on mobile only ─── */
+/* ══════════════════════════════════════════════════════════════════
+   SIDEBAR TOGGLE BUTTON
+   - Base: display:none (desktop ≥ 1025px — sidebar always visible)
+   - Shown on tablet + mobile via media queries below
+═══════════════════════════════════════════════════════════════════ */
 .sidebar-toggle-btn {
   width: 38px;
   height: 38px;
-  display: none;           /* hidden on desktop — sidebar always visible */
+  display: none;          /* HIDDEN on desktop by default */
   align-items: center;
   justify-content: center;
-  background: var(--cream);
-  border: 1px solid var(--latte);
+  background: var(--cream, #f5ede3);
+  border: 1px solid var(--latte, #e1c8b2);
   border-radius: 0.5rem;
   cursor: pointer;
-  color: var(--mocha);
+  color: var(--mocha, #6e4f3e);
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .sidebar-toggle-btn:hover {
-  background: var(--latte);
-  color: var(--primary);
-  border-color: var(--primary);
+  background: var(--latte, #e1c8b2);
+  color: var(--primary, #c47b42);
+  border-color: var(--primary, #c47b42);
 }
 
-.sidebar-toggle-btn svg {
+.sidebar-toggle-btn svg,
+.sidebar-toggle-btn i {
   width: 18px;
   height: 18px;
-}
-
-/* Show toggle only on mobile (<768px) */
-@media (max-width: 767px) {
-  .sidebar-toggle-btn { display: inline-flex; }
+  pointer-events: none;
 }
 
 
-
-/* ── Sidebar Overlay (Mobile) ──────────────────────────────────── */
+/* ── Sidebar Overlay Backdrop ──────────────────────────────────── */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -202,35 +213,52 @@ nav {
   transition: opacity 0.28s ease;
 }
 
-/* ── Mobile Responsive (< 768px) ──────────────────────────────── */
-@media (max-width: 767px) {
+.sidebar-overlay.active {
+  display: block;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════
+   TABLET OVERLAY MODE  (768px – 1024px)
+   Sidebar becomes a sliding overlay — SAME as mobile behavior.
+   Toggle button SHOWS.
+═══════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+
+  /* Show the header toggle button on tablet + mobile */
+  .sidebar-toggle-btn {
+    display: inline-flex !important;
+  }
+
+  /* Sidebar starts off-screen */
   #main-sidebar {
     transform: translateX(-100%);
     box-shadow: none;
-    z-index: 1000;
+    z-index: 1002;
+    /* Cancel any desktop-collapse width */
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
   }
 
+  /* Sidebar slides in when open */
   #main-sidebar.sidebar-open {
     transform: translateX(0);
-    box-shadow: 6px 0 28px rgba(74,47,33,0.28);
+    box-shadow: 6px 0 32px rgba(74,47,33,0.3);
   }
 
-  .sidebar-overlay.active {
-    display: block;
-  }
-
+  /* Main wrapper fills full width — no sidebar push */
   .main-wrapper {
     margin-left: 0 !important;
   }
 
-  /* On mobile, never apply desktop-collapse styles */
+  /* Cancel desktop collapse on tablet/mobile — always full width when open */
   #main-sidebar.sidebar-collapsed {
-    width: 250px !important;
-    min-width: 250px !important;
-    max-width: 250px !important;
-    overflow: hidden;
+    width: 260px !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
   }
-  #main-sidebar.sidebar-collapsed .sidebar-title { display: block !important; }
+  #main-sidebar.sidebar-collapsed .sidebar-title       { display: block !important; }
   #main-sidebar.sidebar-collapsed .sidebar-section-title { display: block !important; }
   #main-sidebar.sidebar-collapsed .sidebar-link {
     justify-content: flex-start !important;
@@ -251,12 +279,28 @@ nav {
 
 
 /* ══════════════════════════════════════════════════════════════════
-   DESKTOP SIDEBAR COLLAPSE — Icon-only mode (≥ 768px)
-   Applied by JS: sidebar-toggle.js adds .sidebar-collapsed to #main-sidebar
-   and .main-wrapper--collapsed to .main-wrapper
+   DESKTOP SIDEBAR — Pushed layout  (≥ 1025px)
+   Toggle button HIDDEN. Sidebar always visible.
+   sidebar-close-btn inside sidebar can collapse to 64px icon rail.
 ═══════════════════════════════════════════════════════════════════ */
-@media (min-width: 768px) {
-  /* Collapsed width — icon-only 64px rail */
+@media (min-width: 1025px) {
+
+  /* Toggle button hidden on desktop */
+  .sidebar-toggle-btn {
+    display: none !important;
+  }
+
+  /* Sidebar always visible — push layout */
+  #main-sidebar {
+    transform: translateX(0) !important;
+    position: fixed;
+  }
+
+  .main-wrapper {
+    margin-left: 250px;
+  }
+
+  /* ── Collapsed (icon-only 64px rail) ── */
   #main-sidebar.sidebar-collapsed {
     width: 64px;
     min-width: 64px;
@@ -264,44 +308,37 @@ nav {
     overflow: hidden;
   }
 
-  /* Less horizontal padding so icons fit in 64px */
   #main-sidebar.sidebar-collapsed .sidebar-inner {
     padding: 1.5rem 0;
   }
 
-  /* Center the close/expand button */
   #main-sidebar.sidebar-collapsed .sidebar-logo-row {
     justify-content: center;
     padding: 0 4px;
     margin-bottom: 1.5rem;
   }
 
-  /* Hide the brand text */
   #main-sidebar.sidebar-collapsed .sidebar-title {
     display: none;
   }
 
-  /* Reduce gap between nav sections */
   #main-sidebar.sidebar-collapsed .sidebar-nav-section {
     margin-bottom: 0.25rem;
   }
 
-  /* Hide section labels */
   #main-sidebar.sidebar-collapsed .sidebar-section-title {
     display: none;
   }
 
-  /* Icon-only links — centered, text hidden */
   #main-sidebar.sidebar-collapsed .sidebar-link {
     justify-content: center;
     padding: 0.65rem 0;
     gap: 0;
-    font-size: 0;    /* hides text nodes */
+    font-size: 0;
     line-height: 0;
     overflow: hidden;
   }
 
-  /* Keep icons at their explicit pixel size */
   #main-sidebar.sidebar-collapsed .sidebar-link svg {
     width: 20px !important;
     height: 20px !important;
@@ -310,9 +347,7 @@ nav {
     line-height: initial;
   }
 
-  /* Shift main content area to match collapsed sidebar width */
   .main-wrapper--collapsed {
     margin-left: 64px !important;
   }
 }
-
