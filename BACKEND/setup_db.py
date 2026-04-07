@@ -27,6 +27,7 @@ Select your database engine:
 
   [A] MySQL / MariaDB  (via XAMPP)
   [B] SQL Server       (via SSMS 19)
+  [C] PostgreSQL       (via pgAdmin / psql)
 
 """
 
@@ -100,6 +101,29 @@ def setup_mssql():
     return config
 
 
+def setup_postgresql():
+    """Collect PostgreSQL connection details and return env lines."""
+    print("\n── PostgreSQL (pgAdmin / psql) ─────────────────────")
+    print("  Make sure PostgreSQL server is running.")
+    print("  The database will be created automatically if it does not exist.")
+    print("  Default: postgres user, port 5432.\n")
+
+    db_name = prompt("Database name", "haneuscafedb").lower()
+    db_host = prompt("Host (e.g. localhost)", "localhost")
+    db_port = prompt("Port", "5432")
+    db_user = prompt("Username", "postgres")
+    db_pass = prompt("Password (leave blank if none)", "")
+
+    return {
+        "DB_ENGINE": "postgresql",
+        "DB_NAME": db_name,
+        "DB_USER": db_user,
+        "DB_PASSWORD": db_pass,
+        "DB_HOST": db_host,
+        "DB_PORT": db_port,
+    }
+
+
 def write_env(config):
     """Write the .env file from config dict."""
     lines = [
@@ -162,6 +186,11 @@ def print_next_steps(engine):
         print("  2. Install the SQL Server driver:")
         print("       pip install mssql-django pyodbc")
         print("  3. Run migrations (the database is created automatically):")
+    elif engine == "postgresql":
+        print("  1. Make sure PostgreSQL server is running (check pgAdmin or psql).")
+        print("  2. Install the PostgreSQL driver:")
+        print("       pip install psycopg2-binary")
+        print("  3. Run migrations (the database is created automatically):")
 
     print()
     print("  Standard Django commands:")
@@ -174,7 +203,11 @@ def print_next_steps(engine):
     print("    python manage.py add_migration infrastructure")
     print("    python manage.py update_database")
     print()
-    print("    python manage.py runserver")
+    print("  For superadmin user, use this command:")
+    print("    python manage.py createsuperuser_custom")
+    print()
+    print("  Then start the server:")
+    print("    python manage.py runserver 8000")
     print()
     print("  API docs will be available at:")
     print("    http://localhost:8000/api/docs/")
@@ -191,12 +224,14 @@ def main():
             sys.exit(0)
 
     print(MENU)
-    choice = input("  Your choice (A/B): ").strip().upper()
+    choice = input("  Your choice (A/B/C): ").strip().upper()
 
     if choice == "A":
         config = setup_mysql()
     elif choice == "B":
         config = setup_mssql()
+    elif choice == "C":
+        config = setup_postgresql()
     else:
         print(f"  Invalid choice: {choice}")
         sys.exit(1)

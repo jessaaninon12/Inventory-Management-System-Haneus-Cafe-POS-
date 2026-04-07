@@ -1,8 +1,8 @@
 """
 Django settings for Haneus Cafe POS — Clean Architecture.
 
-Database: MySQL via XAMPP (default) or MSSQL via env.
-Set DB_ENGINE=mysql or DB_ENGINE=mssql in your .env file.
+Database: MySQL via XAMPP (default), MSSQL, or PostgreSQL via env.
+Set DB_ENGINE=mysql or DB_ENGINE=mssql or DB_ENGINE=postgresql in your .env file.
 """
 
 import os
@@ -106,6 +106,20 @@ if DB_ENGINE == "mssql":
             "HOST": os.environ.get("DB_HOST", "localhost"),
             "PORT": os.environ.get("DB_PORT", "1433"),
             "OPTIONS": _mssql_options,
+            "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "600")),
+            "ATOMIC_REQUESTS": True,
+        }
+    }
+elif DB_ENGINE == "postgresql":
+    # PostgreSQL via psycopg2
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "haneuscafedb"),
+            "USER": os.environ.get("DB_USER", "postgres"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
             "CONN_MAX_AGE": int(os.environ.get("DB_CONN_MAX_AGE", "600")),
             "ATOMIC_REQUESTS": True,
         }
