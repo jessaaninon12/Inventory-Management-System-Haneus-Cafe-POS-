@@ -6,23 +6,38 @@ Depends only on domain entities, DTOs, and the repository interface.
 import random
 from datetime import date
 
+from django.db import IntegrityError
+
 from domain.entities.sale import Sale, SaleItem
 from application.dtos.sale_dto import SaleDTO
 from application.interfaces.sale_repository_interface import SaleRepositoryInterface
 
 
 # ------------------------------------------------------------------
-# Receipt / customer number generators
+# Receipt / customer / sale-id generators
 # ------------------------------------------------------------------
 
-def _generate_receipt_number(today_count: int) -> str:
+def _generate_sale_id(max_seq: int) -> str:
     """
-    Format: REC-YYYYMMDD-XXXX
-    Sequence is today_count + 1, zero-padded to 4 digits.
-    Example: REC-20260321-0001
+    Format: SALE-YYYYMMDD-XXXX
+    *max_seq* is the highest numeric suffix already used today.
+    The next ID is max_seq + 1, zero-padded to 4 digits.
+    Example: SALE-20260413-0003  (when max_seq == 2)
     """
     date_str = date.today().strftime("%Y%m%d")
-    seq = str(today_count + 1).zfill(4)
+    seq = str(max_seq + 1).zfill(4)
+    return f"SALE-{date_str}-{seq}"
+
+
+def _generate_receipt_number(max_seq: int) -> str:
+    """
+    Format: REC-YYYYMMDD-XXXX
+    *max_seq* is the highest numeric suffix already used today.
+    The next receipt is max_seq + 1, zero-padded to 4 digits.
+    Example: REC-20260413-0003  (when max_seq == 2)
+    """
+    date_str = date.today().strftime("%Y%m%d")
+    seq = str(max_seq + 1).zfill(4)
     return f"REC-{date_str}-{seq}"
 
 
@@ -39,6 +54,9 @@ def _generate_customer_number(latest_num: int = 0) -> str:
 
 
 class SaleService:
+
+    # Maximum retry attempts when a duplicate sale_id collision occurs
+    _MAX_RETRIES = 5
 
     def __init__(self, repository: SaleRepositoryInterface):
         # Primary persistence for sales (create, update, read, delete)
@@ -65,12 +83,18 @@ class SaleService:
     # ------------------------------------------------------------------
 
     def create_sale(self, dto):
-        """Build a Sale entity from the DTO, generate receipt/customer numbers, validate, and persist."""
-        # Generate unique receipt number using today's count
-        today_count = self.repository.get_today_count()
-        receipt_number = _generate_receipt_number(today_count)
-        
-        # Generate strict ascending customer number
+        """Build a Sale entity from the DTO, generate receipt/customer numbers, validate, and persist.
+
+        The sale_id, receipt_number, and customer_number are ALL generated
+        server-side based on the current database state.  Any sale_id sent
+        from the frontend is silently overridden to prevent duplicate-key
+        crashes caused by stale client-side counters.
+
+        If a duplicate-key IntegrityError still occurs (race condition
+        between two concurrent checkouts), the method retries up to
+        _MAX_RETRIES times by re-reading the counter from the DB.
+        """
+        # Generate strict ascending customer number (only once — no retry needed)
         latest_customer = self.repository.get_latest_customer_number()
         customer_number = _generate_customer_number(latest_customer)
 
@@ -85,32 +109,52 @@ class SaleService:
             )
             for i in dto.items
         ]
-        # Assemble the Sale domain entity
-        entity = Sale(
-            sale_id=dto.sale_id,
-            receipt_number=receipt_number,
-            customer_number=customer_number,
-            cashier_name=dto.cashier_name,
-            order_type=dto.order_type,
-            customer_name=dto.customer_name,
-            table_number=dto.table_number,
-            payment_method=dto.payment_method,
-            subtotal=dto.subtotal,
-            discount=dto.discount,
-            tax=dto.tax,
-            total=dto.total,
-            amount_tendered=dto.amount_tendered,
-            change_amount=dto.change_amount,
-            status=dto.status,
-            items=items,
+
+        last_error = None
+        for attempt in range(self._MAX_RETRIES):
+            # Re-read counter on each attempt to pick up any new rows
+            today_count = self.repository.get_today_count()
+            sale_id = _generate_sale_id(today_count)
+            receipt_number = _generate_receipt_number(today_count)
+
+            # Assemble the Sale domain entity (server-generated IDs)
+            entity = Sale(
+                sale_id=sale_id,
+                receipt_number=receipt_number,
+                customer_number=customer_number,
+                cashier_name=dto.cashier_name,
+                order_type=dto.order_type,
+                customer_name=dto.customer_name,
+                table_number=dto.table_number,
+                payment_method=dto.payment_method,
+                subtotal=dto.subtotal,
+                discount=dto.discount,
+                tax=dto.tax,
+                total=dto.total,
+                amount_tendered=dto.amount_tendered,
+                change_amount=dto.change_amount,
+                status=dto.status,
+                items=items,
+            )
+            # Run domain validation (ensures required fields and valid items)
+            errors = entity.validate()
+            if errors:
+                raise ValueError(errors)
+
+            try:
+                # Persist via repository and return DTO representation
+                saved = self.repository.create(entity)
+                return SaleDTO.from_entity(saved)
+            except IntegrityError as exc:
+                last_error = exc
+                # Retry with an updated counter on the next iteration
+                continue
+
+        # All retries exhausted — surface a friendly error instead of 500
+        raise ValueError(
+            f"Could not generate a unique Sale ID after {self._MAX_RETRIES} "
+            f"attempts. Please try again. (last error: {last_error})"
         )
-        # Run domain validation (ensures required fields and valid items)
-        errors = entity.validate()
-        if errors:
-            raise ValueError(errors)
-        # Persist via repository and return DTO representation
-        saved = self.repository.create(entity)
-        return SaleDTO.from_entity(saved)
 
     def update_sale(self, pk, dto):
         """Apply full or partial updates to an existing sale."""

@@ -728,7 +728,8 @@ document.getElementById('clearAllBtn')?.addEventListener('click', () => {
 
 // Init badge on load: fetch low-stock + approval data so the badge is accurate
 // without building the full notification list (that happens on bell click).
-(async function initNotifBadgeOnly() {
+// Polls every 30 seconds so the badge stays current WITHOUT page refresh.
+async function _refreshNotifBadge() {
   try {
     const store = _loadStore();
     const storeMap = {};
@@ -799,4 +800,8 @@ document.getElementById('clearAllBtn')?.addEventListener('click', () => {
       _updateBadge(store);
     }
   } catch { /* silent */ }
-}());
+}
+
+// Run once immediately, then poll every 30 seconds
+_refreshNotifBadge();
+setInterval(_refreshNotifBadge, 30000);

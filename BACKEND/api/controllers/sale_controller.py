@@ -144,6 +144,13 @@ class SaleListCreateController(APIView):
             return Response(
                 {"errors": e.args[0]}, status=status.HTTP_400_BAD_REQUEST
             )
+        except Exception as e:
+            # Safety net: catch any remaining DB errors (e.g. IntegrityError)
+            # so the backend never crashes with an unhandled 500
+            return Response(
+                {"errors": f"Sale creation failed: {str(e)}"},
+                status=status.HTTP_409_CONFLICT,
+            )
 
 
 class SaleDetailController(APIView):
