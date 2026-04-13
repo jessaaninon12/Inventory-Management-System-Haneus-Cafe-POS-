@@ -304,8 +304,16 @@ async function submitEditStock() {
       showErrorModal('Adjustment failed: ' + JSON.stringify(err.errors || err));
       return;
     }
+    // Immediately update local data so the table re-renders with correct status
+    const p = loadedProducts.find(x => x.id === editingProductId);
+    if (p) {
+      p.stock = Math.max(0, (p.stock || 0) + qty);
+      p.updated_at = new Date().toISOString();
+    }
     closeEditStockModal();
-    loadProducts();
+    renderTable(loadedProducts);
+    // Also refresh from server for authoritative data (cache now invalidated)
+    loadProducts(currentPage);
   } catch (e) {
     showErrorModal('Failed to adjust stock. Is the backend running?');
   }
@@ -378,8 +386,16 @@ async function submitReceiveStock() {
       showErrorModal('Receive failed: ' + JSON.stringify(err.errors || err));
       return;
     }
+    // Immediately update local data so the table re-renders with correct status
+    const p = loadedProducts.find(x => x.id === product_id);
+    if (p) {
+      p.stock = (p.stock || 0) + quantity;
+      p.updated_at = new Date().toISOString();
+    }
     closeReceiveStockModal();
-    loadProducts();
+    renderTable(loadedProducts);
+    // Also refresh from server for authoritative data (cache now invalidated)
+    loadProducts(currentPage);
   } catch (e) { showErrorModal('Failed to receive stock.'); }
 }
 
