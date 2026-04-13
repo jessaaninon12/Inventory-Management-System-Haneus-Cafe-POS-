@@ -3,13 +3,23 @@
    ================================================================ */
 const API_BASE = 'http://localhost:8000';
 
-// ── Password visibility toggle ────────────────────────────────
-document.getElementById('togglePw').addEventListener('click', function () {
-  var pwInput = document.getElementById('password');
-  var icon    = document.getElementById('togglePwIcon');
-  var show    = pwInput.type === 'password';
-  pwInput.type  = show ? 'text' : 'password';
-  icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+// ── Password visibility toggle (all .toggle-pw buttons) ──────
+// Works for login password AND all reset wizard password fields
+// via data-target attribute or fallback to sibling input.
+document.addEventListener('click', function (e) {
+  var btn = e.target.closest('.toggle-pw');
+  if (!btn) return;
+
+  var targetId = btn.getAttribute('data-target');
+  var pwInput  = targetId
+    ? document.getElementById(targetId)
+    : btn.closest('.input-group').querySelector('input[type="password"], input[type="text"]');
+  if (!pwInput) return;
+
+  var icon = btn.querySelector('i');
+  var show = pwInput.type === 'password';
+  pwInput.type   = show ? 'text' : 'password';
+  if (icon) icon.className = show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
 });
 
 // ── Form submit ───────────────────────────────────────────
