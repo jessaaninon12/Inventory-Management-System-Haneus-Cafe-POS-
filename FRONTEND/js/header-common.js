@@ -249,8 +249,10 @@ if (typeof window._dashboardNotifInit === 'undefined') {
     if (detail) detail.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;padding:1.25rem;">Select a notification to view details.</p>';
   });
 
-  // Init notifications
+  // Init notifications — run once, then poll every 30 seconds
+  // so the badge stays current WITHOUT page refresh
   hcRefreshNotifications();
+  setInterval(hcRefreshNotifications, 30000);
 }
 
 // ══════════════════════════════════════════════════════════════════

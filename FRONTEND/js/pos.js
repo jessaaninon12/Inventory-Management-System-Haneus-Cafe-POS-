@@ -66,18 +66,29 @@ async function initPOS() {
     fetchPOSProducts();
 }
 
-/** Fetch last sale to determine next order number */
+/** Fetch last sale to determine next order number.
+ *  Filters sale_ids by today's date prefix to avoid stale counters.
+ */
 async function _initOrderCounter() {
     try {
         const res = await fetch(`${POS_API}/sales/view/?page=1&limit=1`);
         if (res.ok) {
             const data = await res.json();
             const sales = data.sales || data.results || [];
+            // Build today's prefix to match server-side logic
+            const now = new Date();
+            const todayPrefix = "SALE-" + now.getFullYear()
+                + String(now.getMonth() + 1).padStart(2, "0")
+                + String(now.getDate()).padStart(2, "0") + "-";
+            // Check the latest sale — if it's from today, use its suffix
             if (sales.length > 0) {
-                // Extract the numeric suffix from the last sale_id (e.g. SALE-20260403-0005 → 5)
-                const lastId = sales[0].sale_id || sales[0].receipt_number || '';
-                const match = lastId.match(/(\d+)$/);
-                _posOrderCounter = match ? parseInt(match[1], 10) : 0;
+                const lastId = sales[0].sale_id || '';
+                if (lastId.startsWith(todayPrefix)) {
+                    const match = lastId.match(/(\d+)$/);
+                    _posOrderCounter = match ? parseInt(match[1], 10) : 0;
+                } else {
+                    _posOrderCounter = 0; // New day, reset counter
+                }
             }
         }
     } catch (e) { console.warn('Could not fetch last order number:', e); }
@@ -498,9 +509,9 @@ function showCashModal(ctx) {
     const modal = document.getElementById("cash-payment-modal");
     if (!modal) return;
 
-    // Set order and customer number
+    // Set order number (auto-increment ascending)
     const orderNum = document.getElementById("cash-modal-order-num");
-    if (orderNum) orderNum.textContent = "#00001";  // Placeholder
+    if (orderNum) orderNum.textContent = "#" + String(_posOrderCounter + 1).padStart(5, "0");
 
     const custNum = document.getElementById("cash-modal-customer-num");
     if (custNum) custNum.textContent = _lastGeneratedCustomerNumber;
@@ -541,9 +552,9 @@ function showGCashModal(ctx) {
     const modal = document.getElementById("gcash-payment-modal");
     if (!modal) return;
 
-    // Set order and customer number
+    // Set order number (auto-increment ascending)
     const orderNum = document.getElementById("gcash-modal-order-num");
-    if (orderNum) orderNum.textContent = "#00001";  // Placeholder
+    if (orderNum) orderNum.textContent = "#" + String(_posOrderCounter + 1).padStart(5, "0");
 
     const custNum = document.getElementById("gcash-modal-customer-num");
     if (custNum) custNum.textContent = _lastGeneratedCustomerNumber;
@@ -578,16 +589,9 @@ async function _completeSale(paymentMethod, ctx, amountTendered = ctx.total) {
     const { subtotal, discount, tax, total, customerName, tableNumber, orderType, cashierName } = ctx;
     const changeAmount = Math.max(amountTendered - total, 0);
 
-    // Auto-increment sale_id
-    _posOrderCounter++;
-    const now     = new Date();
-    const dateStr = now.getFullYear().toString()
-                  + String(now.getMonth() + 1).padStart(2, "0")
-                  + String(now.getDate()).padStart(2, "0");
-    const saleId  = "SALE-" + dateStr + "-" + String(_posOrderCounter).padStart(4, "0");
-
+    // sale_id is now generated server-side to prevent duplicate key errors
     const payload = {
-        sale_id:         saleId,
+        sale_id:         "",   // backend will override with a unique value
         customer_name:   customerName,
         customer_number: _lastGeneratedCustomerNumber,
         table_number:    tableNumber,
@@ -627,20 +631,43 @@ async function _completeSale(paymentMethod, ctx, amountTendered = ctx.total) {
         const savedSale = await res.json();
         _lastSaleData   = savedSale;
 
+        // Sync local counter from the server-generated sale_id
+        const serverSaleId = savedSale.sale_id || '';
+        const counterMatch = serverSaleId.match(/(\d+)$/);
+        if (counterMatch) {
+            _posOrderCounter = parseInt(counterMatch[1], 10);
+        } else {
+            _posOrderCounter++;
+        }
+
         // Show receipt modal with data from the server
         showReceiptModal(savedSale);
+
+        // ── Immediately update local product stock so sold-out items
+        //    become disabled BEFORE the async fetchPOSProducts returns ──
+        for (const cartItem of posCart) {
+            const prod = posProducts.find(p => p.id === cartItem.id);
+            if (prod) {
+                prod.stock = Math.max(0, (parseInt(prod.stock) || 0) - cartItem.quantity);
+                if (prod.stock <= 0) {
+                    prod.can_order = false;
+                    prod.is_orderable = false;
+                }
+            }
+        }
 
         // Reset cart
         posCart = [];
         updatePOSReceiptLabel();
         updatePOSOrderLabel();
+        renderPOSProducts();    // re-render immediately with updated local stock
         const nameEl = document.getElementById("pos-customer-name");
         if (nameEl) nameEl.value = "";
         updatePOSCart();
         resetCashTendered();
         const discountEl = document.getElementById("pos-discount-select");
         if (discountEl) { discountEl.value = "0"; updatePOSTotals(); }
-        fetchPOSProducts();     // refresh stock counts
+        fetchPOSProducts();     // also refresh from server for authoritative stock
 
     } catch (err) {
         console.error("POS checkout failed:", err);
