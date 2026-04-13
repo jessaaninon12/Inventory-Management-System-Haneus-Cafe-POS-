@@ -125,7 +125,21 @@ def setup_postgresql():
 
 
 def write_env(config):
-    """Write the .env file from config dict."""
+    """Write the .env file from config dict, preserving email settings."""
+    # ── Preserve existing email settings if .env already exists ──
+    email_vars = {}
+    email_keys = [
+        "EMAIL_HOST", "EMAIL_PORT", "EMAIL_USE_TLS",
+        "EMAIL_HOST_USER", "EMAIL_HOST_PASSWORD", "DEFAULT_FROM_EMAIL",
+    ]
+    if ENV_FILE.exists():
+        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if "=" in stripped and not stripped.startswith("#"):
+                key, _, value = stripped.partition("=")
+                if key.strip() in email_keys:
+                    email_vars[key.strip()] = value.strip()
+
     lines = [
         "# ── Django ──────────────────────────────────────────",
         "DJANGO_SECRET_KEY=change-this-in-production",
@@ -141,6 +155,16 @@ def write_env(config):
     lines.append("")
     lines.append("# ── Frontend (for reference) ────────────────────────")
     lines.append("API_BASE_URL=http://localhost:8000")
+    lines.append("")
+
+    # ── Email section — restore saved values or write defaults ──
+    lines.append("# ── Email (Gmail SMTP) ──────────────────────────────")
+    lines.append(f"EMAIL_HOST={email_vars.get('EMAIL_HOST', 'smtp.gmail.com')}")
+    lines.append(f"EMAIL_PORT={email_vars.get('EMAIL_PORT', '587')}")
+    lines.append(f"EMAIL_USE_TLS={email_vars.get('EMAIL_USE_TLS', 'True')}")
+    lines.append(f"EMAIL_HOST_USER={email_vars.get('EMAIL_HOST_USER', '')}")
+    lines.append(f"EMAIL_HOST_PASSWORD={email_vars.get('EMAIL_HOST_PASSWORD', '')}")
+    lines.append(f"DEFAULT_FROM_EMAIL={email_vars.get('DEFAULT_FROM_EMAIL', '')}")
     lines.append("")
 
     ENV_FILE.write_text("\n".join(lines), encoding="utf-8")

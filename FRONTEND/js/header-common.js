@@ -80,8 +80,8 @@ if (typeof window._dashboardNotifInit === 'undefined') {
     const badge = document.getElementById('notifBadge');
     if (!badge) return;
     const unread = notifs.filter(n => !n.read).length;
-    badge.textContent = unread;
-    badge.style.display = unread > 0 ? 'inline-flex' : 'none';
+    badge.textContent = unread > 9 ? '9+' : String(unread);
+    badge.classList.toggle('visible', unread > 0);
   }
 
   function _hcRenderNotifList(notifs) {
@@ -218,15 +218,19 @@ if (typeof window._dashboardNotifInit === 'undefined') {
   }
 
   // Bell toggle
-  document.getElementById('notifBellBtn')?.addEventListener('click', () => {
+  document.getElementById('notifBellBtn')?.addEventListener('click', (e) => {
+    e.stopPropagation();
     const dd = document.getElementById('notifDropdown');
-    if (dd) dd.style.display = dd.style.display === 'block' ? 'none' : 'block';
+    if (!dd) return;
+    const willOpen = !dd.classList.contains('open');
+    dd.classList.toggle('open');
+    if (willOpen) hcRefreshNotifications();
   });
   // Close on outside click
   document.addEventListener('click', (e) => {
     const wrapper = document.getElementById('notifWrapper');
     const dd = document.getElementById('notifDropdown');
-    if (dd && wrapper && !wrapper.contains(e.target)) dd.style.display = 'none';
+    if (dd && wrapper && !wrapper.contains(e.target)) dd.classList.remove('open');
   });
   // Mark all read
   document.getElementById('markAllReadBtn')?.addEventListener('click', () => {

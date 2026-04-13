@@ -726,24 +726,77 @@ document.getElementById('clearAllBtn')?.addEventListener('click', () => {
   _selectedNotifId = null;
 });
 
-// Init badge on load: only update the badge counter, do NOT fetch full notification data
-// Full notification list is built when the bell is clicked to avoid 429 on page load.
+// Init badge on load: fetch low-stock + approval data so the badge is accurate
+// without building the full notification list (that happens on bell click).
 (async function initNotifBadgeOnly() {
   try {
-    const res = await fetch(`${API_BASE}/products/low-stock/`);
-    if (!res.ok) return;
-    const products = await res.json();
     const store = _loadStore();
     const storeMap = {};
     store.forEach(n => { storeMap[n.id] = n; });
-    // Count unread from previous store
-    const unread = store.filter(n => !n.read).length;
-    // Update badge with at least the low-stock count
-    const badge = document.getElementById('notifBadge');
-    if (badge) {
-      const count = Math.max(unread, products.length);
-      badge.textContent = count > 9 ? '9+' : String(count);
-      badge.classList.toggle('visible', count > 0);
+
+    const freshNotifs = [];
+
+    // 1. Low-stock products
+    try {
+      const res = await fetch(`${API_BASE}/products/low-stock/`);
+      if (res.ok) {
+        const products = await res.json();
+        products.forEach(p => {
+          const type = p.stock <= 0 ? 'out_of_stock'
+            : p.stock <= p.low_stock_threshold / 2 ? 'critical' : 'low_stock';
+          freshNotifs.push({
+            id: `ls_${p.id}`,
+            type,
+            title: p.stock <= 0 ? 'Out of Stock' : type === 'critical' ? 'Critical Stock' : 'Low Stock Alert',
+            message: p.stock <= 0
+              ? `${p.name} is out of stock and needs immediate restocking.`
+              : `${p.name} has only ${p.stock} unit(s) left.`,
+            productId: p.id,
+            productName: p.name,
+            stock: p.stock,
+            threshold: p.low_stock_threshold,
+            category: p.category,
+            timestamp: new Date().toISOString(),
+            read: storeMap[`ls_${p.id}`]?.read ?? false,
+          });
+        });
+      }
+    } catch { /* silent */ }
+
+    // 2. Admin approval requests (Admin users only)
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user.user_type === 'Admin') {
+      try {
+        const approvalRes = await fetch(`${API_BASE}/admin/approval-requests/`);
+        if (approvalRes.ok) {
+          const approvalData = await approvalRes.json();
+          (approvalData.requests || []).forEach(req => {
+            freshNotifs.push({
+              id: `approval_${req.id}`,
+              type: 'approval_pending',
+              title: 'Admin Approval Needed',
+              message: `${req.user_name} (${req.email}) is awaiting approval.`,
+              userId: req.user_id,
+              userName: req.user_name,
+              userEmail: req.email,
+              requestId: req.id,
+              status: req.status,
+              createdAt: req.created_at,
+              timestamp: req.created_at,
+              read: storeMap[`approval_${req.id}`]?.read ?? false,
+            });
+          });
+        }
+      } catch { /* silent — staff users won't have access */ }
+    }
+
+    // Save fresh data so badge and bell-click are in sync
+    if (freshNotifs.length > 0) {
+      _saveStore(freshNotifs);
+      _updateBadge(freshNotifs);
+    } else {
+      // Even if no fresh data, update badge from whatever is in the store
+      _updateBadge(store);
     }
   } catch { /* silent */ }
 }());
