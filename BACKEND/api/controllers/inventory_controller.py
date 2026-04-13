@@ -62,6 +62,21 @@ class StockAdjustController(APIView):
                 notes=request.data.get("notes", ""),
             )
             txn = service.adjust_stock(dto)
+
+            # Invalidate product cache so fresh stock data is returned immediately
+            try:
+                from django.core.cache import cache
+                if hasattr(cache, 'delete_pattern'):
+                    cache.delete_pattern("products:*")
+                else:
+                    for page in range(1, 20):
+                        for limit in [12, 15, 30, 50, 100, 200]:
+                            cache.delete(f"products:list:v1:{page}:{limit}")
+                            cache.delete(f"products:list:v2:{page}:{limit}")
+                    cache.delete("products:low_stock")
+            except Exception:
+                pass
+
             return Response(txn.to_dict(), status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response(
