@@ -68,6 +68,33 @@ class SaleRepository(SaleRepositoryInterface):
         except (IndexError, ValueError):
             return 0
 
+    def get_month_count(self):
+        """Return the highest sequence number used in receipt_number for the current month.
+
+        Scans receipt_number values matching the current month's date range
+        (e.g. ``REC-20260401-XXXX`` through ``REC-20260430-XXXX``) and returns
+        the MAX numeric suffix. Falls back to 0 if no matching receipts exist.
+
+        This is used for monthly receipt counter reset — receipts reset on the 1st.
+        """
+        from datetime import date as _date
+        import calendar
+        today = _date.today()
+        # Build prefix range for current month: REC-YYYYMM
+        month_prefix = f"REC-{today.strftime('%Y%m')}"
+
+        # Find all receipt_numbers for this month
+        month_receipts = list(
+            SaleModel.objects.filter(receipt_number__startswith=month_prefix)
+            .values_list("receipt_number", flat=True)
+        )
+        max_seq = 0
+        for rn in month_receipts:
+            match = re.search(r"(\d+)$", rn)
+            if match:
+                max_seq = max(max_seq, int(match.group(1)))
+        return max_seq
+
     # ------------------------------------------------------------------
     # Commands
     # ------------------------------------------------------------------

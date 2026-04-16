@@ -75,7 +75,7 @@
           <div class="subtitle">Manage your product suppliers and their contact details</div>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="openAddModal()">
+      <button class="btn btn-primary" id="addSupplierBtn" onclick="openAddModal()" type="button">
         <i data-lucide="plus"></i> Add Supplier
       </button>
     </div>
@@ -85,7 +85,7 @@
       <div class="supplier-search-wrap">
         <i data-lucide="search" class="supplier-search-icon"></i>
         <input type="text" id="supplierSearch" class="supplier-search"
-               placeholder="Search by company, owner, or email…" />
+               placeholder="Search by name, company, or email…" />
       </div>
     </div>
 
@@ -103,35 +103,54 @@
   <div class="floating-card">
     <div class="fc-header">
       <h2 id="modalTitle">Add Supplier</h2>
-      <button class="fc-close" onclick="closeSupplierModal()" aria-label="Close">
+      <button class="fc-close" onclick="closeSupplierModal()" aria-label="Close" type="button">
         <i data-lucide="x"></i>
       </button>
     </div>
     <div class="fc-body">
       <div class="fc-group">
-        <label for="sCompany">Company Name *</label>
-        <input type="text" id="sCompany" placeholder="e.g. Zaldy Co and Friend" />
+        <label for="sName">Supplier Name *</label>
+        <input type="text" id="sName" placeholder="e.g. ABC Coffee Supplies" />
       </div>
       <div class="fc-group">
-        <label for="sOwner">Owner Name *</label>
-        <input type="text" id="sOwner" placeholder="e.g. John Adrian James Tabamo Pabuto" />
+        <label for="sPhone">Supplier Contact Number</label>
+        <input type="text" id="sPhone" placeholder="e.g. +63-999-123-4567" />
       </div>
       <div class="fc-group">
-        <label for="sEmail">Email</label>
-        <input type="email" id="sEmail" placeholder="e.g. contact@supplier.com" />
+        <label for="sEmail">Supplier Email Address</label>
+        <input type="email" id="sEmail" placeholder="e.g. email@supplier.com" />
       </div>
       <div class="fc-group">
-        <label for="sPhone">Phone</label>
-        <input type="text" id="sPhone" placeholder="e.g. (63+) 9010123921" />
+        <label for="sCompanyName">Supplier Company Name</label>
+        <input type="text" id="sCompanyName" placeholder="e.g. Inc Macho" />
       </div>
       <div class="fc-group">
         <label for="sAddress">Address</label>
         <input type="text" id="sAddress" placeholder="e.g. BRGY Balbautog Sitio Uwagan Purok Insan" />
       </div>
+
+      <!-- Multi-Select Searchable Product Dropdown -->
       <div class="fc-group">
-        <label for="sProducts">Supplied Products <span style="font-weight:400;color:var(--mocha);">(comma-separated)</span></label>
-        <input type="text" id="sProducts" placeholder="e.g. Paracetamol, Grass" />
+        <label>Supplied Products <span style="font-weight:400;color:var(--mocha);">(select from product list)</span></label>
+        <div class="multi-select-wrapper" id="productMultiSelect">
+          <div class="multi-select-trigger" id="productSelectTrigger" onclick="toggleProductDropdown()" tabindex="0">
+            <span class="multi-select-placeholder" id="productSelectPlaceholder">Select products…</span>
+            <i data-lucide="chevron-down" class="multi-select-arrow"></i>
+          </div>
+          <div class="multi-select-dropdown" id="productDropdown" style="display:none;">
+            <div class="multi-select-search-wrap">
+              <i data-lucide="search" class="multi-select-search-icon"></i>
+              <input type="text" id="productDropdownSearch" class="multi-select-search"
+                     placeholder="Search products…" oninput="filterProductDropdown()" />
+            </div>
+            <div class="multi-select-list" id="productDropdownList">
+              <div class="multi-select-loading">Loading products…</div>
+            </div>
+          </div>
+        </div>
+        <div class="multi-select-tags" id="selectedProductTags"></div>
       </div>
+
       <div class="fc-group">
         <label for="sImageFile">Upload Image <span style="font-weight:400;color:var(--mocha);">(optional — .jpg, .png, .jpeg)</span></label>
         <input type="file" id="sImageFile" accept=".jpg,.jpeg,.png" />
@@ -141,18 +160,33 @@
       </div>
     </div>
     <div class="fc-footer">
-      <button class="btn btn-secondary" onclick="closeSupplierModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="submitSupplierForm()">Save</button>
+      <button class="btn btn-secondary" onclick="closeSupplierModal()" type="button">Cancel</button>
+      <button class="btn btn-primary" id="saveSupplierBtn" onclick="submitSupplierForm()" type="button">Save</button>
     </div>
   </div>
 </div>
 
+<!-- ── View Supplier Modal ─────────────────────────────── -->
+<div id="viewSupplierModal" class="modal-overlay" style="display:none;">
+  <div class="floating-card" style="max-width:480px;">
+    <div class="fc-header">
+      <h2>Supplier Details</h2>
+      <button class="fc-close" onclick="closeViewSupplierModal()" aria-label="Close" type="button">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <div class="fc-body" id="viewSupplierBody" style="max-height:70vh;overflow-y:auto;"></div>
+    <div class="fc-footer">
+      <button class="btn btn-secondary" onclick="closeViewSupplierModal()" type="button">Close</button>
+    </div>
+  </div>
+</div>
 <!-- ── Delete Confirmation Modal ─────────────────────────── -->
 <div id="deleteModal" class="modal-overlay" style="display:none;">
   <div class="floating-card" style="max-width:380px;">
     <div class="fc-header">
       <h2>Delete Supplier</h2>
-      <button class="fc-close" onclick="closeDeleteModal()" aria-label="Close">
+      <button class="fc-close" onclick="closeDeleteModal()" aria-label="Close" type="button">
         <i data-lucide="x"></i>
       </button>
     </div>
@@ -160,8 +194,8 @@
       <p id="deleteMsg" class="delete-msg"></p>
     </div>
     <div class="fc-footer">
-      <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+      <button class="btn btn-secondary" onclick="closeDeleteModal()" type="button">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()" type="button">Delete</button>
     </div>
   </div>
 </div>
@@ -169,6 +203,7 @@
   <script src="js/role-control.js"></script>
   <script src="js/logout-modal.js"></script>
   <script src="js/alert-modal.js"></script>
+  <script src="js/auto-refresh.js"></script>
   <script src="js/supplier.js"></script>
   <script src="js/sidebar-toggle.js"></script>
 </body>

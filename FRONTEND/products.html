@@ -221,17 +221,41 @@
         <div class="fc-hint">Notify admin when stock falls to or below this number</div>
       </div>
 
-      <!-- Row: Supplier Name + Supplier Contact -->
+      <!-- Supplier: Searchable Dropdown with full details -->
+      <div class="fc-form-group" style="margin-top:0.5rem;">
+        <label style="font-size:0.8rem;text-transform:uppercase;letter-spacing:0.05em;color:var(--mocha);font-weight:600;border-bottom:1px solid var(--latte);padding-bottom:0.35rem;">Supplier Information</label>
+      </div>
+      <div class="fc-form-group">
+        <label>Select Supplier <span style="font-weight:400;color:var(--mocha);">(search by name, company, phone or email)</span></label>
+        <div class="supplier-combobox-wrap" id="supplierComboboxWrap">
+          <input type="text" id="pSupplierSearch" placeholder="Type to search suppliers…" autocomplete="off"
+                 oninput="onSupplierSearchInput()" onfocus="onSupplierSearchFocus()" />
+          <div class="supplier-combobox-dropdown" id="supplierComboDropdown" style="display:none;">
+            <div class="supplier-combobox-list" id="supplierComboList"></div>
+          </div>
+        </div>
+      </div>
       <div class="fc-form-row">
         <div class="fc-form-group">
           <label for="pSupplierName">Supplier Name</label>
-          <input type="text" id="pSupplierName" placeholder="e.g. ABC Coffee Supplies" />
+          <input type="text" id="pSupplierName" placeholder="Auto-filled or type manually" />
         </div>
         <div class="fc-form-group">
-          <label for="pSupplierContact">Supplier Contact</label>
-          <input type="text" id="pSupplierContact" placeholder="e.g. +63-999-123-4567 or email@supplier.com" />
+          <label for="pSupplierPhone">Supplier Contact Number</label>
+          <input type="text" id="pSupplierPhone" placeholder="Auto-filled or type manually" />
         </div>
       </div>
+      <div class="fc-form-row">
+        <div class="fc-form-group">
+          <label for="pSupplierEmail">Supplier Email Address</label>
+          <input type="email" id="pSupplierEmail" placeholder="Auto-filled or type manually" />
+        </div>
+        <div class="fc-form-group">
+          <label for="pSupplierCompany">Supplier Company Name</label>
+          <input type="text" id="pSupplierCompany" placeholder="Auto-filled or type manually" />
+        </div>
+      </div>
+
 
     </div>
     <div class="floating-card-footer">
@@ -262,6 +286,8 @@
 
   <script src="js/role-control.js"></script>
   <script src="js/logout-modal.js"></script>
+  <script src="js/alert-modal.js"></script>
+  <script src="js/auto-refresh.js"></script>
   <script src="js/products.js"></script>
   <script src="js/sidebar-toggle.js"></script>
 </body>

@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   --primary:       #c47b42;
   --primary-dark:  #a35f2e;
   --espresso:      #4a2f21;
@@ -1493,3 +1493,82 @@ aside.sidebar-icon-rail .sidebar-link svg { margin-right: 0; width: 20px; height
   .receipt-paper                { padding: 0 !important; }
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   ORDER / RECEIPT DROPDOWN HISTORY
+══════════════════════════════════════════════════════════════════ */
+.pos-dropdown-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.pos-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--latte);
+  border-radius: 0.5rem;
+  background: white;
+  color: var(--mocha);
+  font-size: 0.8rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.pos-dropdown-trigger:hover {
+  background: var(--cream);
+  border-color: var(--primary);
+}
+.pos-dropdown-trigger strong {
+  color: var(--espresso);
+  font-weight: 700;
+}
+
+.pos-dropdown-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  background: white;
+  border-radius: 0.625rem;
+  box-shadow: 0 8px 24px rgba(74,47,33,0.16);
+  border: 1px solid var(--latte);
+  z-index: 9997;
+  animation: posDropIn 0.18s ease;
+  overflow: hidden;
+}
+
+@keyframes posDropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pos-dropdown-list {
+  max-height: 252px; /* ~7 items × 36px */
+  overflow-y: auto;
+}
+.pos-dropdown-list::-webkit-scrollbar { width: 5px; }
+.pos-dropdown-list::-webkit-scrollbar-track { background: transparent; }
+.pos-dropdown-list::-webkit-scrollbar-thumb { background: var(--cappuccino); border-radius: 999px; }
+
+.pos-dropdown-item {
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--espresso);
+  cursor: pointer;
+  border-bottom: 1px solid rgba(225,200,178,0.15);
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.pos-dropdown-item:last-child { border-bottom: none; }
+.pos-dropdown-item:hover { background: var(--cream); }
+
+.pos-dropdown-item-active {
+  background: rgba(196,123,66,0.1);
+  color: var(--primary);
+  font-weight: 700;
+  cursor: default;
+}
+.pos-dropdown-item-active:hover { background: rgba(196,123,66,0.12); }

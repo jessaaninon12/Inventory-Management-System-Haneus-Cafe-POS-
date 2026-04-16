@@ -29,15 +29,16 @@ def _generate_sale_id(max_seq: int) -> str:
     return f"SALE-{date_str}-{seq}"
 
 
-def _generate_receipt_number(max_seq: int) -> str:
+def _generate_receipt_number(month_seq: int) -> str:
     """
     Format: REC-YYYYMMDD-XXXX
-    *max_seq* is the highest numeric suffix already used today.
-    The next receipt is max_seq + 1, zero-padded to 4 digits.
-    Example: REC-20260413-0003  (when max_seq == 2)
+    *month_seq* is the highest numeric suffix already used this MONTH.
+    The next receipt is month_seq + 1, zero-padded to 4 digits.
+    Resets on the 1st of each month (new month prefix = 0 existing receipts).
+    Example: REC-20260416-0003  (when month_seq == 2)
     """
     date_str = date.today().strftime("%Y%m%d")
-    seq = str(max_seq + 1).zfill(4)
+    seq = str(month_seq + 1).zfill(4)
     return f"REC-{date_str}-{seq}"
 
 
@@ -112,10 +113,11 @@ class SaleService:
 
         last_error = None
         for attempt in range(self._MAX_RETRIES):
-            # Re-read counter on each attempt to pick up any new rows
+            # Re-read counters on each attempt to pick up any new rows
             today_count = self.repository.get_today_count()
+            month_count = self.repository.get_month_count()
             sale_id = _generate_sale_id(today_count)
-            receipt_number = _generate_receipt_number(today_count)
+            receipt_number = _generate_receipt_number(month_count)
 
             # Assemble the Sale domain entity (server-generated IDs)
             entity = Sale(
@@ -217,4 +219,29 @@ class SaleService:
             "cogs":             str(result["cogs"]),
             "gross_profit":     str(result["gross_profit"]),
             "total_units_sold": result["total_units_sold"],
+        }
+
+    def get_pos_counters(self):
+        """Return the current POS counter values for the frontend.
+
+        - order_count: highest sequence used today (daily reset)
+        - receipt_count: highest sequence used this month (monthly reset)
+        - next_order: formatted Order #XXXXX string
+        - next_receipt: formatted REC-YYYYMMDD-XXXX string
+        """
+        today_count = self.repository.get_today_count()
+        month_count = self.repository.get_month_count()
+
+        next_order_num = today_count + 1
+        next_receipt_num = month_count + 1
+
+        date_str = date.today().strftime("%Y%m%d")
+
+        return {
+            "order_count": today_count,
+            "receipt_count": month_count,
+            "next_order": f"#{str(next_order_num).zfill(5)}",
+            "next_receipt": f"REC-{date_str}-{str(next_receipt_num).zfill(4)}",
+            "next_order_num": next_order_num,
+            "next_receipt_num": next_receipt_num,
         }

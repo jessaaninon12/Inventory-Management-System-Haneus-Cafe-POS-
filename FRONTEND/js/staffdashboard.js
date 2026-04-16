@@ -567,3 +567,8 @@ async function loadAnalyticsForDate(dateStr) {
     console.error('Analytics error:', err);
   }
 }
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadStaffDashboard(), 15000, 'staff-dashboard');
+}

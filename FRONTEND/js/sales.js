@@ -361,3 +361,8 @@ document.getElementById('exportSalesBtn')?.addEventListener('click', exportSales
 // ---------- Init ----------
 loadAnalytics();
 loadOrders();
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => { loadAnalytics(); loadOrders(); }, 20000, 'sales');
+}

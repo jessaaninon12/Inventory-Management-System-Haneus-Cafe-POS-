@@ -66,7 +66,18 @@ if (typeof window._dashboardProfileInit === 'undefined') {
 // ══════════════════════════════════════════════════════════════════
 if (typeof window._dashboardNotifInit === 'undefined') {
   const HC_NOTIF_KEY = 'haneus_notif_store';
+  const HC_STOCK_SNAPSHOT_KEY = 'haneus_stock_snapshot';
   let _hcSelectedNotifId = null;
+
+  // Detect current user role
+  function _hcGetUserRole() {
+    try { return JSON.parse(localStorage.getItem('user') || '{}').user_type || 'Staff'; }
+    catch { return 'Staff'; }
+  }
+  function _hcGetUsername() {
+    try { const u = JSON.parse(localStorage.getItem('user') || '{}'); return u.first_name || u.username || 'User'; }
+    catch { return 'User'; }
+  }
 
   function _hcLoadStore() {
     try { return JSON.parse(localStorage.getItem(HC_NOTIF_KEY) || '[]'); }
@@ -76,10 +87,22 @@ if (typeof window._dashboardNotifInit === 'undefined') {
     localStorage.setItem(HC_NOTIF_KEY, JSON.stringify(notifs));
   }
 
+  // Stock snapshot for restock detection
+  function _hcLoadStockSnapshot() {
+    try { return JSON.parse(localStorage.getItem(HC_STOCK_SNAPSHOT_KEY) || '{}'); }
+    catch { return {}; }
+  }
+  function _hcSaveStockSnapshot(snap) {
+    localStorage.setItem(HC_STOCK_SNAPSHOT_KEY, JSON.stringify(snap));
+  }
+
   function _hcUpdateBadge(notifs) {
     const badge = document.getElementById('notifBadge');
     if (!badge) return;
-    const unread = notifs.filter(n => !n.read).length;
+    // Staff: only count non-approval notifications
+    const role = _hcGetUserRole();
+    const relevant = role === 'Admin' ? notifs : notifs.filter(n => n.type !== 'approval');
+    const unread = relevant.filter(n => !n.read).length;
     badge.textContent = unread > 9 ? '9+' : String(unread);
     badge.classList.toggle('visible', unread > 0);
   }
@@ -88,13 +111,17 @@ if (typeof window._dashboardNotifInit === 'undefined') {
     const list = document.getElementById('notifList');
     if (!list) return;
 
-    if (!notifs.length) {
+    // Filter: staff should NOT see approval-type notifications
+    const role = _hcGetUserRole();
+    const visible = role === 'Admin' ? notifs : notifs.filter(n => n.type !== 'approval');
+
+    if (!visible.length) {
       list.innerHTML = '<p style="padding:1.25rem;color:var(--mocha);font-size:0.875rem;text-align:center;">No notifications</p>';
       return;
     }
 
-    list.innerHTML = notifs.map(n => {
-      const dotColor = n.type === 'critical' ? 'red' : n.type === 'warning' ? 'orange' : n.type === 'success' ? 'green' : 'blue';
+    list.innerHTML = visible.map(n => {
+      const dotColor = n.type === 'critical' ? 'red' : n.type === 'warning' ? 'orange' : n.type === 'success' || n.type === 'restock' ? 'green' : n.type === 'welcome' ? 'blue' : 'blue';
       const preview = (n.body || '').substring(0, 60) + ((n.body || '').length > 60 ? '…' : '');
       return `
         <div class="notif-item ${n.read ? 'read' : ''} ${_hcSelectedNotifId === n.id ? 'selected' : ''}"
@@ -177,6 +204,7 @@ if (typeof window._dashboardNotifInit === 'undefined') {
   // Generate notifications from live stock data
   async function hcRefreshNotifications() {
     try {
+      const role = _hcGetUserRole();
       const res = await fetch(`${HC_API}/products/view/?page=1&limit=100`);
       if (!res.ok) return;
       const data = await res.json();
@@ -184,7 +212,16 @@ if (typeof window._dashboardNotifInit === 'undefined') {
       const notifs = _hcLoadStore();
       const existingIds = new Set(notifs.map(n => n.id));
 
+      // ── Restock detection: compare with previous snapshot ──
+      const prevSnap = _hcLoadStockSnapshot();
+      const newSnap = {};
+      const now = new Date();
+      const dtStr = now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+
       products.forEach(p => {
+        newSnap[p.id] = p.stock;
+
+        // Stock alerts (for everyone)
         if (p.stock <= 0) {
           const id = `stock_critical_${p.id}`;
           if (!existingIds.has(id)) {
@@ -196,20 +233,60 @@ if (typeof window._dashboardNotifInit === 'undefined') {
             notifs.unshift({ id, type: 'warning', title: '⚠️ Low Stock Alert', body: `${p.name} has only ${p.stock} units left (threshold: ${p.low_stock_threshold || 10}).`, read: false, ts: Date.now() });
           }
         }
-      });
 
-      try {
-        const approvalRes = await fetch(`${HC_API}/admin/pending/`);
-        if (approvalRes.ok) {
-          const pending = await approvalRes.json();
-          (pending.results || pending || []).forEach(req => {
-            const id = `approval_${req.id}`;
-            if (!existingIds.has(id)) {
-              notifs.unshift({ id, type: 'approval', title: '👤 Registration Request', body: `${req.username || 'A user'} has requested Admin access.`, read: false, ts: Date.now(), userId: req.user_id || req.id });
-            }
-          });
+        // Restock notification: stock increased since last check
+        if (prevSnap[p.id] !== undefined && p.stock > prevSnap[p.id]) {
+          const restockId = `restock_${p.id}_${Date.now()}`;
+          // Avoid duplicate restock for same product within 60s
+          const recentRestock = notifs.find(n => n.type === 'restock' && n.productId === p.id && (Date.now() - n.ts) < 60000);
+          if (!recentRestock) {
+            notifs.unshift({
+              id: restockId, type: 'restock', productId: p.id,
+              title: '📦 Restocked',
+              body: `${p.name} is now restocked. ${dtStr}`,
+              read: false, ts: Date.now()
+            });
+            // Also remove the out-of-stock / low-stock notification for this product
+            const critIdx = notifs.findIndex(n => n.id === `stock_critical_${p.id}`);
+            if (critIdx >= 0) notifs.splice(critIdx, 1);
+            const lowIdx = notifs.findIndex(n => n.id === `stock_low_${p.id}`);
+            if (lowIdx >= 0) notifs.splice(lowIdx, 1);
+          }
         }
-      } catch {} // Silently fail for staff users
+      });
+      _hcSaveStockSnapshot(newSnap);
+
+      // ── Welcome notification (first login) ──
+      const welcomeKey = 'haneus_welcome_shown';
+      if (!localStorage.getItem(welcomeKey)) {
+        const username = _hcGetUsername();
+        notifs.unshift({
+          id: `welcome_${Date.now()}`, type: 'welcome',
+          title: '👋 Welcome!',
+          body: `Welcome ${username}! You're now logged into Haneus Cafe POS.`,
+          read: false, ts: Date.now()
+        });
+        localStorage.setItem(welcomeKey, '1');
+      }
+
+      // ── Admin approval requests (ONLY for Admin users) ──
+      if (role === 'Admin') {
+        try {
+          const approvalRes = await fetch(`${HC_API}/admin/approval-requests/`);
+          if (approvalRes.ok) {
+            const pending = await approvalRes.json();
+            (pending.results || pending || []).forEach(req => {
+              const id = `approval_${req.id}`;
+              if (!existingIds.has(id)) {
+                notifs.unshift({ id, type: 'approval', title: '👤 Registration Request', body: `${req.username || 'A user'} has requested Admin access.`, read: false, ts: Date.now(), userId: req.user_id || req.id });
+              }
+            });
+          }
+        } catch {} // Silently fail
+      }
+
+      // Keep only last 50 notifications
+      if (notifs.length > 50) notifs.length = 50;
 
       _hcSaveStore(notifs);
       _hcUpdateBadge(notifs);

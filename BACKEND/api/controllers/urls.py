@@ -78,6 +78,7 @@ from api.controllers.staff_dashboard_controller import (
     StaffDashboardAnalyticsController,
 )
 from api.controllers.sale_controller import (
+    PosCountersController,
     SaleLatestCustomerNumberController,
     SaleListCreateController,
     SaleDetailController,
@@ -138,6 +139,9 @@ urlpatterns = [
     path("sales/delete/<int:pk>/", SaleDetailController.as_view(), name="sale-delete"),
     path("sales/partialedit/<int:pk>/", SaleDetailController.as_view(), name="sale-partialedit"),
     path("sales/compute-totals/", SaleComputeTotalsController.as_view(), name="sale-compute-totals"),
+
+    # ── POS Counters ──────────────────────────────────────────────────
+    path("pos/counters/", PosCountersController.as_view(), name="pos-counters"),
 
     # ── Sales Analytics ────────────────────────────────────────────
     path("sales/analytics/", SalesAnalyticsController.as_view(), name="sales-analytics"),

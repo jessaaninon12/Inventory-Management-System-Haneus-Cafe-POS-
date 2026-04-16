@@ -24,6 +24,24 @@ def _get_service():
     return SaleService(SaleRepository())
 
 
+class PosCountersController(APIView):
+    """
+    GET /api/pos/counters/
+
+    Returns the current POS counter values:
+    - order_count: highest order sequence used today (resets daily)
+    - receipt_count: highest receipt sequence used this month (resets monthly)
+    - next_order: formatted next Order #XXXXX
+    - next_receipt: formatted next REC-YYYYMMDD-XXXX
+    """
+
+    @extend_schema(tags=["POS Sales"], responses={200: None})
+    def get(self, request):
+        service = _get_service()
+        counters = service.get_pos_counters()
+        return Response(counters)
+
+
 class SaleComputeTotalsController(APIView):
     """
     POST /api/sales/compute-totals/

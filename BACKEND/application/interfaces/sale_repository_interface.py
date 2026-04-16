@@ -41,3 +41,8 @@ class SaleRepositoryInterface(ABC):
     def get_latest_customer_number(self):
         """Return the numeric part of the latest customer number, or 0 if none exist."""
         pass
+
+    @abstractmethod
+    def get_month_count(self):
+        """Return the highest sequence number used in receipt_number for the current month."""
+        pass

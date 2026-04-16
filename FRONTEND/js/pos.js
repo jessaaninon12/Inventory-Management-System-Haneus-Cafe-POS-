@@ -21,7 +21,8 @@ let posCart        = [];
 let posCurrentCat  = "all";
 let posProducts    = [];
 let _lastSaleData  = null;   // stores the last saved sale from the API
-let _posOrderCounter = 0;    // auto-increment order counter
+let _posOrderCounter = 0;    // auto-increment order counter (daily reset)
+let _posReceiptCounter = 0;  // auto-increment receipt counter (monthly reset)
 
 // ── View Toggle ────────────────────────────────────────────────────
 
@@ -57,7 +58,7 @@ function switchView(view) {
 
 async function initPOS() {
     updatePOSDateDisplay();
-    await _initOrderCounter();
+    await _initPOSCounters();
     updatePOSReceiptLabel();
     updatePOSOrderLabel();
     setupPOSCategoryTabs();
@@ -66,32 +67,22 @@ async function initPOS() {
     fetchPOSProducts();
 }
 
-/** Fetch last sale to determine next order number.
- *  Filters sale_ids by today's date prefix to avoid stale counters.
+/**
+ * Fetch current order & receipt counters from the backend.
+ * Order # resets daily, Receipt # resets monthly.
+ * This ensures page refresh never resets the counters.
  */
-async function _initOrderCounter() {
+async function _initPOSCounters() {
     try {
-        const res = await fetch(`${POS_API}/sales/view/?page=1&limit=1`);
+        const res = await fetch(`${POS_API}/pos/counters/`);
         if (res.ok) {
             const data = await res.json();
-            const sales = data.sales || data.results || [];
-            // Build today's prefix to match server-side logic
-            const now = new Date();
-            const todayPrefix = "SALE-" + now.getFullYear()
-                + String(now.getMonth() + 1).padStart(2, "0")
-                + String(now.getDate()).padStart(2, "0") + "-";
-            // Check the latest sale — if it's from today, use its suffix
-            if (sales.length > 0) {
-                const lastId = sales[0].sale_id || '';
-                if (lastId.startsWith(todayPrefix)) {
-                    const match = lastId.match(/(\d+)$/);
-                    _posOrderCounter = match ? parseInt(match[1], 10) : 0;
-                } else {
-                    _posOrderCounter = 0; // New day, reset counter
-                }
-            }
+            _posOrderCounter = data.order_count || 0;
+            _posReceiptCounter = data.receipt_count || 0;
         }
-    } catch (e) { console.warn('Could not fetch last order number:', e); }
+    } catch (e) {
+        console.warn('Could not fetch POS counters:', e);
+    }
 }
 
 function updatePOSDateDisplay() {
@@ -102,7 +93,7 @@ function updatePOSDateDisplay() {
     });
 }
 
-/** Show the next receipt number (auto-incremented). */
+/** Show the next receipt number (monthly counter). */
 function updatePOSReceiptLabel() {
     const el = document.getElementById("pos-receipt-number");
     if (!el) return;
@@ -110,15 +101,15 @@ function updatePOSReceiptLabel() {
     const dateStr = now.getFullYear().toString()
                   + String(now.getMonth() + 1).padStart(2, "0")
                   + String(now.getDate()).padStart(2, "0");
-    const nextNum = String(_posOrderCounter + 1).padStart(4, "0");
+    const nextNum = String(_posReceiptCounter + 1).padStart(4, "0");
     el.textContent = `REC-${dateStr}-${nextNum}`;
 }
 
-/** Update the Order # display across all POS elements */
+/** Update the Order # display across all POS elements (daily counter). */
 function updatePOSOrderLabel() {
     const nextOrder = String(_posOrderCounter + 1).padStart(5, "0");
     const orderStr = `#${nextOrder}`;
-    const ids = ['pos-receipt-no-display', 'cash-modal-order-num', 'gcash-modal-order-num'];
+    const ids = ['pos-panel-order-display', 'pos-order-dropdown-label', 'cash-modal-order-num', 'gcash-modal-order-num'];
     ids.forEach(id => {
         const el = document.getElementById(id);
         if (el) el.textContent = orderStr;
@@ -279,6 +270,11 @@ function renderPOSProducts() {
         const badgeTxt   = outOfStock ? "Sold Out"  : lowStock ? "Low Stock" : "In Stock";
         const badge      = `<span class="pos-stock-badge ${badgeCls}">${badgeTxt}</span>`;
 
+        // Calculate remaining stock (accounting for items already in cart)
+        const inCart = posCart.find(ci => ci.id === p.id);
+        const cartQty = inCart ? inCart.quantity : 0;
+        const displayStock = Math.max(0, stock - cartQty);
+
         const emoji  = getCategoryEmoji(p.category);
         const price  = parseFloat(p.price) || 0;
         const visual = p.image_url
@@ -296,6 +292,9 @@ function renderPOSProducts() {
             ? `<div class="pos-product-supplier">&#128230; ${escHtml(p.supplier_name)}</div>`
             : '';
 
+        // Stock display color
+        const stockColor = outOfStock ? '#b91c1c' : lowStock ? '#b45309' : '#16a34a';
+
         return `
             <div class="pos-product-card${outOfStock ? " out-of-stock" : ""}"
                  onclick="${outOfStock ? "" : `posAddToCart(${p.id},'${escStr(p.name)}',${price},${stock})`}">
@@ -304,6 +303,7 @@ function renderPOSProducts() {
                 <div class="pos-product-name">${escHtml(p.name)}</div>
                 <div class="pos-product-cat">${escHtml(p.category)}</div>
                 ${supplierLine}
+                <div class="pos-product-stock" style="font-size:0.75rem;font-weight:600;color:${stockColor};margin-top:0.15rem;">Stock: ${displayStock}</div>
                 <div class="pos-product-price">${formatPOS(price)}</div>
                 ${addBtn}
             </div>`;
@@ -345,6 +345,7 @@ function posAddToCart(productId, productName, price, stock) {
         posCart.push({ id: productId, name: productName, price, quantity: 1 });
     }
     updatePOSCart();
+    renderPOSProducts(); // Re-render to update stock display live
 }
 
 function posIncreaseQty(index) {
@@ -353,6 +354,7 @@ function posIncreaseQty(index) {
     if (posCart[index].quantity < maxStock) {
         posCart[index].quantity++;
         updatePOSCart();
+        renderPOSProducts(); // Re-render to update stock display live
     }
 }
 
@@ -363,11 +365,13 @@ function posDecreaseQty(index) {
         posCart.splice(index, 1);
     }
     updatePOSCart();
+    renderPOSProducts(); // Re-render to update stock display live
 }
 
 function posRemoveItem(index) {
     posCart.splice(index, 1);
     updatePOSCart();
+    renderPOSProducts(); // Re-render to update stock display live
 }
 
 function updatePOSCart() {
@@ -631,13 +635,21 @@ async function _completeSale(paymentMethod, ctx, amountTendered = ctx.total) {
         const savedSale = await res.json();
         _lastSaleData   = savedSale;
 
-        // Sync local counter from the server-generated sale_id
+        // Sync local counters from the server-generated IDs
         const serverSaleId = savedSale.sale_id || '';
         const counterMatch = serverSaleId.match(/(\d+)$/);
         if (counterMatch) {
             _posOrderCounter = parseInt(counterMatch[1], 10);
         } else {
             _posOrderCounter++;
+        }
+        // Sync receipt counter from server-generated receipt_number
+        const serverReceipt = savedSale.receipt_number || '';
+        const receiptMatch = serverReceipt.match(/(\d+)$/);
+        if (receiptMatch) {
+            _posReceiptCounter = parseInt(receiptMatch[1], 10);
+        } else {
+            _posReceiptCounter++;
         }
 
         // Show receipt modal with data from the server
@@ -914,5 +926,138 @@ document.addEventListener("keydown", function (e) {
         document.getElementById("order-history-overlay")?.classList.remove("open");
         document.getElementById("cash-payment-modal")?.classList.remove("open");
         document.getElementById("gcash-payment-modal")?.classList.remove("open");
+        // Close dropdowns
+        document.getElementById("orderDropdownPanel") && (document.getElementById("orderDropdownPanel").style.display = "none");
+        document.getElementById("receiptDropdownPanel") && (document.getElementById("receiptDropdownPanel").style.display = "none");
     }
 });
+
+// ═══════════════════════════════════════════════════════════════════
+//  ORDER & RECEIPT DROPDOWN HISTORY
+// ═══════════════════════════════════════════════════════════════════
+
+let _posDropdownSales = [];
+
+function toggleOrderDropdown() {
+    const panel = document.getElementById("orderDropdownPanel");
+    const receiptPanel = document.getElementById("receiptDropdownPanel");
+    if (!panel) return;
+    if (receiptPanel) receiptPanel.style.display = "none";
+    const willShow = panel.style.display === "none";
+    panel.style.display = willShow ? "block" : "none";
+    if (willShow) populateOrderDropdown();
+}
+
+function toggleReceiptDropdown() {
+    const panel = document.getElementById("receiptDropdownPanel");
+    const orderPanel = document.getElementById("orderDropdownPanel");
+    if (!panel) return;
+    if (orderPanel) orderPanel.style.display = "none";
+    const willShow = panel.style.display === "none";
+    panel.style.display = willShow ? "block" : "none";
+    if (willShow) populateReceiptDropdown();
+}
+
+async function _fetchDropdownSales() {
+    try {
+        const res = await fetch(`${POS_API}/sales/view/?page=1&limit=50`);
+        if (!res.ok) return [];
+        const data = await res.json();
+        _posDropdownSales = data.sales || data.results || [];
+        return _posDropdownSales;
+    } catch { return []; }
+}
+
+async function populateOrderDropdown() {
+    const list = document.getElementById("orderDropdownList");
+    if (!list) return;
+    list.innerHTML = '<p style="padding:0.75rem;color:var(--mocha);font-size:0.8rem;">Loading…</p>';
+    const sales = await _fetchDropdownSales();
+
+    // Current (next) order
+    const nextOrder = String(_posOrderCounter + 1).padStart(5, "0");
+    let html = `<div class="pos-dropdown-item pos-dropdown-item-active">Order #${nextOrder} (Current)</div>`;
+
+    if (!sales.length) {
+        list.innerHTML = html + '<p style="padding:0.5rem 0.875rem;color:var(--mocha);font-size:0.75rem;">No previous orders</p>';
+        return;
+    }
+
+    // Build descending from _posOrderCounter down to 1
+    // Each sale corresponds to an order number extracted from sale_id: SALE-YYYYMMDD-XXXX
+    sales.forEach(sale => {
+        const saleId = sale.sale_id || sale.id || '';
+        // Extract order number suffix from SALE-YYYYMMDD-XXXX
+        const match = saleId.match(/(\d+)$/);
+        const orderNum = match ? String(parseInt(match[1], 10)).padStart(5, "0") : '00000';
+        html += `<div class="pos-dropdown-item" onclick="loadSaleReceipt('${saleId}')">Order #${orderNum}</div>`;
+    });
+    list.innerHTML = html;
+}
+
+async function populateReceiptDropdown() {
+    const list = document.getElementById("receiptDropdownList");
+    if (!list) return;
+    list.innerHTML = '<p style="padding:0.75rem;color:var(--mocha);font-size:0.8rem;">Loading…</p>';
+    const sales = await _fetchDropdownSales();
+
+    // Current receipt (monthly counter)
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() + String(now.getMonth()+1).padStart(2,"0") + String(now.getDate()).padStart(2,"0");
+    const nextNum = String(_posReceiptCounter + 1).padStart(4, "0");
+    let html = `<div class="pos-dropdown-item pos-dropdown-item-active">REC-${dateStr}-${nextNum} (Current)</div>`;
+
+    if (!sales.length) {
+        list.innerHTML = html + '<p style="padding:0.5rem 0.875rem;color:var(--mocha);font-size:0.75rem;">No previous receipts</p>';
+        return;
+    }
+
+    // Past receipts — use receipt_number from sale data, or derive from sale_id
+    sales.forEach(sale => {
+        const saleId = sale.sale_id || sale.id || '';
+        const recId = sale.receipt_number || saleId.replace(/^SALE-/, 'REC-');
+        html += `<div class="pos-dropdown-item" onclick="loadSaleReceipt('${saleId}')">${recId}</div>`;
+    });
+    list.innerHTML = html;
+}
+
+async function loadSaleReceipt(saleId) {
+    // Close dropdowns
+    document.getElementById("orderDropdownPanel") && (document.getElementById("orderDropdownPanel").style.display = "none");
+    document.getElementById("receiptDropdownPanel") && (document.getElementById("receiptDropdownPanel").style.display = "none");
+    // Find in cached data or fetch
+    let sale = _posDropdownSales.find(s => (s.sale_id || s.id) === saleId);
+    if (!sale) {
+        try {
+            const res = await fetch(`${POS_API}/sales/${saleId}/`);
+            if (res.ok) sale = await res.json();
+        } catch {}
+    }
+    if (!sale) return;
+    // Populate and open the receipt modal
+    _lastSaleData = sale;
+    openReceiptModal(sale);
+}
+
+// Close dropdowns on outside click
+document.addEventListener("click", function (e) {
+    const orderWrap = document.getElementById("orderDropdownWrap");
+    const receiptWrap = document.getElementById("receiptDropdownWrap");
+    if (orderWrap && !orderWrap.contains(e.target)) {
+        const p = document.getElementById("orderDropdownPanel");
+        if (p) p.style.display = "none";
+    }
+    if (receiptWrap && !receiptWrap.contains(e.target)) {
+        const p = document.getElementById("receiptDropdownPanel");
+        if (p) p.style.display = "none";
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  AJAX AUTO-REFRESH — Update POS data every 15 seconds
+// ═══════════════════════════════════════════════════════════════════
+if (typeof startAutoRefresh === 'function') {
+    startAutoRefresh(() => {
+        fetchPOSProducts();
+    }, 15000, 'pos-products');
+}
