@@ -402,6 +402,15 @@ h1 { font-size:1.875rem; font-weight:700; color:var(--espresso); }
   .grid-1-2-3 { grid-template-columns: 1fr 1fr 1fr; }
 }
 
+.grid-1-2 {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 768px) {
+  .grid-1-2 { grid-template-columns: 1fr 1fr; }
+}
+
 /* ── Dashboard / POS Toggle ─────────────────────────────────────── */
 .view-toggle {
   display: inline-flex;

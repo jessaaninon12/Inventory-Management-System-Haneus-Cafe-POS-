@@ -61,7 +61,7 @@ document.addEventListener('click', (e) => {
 
 function formatCurrency(value) {
   const num = parseFloat(value) || 0;
-  return "$" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return "₱" + num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function setText(id, text) {
@@ -107,17 +107,14 @@ function renderPctChange(id, pct) {
 
 function renderSummaryCards(data) {
   setText("total-sales", formatCurrency(data.total_sales));
-  setText("total-sales-returns", formatCurrency(data.total_sales_returns));
   setText("total-products", data.total_products);
   setText("profit", formatCurrency(data.profit));
   setText("total-expenses", formatCurrency(data.total_expenses));
-  setText("total-payment-returns", formatCurrency(data.total_payment_returns));
   setText("orders-today", `You have ${data.orders_today} Orders, Today`);
 
   // Weekly % changes
   renderPctChange("profit-change", data.profit_change_pct);
   renderPctChange("expenses-change", data.expenses_change_pct);
-  renderPctChange("returns-change", data.returns_change_pct);
 }
 
 function renderBarChart(monthlySales) {
@@ -219,12 +216,14 @@ function renderLowStock(items) {
 
   if (!items.length) {
     container.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;">All products are well stocked.</p>';
+    const btn = document.getElementById('viewAllLowStockBtn');
+    if (btn) btn.style.display = 'none';
     return;
   }
 
-  // Task 7: Show only first 6 items
-  const show = items.slice(0, 6);
-  let html = show
+  // Show only first 5 items in the card
+  const show = items.slice(0, 5);
+  container.innerHTML = show
     .map(
       (p) => `
       <div class="product-item">
@@ -239,11 +238,12 @@ function renderLowStock(items) {
     )
     .join("");
 
-  // Task 7: View All if > 6
-  if (items.length > 6) {
-    html += `<button onclick="openDashLowStockModal()" style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;">View All (${items.length})</button>`;
+  // Show View All button with count
+  const btn = document.getElementById('viewAllLowStockBtn');
+  if (btn) {
+    btn.textContent = `View All (${items.length})`;
+    btn.style.display = '';
   }
-  container.innerHTML = html;
 }
 
 function renderRecentSales(sales) {
@@ -253,12 +253,14 @@ function renderRecentSales(sales) {
 
   if (!sales.length) {
     container.innerHTML = '<p style="color:var(--mocha);font-size:0.875rem;">No recent sales.</p>';
+    const btn = document.getElementById('viewAllRecentSalesBtn');
+    if (btn) btn.style.display = 'none';
     return;
   }
 
-  // Task 7: Show only first 6 items
-  const show = sales.slice(0, 6);
-  let html = show
+  // Show only first 5 items in the card
+  const show = sales.slice(0, 5);
+  container.innerHTML = show
     .map(
       (s) => `
       <div class="product-item" style="margin-bottom:0.75rem;">
@@ -274,11 +276,12 @@ function renderRecentSales(sales) {
     )
     .join("");
 
-  // Task 7: View All if > 6
-  if (sales.length > 6) {
-    html += `<button onclick="openDashRecentSalesModal()" style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;">View All (${sales.length})</button>`;
+  // Show View All button with count
+  const btn = document.getElementById('viewAllRecentSalesBtn');
+  if (btn) {
+    btn.textContent = `View All (${sales.length})`;
+    btn.style.display = '';
   }
-  container.innerHTML = html;
 }
 
 // ── Task 7: View All Modals ─────────────────────────────────────
