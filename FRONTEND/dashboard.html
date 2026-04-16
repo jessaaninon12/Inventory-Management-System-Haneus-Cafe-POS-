@@ -181,16 +181,11 @@
           </div>
 
           <!-- summary cards row 1 -->
-          <div class="grid-1-2-3" style="margin-bottom:2rem;">
+          <div class="grid-1-2" style="margin-bottom:2rem;">
             <div class="card card-primary">
               <p style="opacity:0.9;font-size:0.875rem;">Total Sales</p>
-              <div id="total-sales" class="stat-value">$0</div>
+              <div id="total-sales" class="stat-value">₱0</div>
               <i data-lucide="trending-up" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
-            </div>
-            <div class="card card-mocha">
-              <p style="opacity:0.9;font-size:0.875rem;">Total Sales Return</p>
-              <div id="total-sales-returns" class="stat-value">$0</div>
-              <i data-lucide="trending-down" style="font-size:2.5rem;opacity:0.8;float:right;"></i>
             </div>
             <div class="card card-cappuccino">
               <p style="opacity:0.9;font-size:0.875rem;">Total Products</p>
@@ -200,9 +195,9 @@
           </div>
 
           <!-- ubos stats -->
-          <div class="grid-1-2-3" style="margin-bottom:2rem;">
+          <div class="grid-1-2" style="margin-bottom:2rem;">
             <div class="card">
-              <div id="profit" class="stat-value">$0</div>
+              <div id="profit" class="stat-value">₱0</div>
               <p style="color:var(--mocha);">Profit</p>
               <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
                 <span id="profit-change" style="font-weight:500;">0%</span>
@@ -210,18 +205,10 @@
               </div>
             </div>
             <div class="card">
-              <div id="total-expenses" class="stat-value">$0</div>
+              <div id="total-expenses" class="stat-value">₱0</div>
               <p style="color:var(--mocha);">Total Expenses</p>
               <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
                 <span id="expenses-change" style="font-weight:500;">0%</span>
-                <span style="color:var(--mocha);">vs last week</span>
-              </div>
-            </div>
-            <div class="card">
-              <div id="total-payment-returns" class="stat-value">$0</div>
-              <p style="color:var(--mocha);">Total Payment Returns</p>
-              <div style="margin-top:0.75rem;display:flex;gap:0.5rem;font-size:0.75rem;">
-                <span id="returns-change" style="font-weight:500;">0%</span>
                 <span style="color:var(--mocha);">vs last week</span>
               </div>
             </div>
@@ -272,7 +259,7 @@
               <div id="top-selling-list" style="display:flex; flex-direction:column; gap:1.25rem;">
                 <p style="opacity:0.7;font-size:0.875rem;">Loading...</p>
               </div>
-              <button
+              <button id="viewAllTopSellingBtn" onclick="openDashTopSellingModal()"
                 style="margin-top:1.5rem; width:100%; padding:0.625rem; background:rgba(225,200,178,0.1); color:var(--latte); border:1px solid rgba(225,200,178,0.3); border-radius:0.5rem; font-weight:500; cursor:pointer;">
                 View All Products
               </button>
@@ -286,12 +273,16 @@
               <div id="low-stock-list">
                 <p style="color:var(--mocha);font-size:0.875rem;">Loading...</p>
               </div>
+              <button id="viewAllLowStockBtn" onclick="openDashLowStockModal()"
+                style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;display:none;">View All</button>
             </div>
             <div class="card">
               <h3 style="font-weight:600; font-size:1.125rem; margin-bottom:1.25rem;">Recent Sales</h3>
               <div id="recent-sales-list">
                 <p style="color:var(--mocha);font-size:0.875rem;">Loading...</p>
               </div>
+              <button id="viewAllRecentSalesBtn" onclick="openDashRecentSalesModal()"
+                style="margin-top:0.75rem;width:100%;padding:0.5rem;background:var(--cream);border:1px solid var(--latte);border-radius:0.375rem;cursor:pointer;font-size:0.85rem;font-weight:500;display:none;">View All</button>
             </div>
           </div>
 
