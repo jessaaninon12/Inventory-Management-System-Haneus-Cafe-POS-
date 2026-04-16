@@ -130,14 +130,6 @@ class UserRepository(UserRepositoryInterface):
         orm_user.save()
         return True
 
-    def get_require_password_change(self, user_id):
-        """Check if user must change password on next login."""
-        try:
-            orm_user = UserModel.objects.get(pk=user_id)
-            return getattr(orm_user, "require_password_change", False)
-        except UserModel.DoesNotExist:
-            return False
-
     def get_temporary_password_hash(self, user_id):
         """Return the stored temporary_password_hash for a user, or empty string."""
         try:
@@ -145,6 +137,14 @@ class UserRepository(UserRepositoryInterface):
             return getattr(orm_user, "temporary_password_hash", "") or ""
         except UserModel.DoesNotExist:
             return ""
+
+    def get_require_password_change(self, user_id):
+        """Check if user must change password on next login."""
+        try:
+            orm_user = UserModel.objects.get(pk=user_id)
+            return getattr(orm_user, "require_password_change", False)
+        except UserModel.DoesNotExist:
+            return False
 
     def get_all_by_type(self, user_type):
         """Return all User entities matching the given user_type."""

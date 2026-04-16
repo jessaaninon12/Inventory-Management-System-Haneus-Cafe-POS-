@@ -15,7 +15,7 @@ async function loadLowStock() {
     document.getElementById('lowStockCount').textContent = products.length;
 
     if (!products.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No low-stock products
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No low-stock products found.</td></tr>';
       return;
     }
 
@@ -66,7 +66,7 @@ function openRestockModal(productId) {
     .catch(() => showErrorModal('Could not load product details.'));
 }
 
-function closeRestockModal()
+function closeRestockModal() {
   document.getElementById('restockModal').style.display = 'none';
   currentRestockingProduct = null;
 }
@@ -161,7 +161,7 @@ function openViewModal(productId) {
     .catch(() => showErrorModal('Could not load product details.'));
 }
 
-function closeViewModal()
+function closeViewModal() {
   document.getElementById('viewModal').style.display = 'none';
   currentViewingProduct = null;
 }
@@ -174,3 +174,8 @@ window.addEventListener('click', function(event) {
 
 // ---------- Init ----------
 loadLowStock();
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadLowStock(), 20000, 'low-stock');
+}

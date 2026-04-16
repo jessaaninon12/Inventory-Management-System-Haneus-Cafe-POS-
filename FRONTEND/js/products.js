@@ -1,5 +1,6 @@
 /* =================================================================
    products.js — Card-grid product list + floating create/edit modals
+   UPDATED: Searchable supplier dropdown combobox with auto-fill
 ================================================================= */
 lucide.createIcons();
 
@@ -7,6 +8,7 @@ const API = 'http://127.0.0.1:8000/api';
 let allProducts       = [];
 let editingProductId  = null;
 let deletingProductId = null;
+let allSuppliers      = []; // loaded from localStorage for combobox
 
 // ── Pagination state ───────────────────────────────────────────────
 let currentPage        = 1;
@@ -24,6 +26,121 @@ function escHtml(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function escAttr(s) { return String(s||'').replace(/'/g,"\\'"); }
+
+/* ── Load Suppliers from localStorage ────────────────────── */
+function loadSuppliersForCombobox() {
+  try {
+    const data = localStorage.getItem('haneus_suppliers');
+    allSuppliers = data ? JSON.parse(data) : [];
+  } catch {
+    allSuppliers = [];
+  }
+}
+
+/* ── Supplier Searchable Dropdown Logic ───────────────────── */
+function onSupplierSearchInput() {
+  const val = (document.getElementById('pSupplierSearch')?.value || '').toLowerCase().trim();
+  showSupplierSuggestions(val);
+}
+
+function onSupplierSearchFocus() {
+  loadSuppliersForCombobox();
+  const val = (document.getElementById('pSupplierSearch')?.value || '').toLowerCase().trim();
+  showSupplierSuggestions(val);
+}
+
+function showSupplierSuggestions(query) {
+  const dd = document.getElementById('supplierComboDropdown');
+  const list = document.getElementById('supplierComboList');
+  if (!dd || !list) return;
+
+  if (allSuppliers.length === 0) {
+    list.innerHTML = '<div class="supplier-combo-empty">No suppliers in system. Add suppliers first.</div>';
+    dd.style.display = 'block';
+    return;
+  }
+
+  const filtered = allSuppliers.filter(s => {
+    const name = (s.name || s.owner || '').toLowerCase();
+    const company = (s.companyName || s.company || '').toLowerCase();
+    const email = (s.email || '').toLowerCase();
+    const phone = (s.phone || '').toLowerCase();
+    if (!query) return true;
+    return name.includes(query) || company.includes(query) || email.includes(query) || phone.includes(query);
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="supplier-combo-empty">No matching suppliers found</div>';
+    dd.style.display = 'block';
+    return;
+  }
+
+  list.innerHTML = filtered.map(s => {
+    const name = escHtml(s.name || s.owner || '');
+    const company = escHtml(s.companyName || s.company || '');
+    const phone = escHtml(s.phone || '');
+    const email = escHtml(s.email || '');
+    return `
+      <div class="supplier-combo-item" onclick="selectSupplier(${s.id})">
+        <div class="supplier-combo-name">${name}</div>
+        <div class="supplier-combo-detail">
+          ${company ? `<span>🏢 ${company}</span>` : ''}
+          ${phone ? `<span>📞 ${phone}</span>` : ''}
+          ${email ? `<span>✉ ${email}</span>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+
+  dd.style.display = 'block';
+}
+
+function selectSupplier(id) {
+  const s = allSuppliers.find(x => x.id === id);
+  if (!s) return;
+
+  // Fill all 4 fields
+  document.getElementById('pSupplierName').value = s.name || s.owner || '';
+  document.getElementById('pSupplierPhone').value = s.phone || '';
+  document.getElementById('pSupplierEmail').value = s.email || '';
+  document.getElementById('pSupplierCompany').value = s.companyName || s.company || '';
+
+  // Update search field to show selected supplier
+  const searchEl = document.getElementById('pSupplierSearch');
+  if (searchEl) searchEl.value = `✓ ${s.name || s.owner || ''} — ${s.companyName || s.company || ''}`;
+
+  closeSupplierCombobox();
+
+  // Brief highlight animation
+  ['pSupplierName','pSupplierPhone','pSupplierEmail','pSupplierCompany'].forEach(fid => {
+    const el = document.getElementById(fid);
+    if (el && el.value) {
+      el.style.transition = 'background 0.3s';
+      el.style.background = 'rgba(196,123,66,0.15)';
+      setTimeout(() => { el.style.background = ''; }, 800);
+    }
+  });
+}
+
+function clearSupplierSelection() {
+  document.getElementById('pSupplierSearch').value = '';
+  document.getElementById('pSupplierName').value = '';
+  document.getElementById('pSupplierPhone').value = '';
+  document.getElementById('pSupplierEmail').value = '';
+  document.getElementById('pSupplierCompany').value = '';
+}
+
+function closeSupplierCombobox() {
+  const dd = document.getElementById('supplierComboDropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Close combobox when clicking outside
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('supplierComboboxWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    closeSupplierCombobox();
+  }
+});
 
 /* ── Image preview helper ───────────────────────────────────── */
 function resetImagePreview() {
@@ -178,6 +295,34 @@ function openProductViewModal(id) {
   const statusCls = p.stock_status === 'In Stock'  ? '#16a34a'
                   : p.stock_status === 'Low Stock'  ? '#b45309' : '#b91c1c';
 
+  // Get enriched supplier data from localStorage mapping
+  let supplierData = null;
+  try {
+    const mapStr = localStorage.getItem('haneus_supplier_product_map');
+    if (mapStr) {
+      const map = JSON.parse(mapStr);
+      if (map[id]) supplierData = map[id];
+    }
+  } catch {}
+
+  const supplierName = (supplierData && supplierData.supplierName) || p.supplier_name || '';
+  const supplierContact = p.supplier_contact || '';
+  // Parse phone/email from combined supplier_contact field (format: "phone | email")
+  let parsedPhone = '', parsedEmail = '';
+  if (supplierContact && supplierContact.includes('|')) {
+    const parts = supplierContact.split('|').map(s => s.trim());
+    parsedPhone = parts[0] || '';
+    parsedEmail = parts[1] || '';
+  } else if (supplierContact) {
+    if (supplierContact.includes('@')) parsedEmail = supplierContact;
+    else parsedPhone = supplierContact;
+  }
+  const supplierPhone = (supplierData && supplierData.supplierPhone) || parsedPhone;
+  const supplierEmail = (supplierData && supplierData.supplierEmail) || parsedEmail;
+  const supplierCompany = (supplierData && supplierData.supplierCompany) || '';
+
+  const lbl = 'font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;';
+
   document.getElementById('pvModal').style.display = 'flex';
   document.getElementById('pvModalBody').innerHTML = `
     <div style="text-align:center;margin-bottom:1.25rem;">
@@ -186,18 +331,28 @@ function openProductViewModal(id) {
            style="width:160px;height:160px;object-fit:cover;border-radius:0.75rem;border:1px solid #ddd;" />
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Name</div><div style="font-weight:600;">${escHtml(p.name)}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Category</div><div>${escHtml(p.category)}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Price</div><div style="font-weight:600;color:#c47b42;">&#8369;${parseFloat(p.price).toFixed(2)}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Cost</div><div>&#8369;${parseFloat(p.cost || 0).toFixed(2)}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Stock</div><div>${p.stock} ${escHtml(p.unit || '')}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Status</div><div style="color:${statusCls};font-weight:600;">${escHtml(p.stock_status)}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Reorder At</div><div>${p.low_stock_threshold}</div></div>
-      <div><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Unit</div><div>${escHtml(p.unit || '—')}</div></div>
-      ${p.supplier_name ? `<div style="grid-column:1/-1;"><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Supplier</div><div>${escHtml(p.supplier_name)}</div></div>` : ''}
-      ${p.supplier_contact ? `<div style="grid-column:1/-1;"><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Supplier Contact</div><div>${escHtml(p.supplier_contact)}</div></div>` : ''}
-      ${p.description ? `<div style="grid-column:1/-1;"><div style="font-size:0.7rem;color:#999;text-transform:uppercase;margin-bottom:0.2rem;">Description</div><div style="font-size:0.875rem;color:#555;">${escHtml(p.description)}</div></div>` : ''}
-    </div>`;
+      <div><div style="${lbl}">Name</div><div style="font-weight:600;">${escHtml(p.name)}</div></div>
+      <div><div style="${lbl}">Category</div><div>${escHtml(p.category)}</div></div>
+      <div><div style="${lbl}">Selling Price</div><div style="font-weight:600;color:#c47b42;">&#8369;${parseFloat(p.price).toFixed(2)}</div></div>
+      <div><div style="${lbl}">Cost Per Unit</div><div>&#8369;${parseFloat(p.cost || 0).toFixed(2)}</div></div>
+      <div><div style="${lbl}">Stock</div><div>${p.stock} ${escHtml(p.unit || '')}</div></div>
+      <div><div style="${lbl}">Status</div><div style="color:${statusCls};font-weight:600;">${escHtml(p.stock_status)}</div></div>
+      <div><div style="${lbl}">Reorder At</div><div>${p.low_stock_threshold}</div></div>
+      <div><div style="${lbl}">Unit</div><div>${escHtml(p.unit || '—')}</div></div>
+    </div>
+    ${supplierName || supplierContact ? `
+    <div style="margin-top:1rem;padding-top:0.75rem;border-top:1px solid #e1c8b2;">
+      <div style="font-size:0.75rem;font-weight:600;color:#6e4f3e;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.5rem;">Supplier Information</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div style="grid-column:1/-1;"><div style="${lbl}">Supplier Name</div><div>${escHtml(supplierName) || '—'}</div></div>
+        ${supplierPhone ? `<div><div style="${lbl}">Contact Number</div><div>${escHtml(supplierPhone)}</div></div>` : ''}
+        ${supplierEmail ? `<div><div style="${lbl}">Email Address</div><div>${escHtml(supplierEmail)}</div></div>` : ''}
+        ${supplierCompany ? `<div style="grid-column:1/-1;"><div style="${lbl}">Company Name</div><div>${escHtml(supplierCompany)}</div></div>` : ''}
+        ${!supplierPhone && !supplierEmail && !supplierCompany && supplierContact ? `<div style="grid-column:1/-1;"><div style="${lbl}">Contact</div><div>${escHtml(supplierContact)}</div></div>` : ''}
+      </div>
+    </div>` : ''}
+    ${p.description ? `<div style="margin-top:0.75rem;"><div style="${lbl}">Description</div><div style="font-size:0.875rem;color:#555;">${escHtml(p.description)}</div></div>` : ''}
+  `;
   lucide.createIcons();
 }
 function closeProductViewModal() {
@@ -215,6 +370,8 @@ document.getElementById('productSort')?.addEventListener('change', applyFilterSo
 
 function openCreateModal() {
   editingProductId = null;
+  loadSuppliersForCombobox();
+
   document.getElementById('modalTitle').textContent       = 'Create Product';
   document.getElementById('saveProductBtn').textContent   = 'Create Product';
   document.getElementById('pName').value      = '';
@@ -225,9 +382,14 @@ function openCreateModal() {
   document.getElementById('pUnit').value      = 'Piece/Item';
   document.getElementById('pDesc').value      = '';
   document.getElementById('pThreshold').value = '10';
+  document.getElementById('pSupplierSearch').value = '';
   document.getElementById('pSupplierName').value = '';
-  document.getElementById('pSupplierContact').value = '';
+  document.getElementById('pSupplierPhone').value = '';
+  document.getElementById('pSupplierEmail').value = '';
+  document.getElementById('pSupplierCompany').value = '';
   resetImagePreview();
+  closeSupplierCombobox();
+
   document.getElementById('productModal').style.display = 'flex';
   lucide.createIcons();
 }
@@ -236,6 +398,8 @@ function openEditModal(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   editingProductId = id;
+  loadSuppliersForCombobox();
+
   document.getElementById('modalTitle').textContent       = 'Edit Product';
   document.getElementById('saveProductBtn').textContent   = 'Save Changes';
   document.getElementById('pName').value      = p.name;
@@ -246,8 +410,36 @@ function openEditModal(id) {
   document.getElementById('pUnit').value      = p.unit || 'Piece/Item';
   document.getElementById('pDesc').value      = p.description || '';
   document.getElementById('pThreshold').value = p.low_stock_threshold ?? 10;
-  document.getElementById('pSupplierName').value = p.supplier_name || '';
-  document.getElementById('pSupplierContact').value = p.supplier_contact || '';
+
+  // Populate supplier fields
+  // First check if there's a mapping from supplier page
+  let supplierFromMap = null;
+  try {
+    const mapStr = localStorage.getItem('haneus_supplier_product_map');
+    if (mapStr) {
+      const map = JSON.parse(mapStr);
+      if (map[id]) supplierFromMap = map[id];
+    }
+  } catch {}
+
+  if (supplierFromMap) {
+    document.getElementById('pSupplierName').value = supplierFromMap.supplierName || p.supplier_name || '';
+    document.getElementById('pSupplierPhone').value = supplierFromMap.supplierPhone || '';
+    document.getElementById('pSupplierEmail').value = supplierFromMap.supplierEmail || '';
+    document.getElementById('pSupplierCompany').value = supplierFromMap.supplierCompany || '';
+    const sn = supplierFromMap.supplierName || p.supplier_name || '';
+    const sc = supplierFromMap.supplierCompany || '';
+    document.getElementById('pSupplierSearch').value = sn ? `✓ ${sn}${sc ? ' — ' + sc : ''}` : '';
+  } else {
+    document.getElementById('pSupplierName').value = p.supplier_name || '';
+    document.getElementById('pSupplierPhone').value = p.supplier_phone || '';
+    document.getElementById('pSupplierEmail').value = p.supplier_email || '';
+    document.getElementById('pSupplierCompany').value = p.supplier_company || '';
+    document.getElementById('pSupplierSearch').value = p.supplier_name ? `✓ ${p.supplier_name}` : '';
+  }
+
+  closeSupplierCombobox();
+
   // File inputs cannot be pre-filled; show existing image if available
   const inp = document.getElementById('pImage');
   if (inp) inp.value = '';
@@ -271,6 +463,7 @@ function openEditModal(id) {
 function closeProductModal() {
   document.getElementById('productModal').style.display = 'none';
   editingProductId = null;
+  closeSupplierCombobox();
 }
 
 async function submitProductForm() {
@@ -282,9 +475,14 @@ async function submitProductForm() {
   const unit      = document.getElementById('pUnit').value;
   const desc      = document.getElementById('pDesc').value.trim();
   const threshold = parseInt(document.getElementById('pThreshold').value, 10);
-  const supplierName = document.getElementById('pSupplierName').value.trim();
-  const supplierContact = document.getElementById('pSupplierContact').value.trim();
+  const supplierName    = document.getElementById('pSupplierName').value.trim();
+  const supplierPhone   = document.getElementById('pSupplierPhone').value.trim();
+  const supplierEmail   = document.getElementById('pSupplierEmail').value.trim();
+  const supplierCompany = document.getElementById('pSupplierCompany').value.trim();
   const imageFile = document.getElementById('pImage')?.files[0];
+
+  // Build supplier_contact as combined string for backward compatibility
+  const supplierContact = [supplierPhone, supplierEmail].filter(Boolean).join(' | ');
 
   if (!name)                      { showErrorModal('Product name is required.');         return; }
   if (!category)                  { showErrorModal('Please select a category.');         return; }
@@ -321,7 +519,8 @@ async function submitProductForm() {
 
     const body = { name, category, price, cost, stock, unit,
                    description: desc, low_stock_threshold: threshold,
-                   supplier_name: supplierName || null, supplier_contact: supplierContact || null,
+                   supplier_name: supplierName || null,
+                   supplier_contact: supplierContact || null,
                    image_url: imageUrl };
     let res;
     if (editingProductId) {
@@ -336,6 +535,25 @@ async function submitProductForm() {
       });
     }
     if (!res.ok) { const err = await res.json(); showErrorModal(JSON.stringify(err.errors||err.error||err)); return; }
+
+    // After save, update the localStorage supplier-product mapping
+    // so View modals in products/managestock can display supplier info
+    const savedProduct = await res.json().catch(() => null);
+    const productId = savedProduct?.id || editingProductId;
+    if (productId && supplierName) {
+      try {
+        const mapStr = localStorage.getItem('haneus_supplier_product_map');
+        const map = mapStr ? JSON.parse(mapStr) : {};
+        map[productId] = {
+          supplierName: supplierName,
+          supplierPhone: supplierPhone,
+          supplierEmail: supplierEmail,
+          supplierCompany: supplierCompany
+        };
+        localStorage.setItem('haneus_supplier_product_map', JSON.stringify(map));
+      } catch (e) { console.error('Failed to update supplier mapping:', e); }
+    }
+
     closeProductModal();
     loadProducts();
   } catch { showErrorModal('Failed to save. Is the backend running?'); }
@@ -370,3 +588,8 @@ window.addEventListener('click', e => {
 });
 
 loadProducts();
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadProducts(), 20000, 'products');
+}

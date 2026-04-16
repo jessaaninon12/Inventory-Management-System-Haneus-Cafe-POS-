@@ -234,12 +234,52 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── View Modal ───────────────────────────────────────────────
-function openViewModal(productId) {
-  const p = loadedProducts.find(x => x.id === productId);
+async function openViewModal(productId) {
+  let p = loadedProducts.find(x => x.id === productId);
   if (!p) return;
+
+  // If price or cost is missing, fetch full product detail from API
+  if (p.price == null && p.selling_price == null) {
+    try {
+      const detailRes = await fetch(`${API}/products/${productId}/`);
+      if (detailRes.ok) {
+        const full = await detailRes.json();
+        p = { ...p, ...full };
+        const idx = loadedProducts.findIndex(x => x.id === productId);
+        if (idx >= 0) loadedProducts[idx] = p;
+      }
+    } catch (e) { console.warn('Could not fetch product details:', e); }
+  }
+
   const status = getStockStatus(p);
   const fallback = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400';
   const imgSrc = p.image_url || fallback;
+
+  // Get enriched supplier data from localStorage mapping
+  let supplierData = null;
+  try {
+    const mapStr = localStorage.getItem('haneus_supplier_product_map');
+    if (mapStr) {
+      const map = JSON.parse(mapStr);
+      if (map[productId]) supplierData = map[productId];
+    }
+  } catch {}
+
+  const supplierName = (supplierData && supplierData.supplierName) || p.supplier_name || '';
+  const supplierContact = p.supplier_contact || '';
+  let parsedPhone = '', parsedEmail = '';
+  if (supplierContact && supplierContact.includes('|')) {
+    const parts = supplierContact.split('|').map(s => s.trim());
+    parsedPhone = parts[0] || '';
+    parsedEmail = parts[1] || '';
+  } else if (supplierContact) {
+    if (supplierContact.includes('@')) parsedEmail = supplierContact;
+    else parsedPhone = supplierContact;
+  }
+  const supplierPhone = (supplierData && supplierData.supplierPhone) || parsedPhone;
+  const supplierEmail = (supplierData && supplierData.supplierEmail) || parsedEmail;
+  const supplierCompany = (supplierData && supplierData.supplierCompany) || '';
+
   document.getElementById('viewModalContent').innerHTML = `
     <div style="text-align:center;margin-bottom:1rem;">
       <img src="${escHtml(imgSrc)}" alt="${escHtml(p.name)}"
@@ -248,13 +288,22 @@ function openViewModal(productId) {
     </div>
     <div class="ms-detail-row"><span class="ms-detail-label">Product Name</span><span class="ms-detail-val">${escHtml(p.name)}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Category</span><span class="ms-detail-val">${escHtml(p.category || 'Uncategorized')}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Selling Price</span><span class="ms-detail-val" style="font-weight:600;color:#c47b42;">₱${parseFloat(p.price || p.selling_price || 0).toFixed(2)}</span></div>
+    <div class="ms-detail-row"><span class="ms-detail-label">Cost Per Unit</span><span class="ms-detail-val">₱${parseFloat(p.cost || p.cost_per_unit || 0).toFixed(2)}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Current Stock</span><span class="ms-detail-val">${p.stock} ${escHtml(p.unit || '')}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Reorder Threshold</span><span class="ms-detail-val">${p.low_stock_threshold || 10}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Status</span><span class="status-badge ${status.cls}">${status.label}</span></div>
     <div class="ms-detail-row"><span class="ms-detail-label">Last Updated</span><span class="ms-detail-val">${p.updated_at ? new Date(p.updated_at).toLocaleString() : '—'}</span></div>
-    <div class="ms-detail-row"><span class="ms-detail-label">Supplier Name</span><span class="ms-detail-val">${p.supplier_name ? escHtml(p.supplier_name) : 'No supplier info'}</span></div>
-    <div class="ms-detail-row"><span class="ms-detail-label">Supplier Contact</span><span class="ms-detail-val">${p.supplier_contact ? escHtml(p.supplier_contact) : '—'}</span></div>
-    ${p.description ? `<div class="ms-detail-row"><span class="ms-detail-label">Description</span><span class="ms-detail-val">${escHtml(p.description)}</span></div>` : ''}
+    ${supplierName || supplierContact ? `
+    <div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--latte);">
+      <div style="font-size:0.75rem;font-weight:600;color:var(--mocha);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:0.5rem;">Supplier Information</div>
+      <div class="ms-detail-row"><span class="ms-detail-label">Supplier Name</span><span class="ms-detail-val">${escHtml(supplierName) || '—'}</span></div>
+      ${supplierPhone ? `<div class="ms-detail-row"><span class="ms-detail-label">Contact Number</span><span class="ms-detail-val">${escHtml(supplierPhone)}</span></div>` : ''}
+      ${supplierEmail ? `<div class="ms-detail-row"><span class="ms-detail-label">Email Address</span><span class="ms-detail-val">${escHtml(supplierEmail)}</span></div>` : ''}
+      ${supplierCompany ? `<div class="ms-detail-row"><span class="ms-detail-label">Company Name</span><span class="ms-detail-val">${escHtml(supplierCompany)}</span></div>` : ''}
+      ${!supplierPhone && !supplierEmail && !supplierCompany && supplierContact ? `<div class="ms-detail-row"><span class="ms-detail-label">Contact</span><span class="ms-detail-val">${escHtml(supplierContact)}</span></div>` : ''}
+    </div>` : ''}
+    ${p.description ? `<div class="ms-detail-row" style="margin-top:0.5rem;"><span class="ms-detail-label">Description</span><span class="ms-detail-val">${escHtml(p.description)}</span></div>` : ''}
   `;
   document.getElementById('viewModal').style.display = 'flex';
   lucide.createIcons();
@@ -484,3 +533,8 @@ document.getElementById('receiveStockBtn')?.addEventListener('click', openReceiv
 // ── Init (low-stock badge is loaded as part of loadProducts) ─────────────────
 loadProducts();
 
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadProducts(), 20000, 'manage-stock');
+}

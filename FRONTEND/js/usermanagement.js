@@ -634,3 +634,8 @@ function copyTempPassword() {
 
 /* ── Bootstrap ───────────────────────────────────── */
 loadUsers();
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadUsers(), 30000, 'user-management');
+}

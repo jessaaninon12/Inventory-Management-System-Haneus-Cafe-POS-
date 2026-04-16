@@ -387,13 +387,21 @@ table { min-width: 700px; }
 
   /* TABLE → CARD VIEW on mobile portrait */
   .table-container {
-    background: transparent;
-    box-shadow: none;
-    border-radius: 0;
-    overflow-x: visible;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
   }
-  table, thead, tbody, th, td, tr { display: block; }
-  thead tr { display: none; } /* hide column headers */
+  table {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  thead, tbody, th, td, tr {
+    display: block !important;
+    min-width: 0 !important;
+  }
+  thead tr { display: none !important; } /* hide column headers */
 
   tbody tr {
     background: white;

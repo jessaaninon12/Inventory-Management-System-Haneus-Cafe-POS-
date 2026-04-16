@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Point of Sale - Haneus Cafe</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <link rel="stylesheet" href="css/sidebar.css">
@@ -14,334 +15,382 @@
   <link rel="stylesheet" href="css/pos.css">
   <link rel="stylesheet" href="css/payment-modals.css">
 </head>
+
 <body>
-<script>(function(){try{var s=localStorage.getItem('user');if(!s){window.location.href='login.html';}}catch(e){try{localStorage.clear();}catch{}window.location.href='login.html';}})();</script>
+  <script>(function () { try { var s = localStorage.getItem('user'); if (!s) { window.location.href = 'login.html'; } } catch (e) { try { localStorage.clear(); } catch { } window.location.href = 'login.html'; } })();</script>
 
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
-<div class="app-container">
+  <div class="app-container">
 
-  <!-- Sidebar -->
-  <aside id="main-sidebar">
-    <div class="sidebar-inner">
-      <div class="sidebar-logo-row">
-        <h2 class="sidebar-title">Haneus Cafe</h2>
-        <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+    <!-- Sidebar -->
+    <aside id="main-sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-logo-row">
+          <h2 class="sidebar-title">Haneus Cafe</h2>
+          <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+        </div>
+        <nav>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Main</p>
+            <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="staff">
+            <p class="sidebar-section-title">Main</p>
+            <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="staff">
+            <p class="sidebar-section-title">POS</p>
+            <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Inventory</p>
+            <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Stock</p>
+            <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+            <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Sales</p>
+            <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Users</p>
+            <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Settings</p>
+            <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+            <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+          </div>
+        </nav>
       </div>
-      <nav>
-  <div class="sidebar-nav-section" data-role="admin">
-    <p class="sidebar-section-title">Main</p>
-    <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="staff">
-    <p class="sidebar-section-title">Main</p>
-    <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="staff">
-    <p class="sidebar-section-title">POS</p>
-    <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="admin">
-    <p class="sidebar-section-title">Inventory</p>
-    <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="all">
-    <p class="sidebar-section-title">Stock</p>
-    <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
-    <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="admin">
-    <p class="sidebar-section-title">Sales</p>
-    <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="admin">
-    <p class="sidebar-section-title">Users</p>
-    <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
-  </div>
-  <div class="sidebar-nav-section" data-role="all">
-    <p class="sidebar-section-title">Settings</p>
-    <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
-    <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
-  </div>
-</nav>
-    </div>
-  </aside>
+    </aside>
 
-  <!-- Main -->
-  <div class="main-wrapper">
+    <!-- Main -->
+    <div class="main-wrapper">
 
-    <header>
-      <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
-        <i data-lucide="panel-left"></i>
-      </button>
-      <div style="flex:1;"></div>
-      <div class="header-actions">
-        <button class="btn btn-outline">Haneus Cafe</button>
-        <!-- Profile Flyout -->
-        <div class="profile-flyout-wrapper" id="profileFlyoutWrapper" style="position:relative;">
-          <img id="headerProfileImg" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="User" class="avatar" style="cursor:pointer;" onclick="toggleProfileFlyout()" />
-          <div id="profileFlyout" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:260px;z-index:9999;padding:1.25rem;">
-            <div style="text-align:center;margin-bottom:0.75rem;">
-              <img id="flyoutProfileImg" src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg" alt="Profile" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #ddd;" />
-            </div>
-            <div style="text-align:center;margin-bottom:0.25rem;font-weight:600;font-size:0.95rem;" id="flyoutUsername">Loading...</div>
-            <div style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:0.25rem;" id="flyoutUserId">ID: —</div>
-            <div style="text-align:center;font-size:0.8rem;color:#c47b42;font-weight:500;margin-bottom:0.75rem;" id="flyoutAccountType">—</div>
-            <div style="border-top:1px solid #eee;padding-top:0.75rem;display:flex;gap:0.5rem;">
-              <a href="profile.html" style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#f5f5f5;font-size:0.8rem;color:#333;text-decoration:none;">Profile</a>
-              <a href="#" onclick="event.preventDefault();localStorage.clear();window.location.href='login.html'" style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#fef2f2;font-size:0.8rem;color:#dc2626;text-decoration:none;">Logout</a>
+      <header>
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div style="flex:1;"></div>
+        <div class="header-actions">
+          <button class="btn btn-outline">Haneus Cafe</button>
+          <!-- Profile Flyout -->
+          <div class="profile-flyout-wrapper" id="profileFlyoutWrapper" style="position:relative;">
+            <img id="headerProfileImg"
+              src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg"
+              alt="User" class="avatar" style="cursor:pointer;" onclick="toggleProfileFlyout()" />
+            <div id="profileFlyout"
+              style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:#fff;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:260px;z-index:9999;padding:1.25rem;">
+              <div style="text-align:center;margin-bottom:0.75rem;">
+                <img id="flyoutProfileImg"
+                  src="https://static.vecteezy.com/system/resources/previews/014/194/215/original/avatar-icon-human-a-person-s-badge-social-media-profile-symbol-the-symbol-of-a-person-vector.jpg"
+                  alt="Profile"
+                  style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid #ddd;" />
+              </div>
+              <div style="text-align:center;margin-bottom:0.25rem;font-weight:600;font-size:0.95rem;"
+                id="flyoutUsername">Loading...</div>
+              <div style="text-align:center;font-size:0.8rem;color:#888;margin-bottom:0.25rem;" id="flyoutUserId">ID: —
+              </div>
+              <div style="text-align:center;font-size:0.8rem;color:#c47b42;font-weight:500;margin-bottom:0.75rem;"
+                id="flyoutAccountType">—</div>
+              <div style="border-top:1px solid #eee;padding-top:0.75rem;display:flex;gap:0.5rem;">
+                <a href="profile.html"
+                  style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#f5f5f5;font-size:0.8rem;color:#333;text-decoration:none;">Profile</a>
+                <a href="#" onclick="event.preventDefault();localStorage.clear();window.location.href='login.html'"
+                  style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#fef2f2;font-size:0.8rem;color:#dc2626;text-decoration:none;">Logout</a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </header>
+      </header>
 
-    <main>
+      <main>
 
-      <!-- ═══════════════════════════════════════════════════════════
+        <!-- ═══════════════════════════════════════════════════════════
            POS SECTION
       ═══════════════════════════════════════════════════════════ -->
-      <div id="pos-section" style="display:block;">
-        <div class="pos-header-row">
-          <div>
-            <h1>Point of Sale</h1>
-            <p class="pos-date-display" id="pos-date-display"></p>
-          </div>
-          <div style="display:flex;align-items:center;gap:0.75rem;">
-            <button class="pos-action-btn" id="pos-history-btn" onclick="openOrderHistory()" style="white-space:nowrap;">
-              &#x1F4CB; Order History
-            </button>
-            <div style="font-size:0.8rem;color:var(--mocha);white-space:nowrap;">
-              Receipt <strong id="pos-receipt-number">REC-...</strong>
+        <div id="pos-section" style="display:block;">
+          <div class="pos-header-row">
+            <div>
+              <h1>Point of Sale</h1>
+              <p class="pos-date-display" id="pos-date-display"></p>
             </div>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              <button class="pos-action-btn" id="pos-history-btn" onclick="openOrderHistory()"
+                style="white-space:nowrap;">
+                &#x1F4CB; Order History
+              </button>
+              <!-- Order # Dropdown -->
+              <div class="pos-dropdown-wrap" id="orderDropdownWrap">
+                <button class="pos-dropdown-trigger" onclick="toggleOrderDropdown()" title="View past orders">
+                  Order <strong id="pos-order-dropdown-label">#00001</strong>
+                  <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+                </button>
+                <div class="pos-dropdown-panel" id="orderDropdownPanel" style="display:none;">
+                  <div class="pos-dropdown-list" id="orderDropdownList">
+                    <p style="padding:0.75rem;color:var(--mocha);font-size:0.8rem;">Loading…</p>
+                  </div>
+                </div>
+              </div>
+              <!-- Receipt # Dropdown -->
+              <div class="pos-dropdown-wrap" id="receiptDropdownWrap">
+                <button class="pos-dropdown-trigger" onclick="toggleReceiptDropdown()" title="View past receipts">
+                  Receipt <strong id="pos-receipt-number">REC-...</strong>
+                  <i data-lucide="chevron-down" style="width:14px;height:14px;"></i>
+                </button>
+                <div class="pos-dropdown-panel" id="receiptDropdownPanel" style="display:none;">
+                  <div class="pos-dropdown-list" id="receiptDropdownList">
+                    <p style="padding:0.75rem;color:var(--mocha);font-size:0.8rem;">Loading…</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pos-wrapper">
+            <!-- ── Products Panel ─────────────────────────────────── -->
+            <section class="pos-products-panel">
+              <!-- Category tabs -->
+              <div class="pos-category-tabs">
+                <button class="pos-cat-btn active" data-category="all">All</button>
+                <button class="pos-cat-btn" data-category="Beverages">&#9749; Beverages</button>
+                <button class="pos-cat-btn" data-category="Pastries">&#x1F950; Pastries</button>
+                <button class="pos-cat-btn" data-category="Desserts">&#x1F370; Desserts</button>
+                <button class="pos-cat-btn" data-category="Ingredients">&#x1F9C2; Ingredients</button>
+                <button class="pos-cat-btn" data-category="Merchandise">&#x1F6CD; Merchandise</button>
+              </div>
+
+              <!-- Search -->
+              <div class="pos-search-bar">
+                <i data-lucide="search" style="width:16px;height:16px;color:var(--mocha);flex-shrink:0;"></i>
+                <input type="text" id="pos-search" placeholder="Search products..." />
+              </div>
+
+              <!-- Products grid -->
+              <div class="pos-products-grid" id="pos-products-grid">
+                <p style="color:var(--mocha);font-size:0.875rem;">Loading products&hellip;</p>
+              </div>
+            </section>
+
+            <!-- ── Receipt Panel ──────────────────────────────────── -->
+            <section class="pos-receipt-panel">
+              <div class="pos-receipt-header">
+                <span class="pos-receipt-number">Order <strong id="pos-panel-order-display">#00001</strong></span>
+                <div class="pos-order-type-toggle">
+                  <button class="pos-order-type-btn active" data-type="Dine In">&#x1F374; Dine In</button>
+                  <button class="pos-order-type-btn" data-type="Take Out">&#x1F6CD; Take Out</button>
+                </div>
+              </div>
+
+              <!-- Customer info -->
+              <input type="text" id="pos-customer-name" class="pos-customer-input" placeholder="Customer name" />
+              <select id="pos-table-number" class="pos-customer-input" style="cursor:pointer;">
+                <option value="">&#x1F4CB; No table / Takeout</option>
+                <option value="B01 - Indoor">B01 - Indoor</option>
+                <option value="B02 - Indoor">B02 - Indoor</option>
+                <option value="B03 - Indoor">B03 - Indoor</option>
+                <option value="T01 - Outdoor">T01 - Outdoor</option>
+                <option value="T02 - Outdoor">T02 - Outdoor</option>
+              </select>
+
+              <!-- Order list -->
+              <p
+                style="font-size:0.75rem;font-weight:600;color:var(--mocha);text-transform:uppercase;letter-spacing:0.04em;">
+                Order list</p>
+              <div class="pos-order-list" id="pos-cart-items">
+                <p class="pos-empty-order">No items added yet</p>
+              </div>
+
+              <!-- Totals -->
+              <div class="pos-totals">
+                <div class="pos-totals-row">
+                  <span>Subtotal</span><span id="pos-subtotal">&#x20B1;0.00</span>
+                </div>
+                <div class="pos-totals-row">
+                  <span class="pos-discount-label">Discount
+                    <select id="pos-discount-select" class="pos-discount-select">
+                      <option value="0">None</option>
+                      <option value="0.20">PWD / Senior (20%)</option>
+                    </select>
+                  </span>
+                  <span id="pos-discount" class="pos-discount-val">&#x20B1;0.00</span>
+                </div>
+                <div class="pos-totals-row">
+                  <span>Tax (12% VAT)</span><span id="pos-tax">&#x20B1;0.00</span>
+                </div>
+                <div class="pos-totals-row total">
+                  <span>Total</span><span id="pos-total">&#x20B1;0.00</span>
+                </div>
+              </div>
+
+              <!-- Payment method -->
+              <select id="pos-payment-method" class="pos-payment-select">
+                <option value="Cash">&#x1F4B5; Cash</option>
+                <option value="Card">&#x1F4B3; Card</option>
+                <option value="GCash">&#x1F4F1; GCash</option>
+                <option value="Maya">&#x1F4F1; Maya</option>
+              </select>
+
+              <!-- Cash tendered / Change due (Cash only) -->
+              <div id="pos-cash-row" class="pos-cash-row">
+                <span class="pos-label">Cash Tendered</span>
+                <input type="number" id="pos-cash-tendered" class="pos-customer-input" placeholder="&#x20B1;0.00"
+                  min="0" step="0.01" />
+                <div class="pos-totals-row">
+                  <span>Change Due</span>
+                  <span id="pos-change-due" class="pos-change-positive">&#x20B1;0.00</span>
+                </div>
+              </div>
+
+              <!-- Checkout -->
+              <button class="pos-checkout-btn" id="pos-checkout-btn">
+                <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
+                <span>Place Order</span>
+                <span id="pos-checkout-total">&#x20B1;0.00</span>
+              </button>
+
+              <!-- Actions -->
+              <div class="pos-actions">
+                <button class="pos-action-btn" id="pos-clear-btn">&#x1F5D1; Clear</button>
+                <button class="pos-action-btn" id="pos-cancel-btn">&#x2715; Cancel</button>
+              </div>
+            </section>
+          </div>
+        </div><!-- /#pos-section -->
+
+      </main>
+    </div>
+  </div>
+
+  <!-- CASH PAYMENT MODAL -->
+  <div id="cash-payment-modal" class="payment-modal-overlay" onclick="closeCashModal(event)">
+    <div class="payment-modal" onclick="event.stopPropagation()">
+      <div class="payment-modal-content">
+        <div style="margin-bottom:1.5rem;text-align:center;">
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong
+              id="cash-modal-order-num">#00001</strong></div>
+          <div style="font-size:0.9rem;color:#666;margin-bottom:1rem;">Customer #: <strong
+              id="cash-modal-customer-num">CUST-00001</strong></div>
+        </div>
+        <div style="margin-bottom:1.5rem;">
+          <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#333;">Amount
+            Customer Gives</label>
+          <input type="number" id="cash-modal-amount" class="payment-modal-input" placeholder="₱0.00" min="0"
+            step="0.01" />
+        </div>
+      </div>
+      <div class="payment-modal-actions">
+        <button id="cash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
+        <button id="cash-modal-ok-btn" class="payment-btn payment-btn-primary">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GCASH PAYMENT MODAL -->
+  <div id="gcash-payment-modal" class="payment-modal-overlay" onclick="closeGCashModal(event)">
+    <div class="payment-modal" onclick="event.stopPropagation()">
+      <div class="payment-modal-content">
+        <div style="margin-bottom:1.5rem;text-align:center;">
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong
+              id="gcash-modal-order-num">#00001</strong></div>
+          <div style="font-size:0.9rem;color:#666;margin-bottom:1.5rem;">Customer #: <strong
+              id="gcash-modal-customer-num">CUST-00001</strong></div>
+        </div>
+        <div id="gcash-modal-qr"
+          style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:0.5rem;padding:1.5rem;text-align:center;background:#f9f9f9;">
+        </div>
+        <div style="text-align:center;margin-bottom:1.5rem;">
+          <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Scan to Pay via GCash</div>
+          <div style="font-size:1.25rem;font-weight:600;color:#333;">Amount: <span id="gcash-modal-amount">₱0.00</span>
           </div>
         </div>
+      </div>
+      <div class="payment-modal-actions">
+        <button id="gcash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
+        <button id="gcash-modal-confirm-btn" class="payment-btn payment-btn-primary">CONFIRM PAYMENT</button>
+      </div>
+    </div>
+  </div>
 
-        <div class="pos-wrapper">
-          <!-- ── Products Panel ─────────────────────────────────── -->
-          <section class="pos-products-panel">
-            <!-- Category tabs -->
-            <div class="pos-category-tabs">
-              <button class="pos-cat-btn active" data-category="all">All</button>
-              <button class="pos-cat-btn" data-category="Beverages">&#9749; Beverages</button>
-              <button class="pos-cat-btn" data-category="Pastries">&#x1F950; Pastries</button>
-              <button class="pos-cat-btn" data-category="Desserts">&#x1F370; Desserts</button>
-              <button class="pos-cat-btn" data-category="Ingredients">&#x1F9C2; Ingredients</button>
-              <button class="pos-cat-btn" data-category="Merchandise">&#x1F6CD; Merchandise</button>
-            </div>
-
-            <!-- Search -->
-            <div class="pos-search-bar">
-              <i data-lucide="search" style="width:16px;height:16px;color:var(--mocha);flex-shrink:0;"></i>
-              <input type="text" id="pos-search" placeholder="Search products..." />
-            </div>
-
-            <!-- Products grid -->
-            <div class="pos-products-grid" id="pos-products-grid">
-              <p style="color:var(--mocha);font-size:0.875rem;">Loading products&hellip;</p>
-            </div>
-          </section>
-
-          <!-- ── Receipt Panel ──────────────────────────────────── -->
-          <section class="pos-receipt-panel">
-            <div class="pos-receipt-header">
-              <span class="pos-receipt-number">Order <strong id="pos-receipt-no-display">#00001</strong></span>
-              <div class="pos-order-type-toggle">
-                <button class="pos-order-type-btn active" data-type="Dine In">&#x1F374; Dine In</button>
-                <button class="pos-order-type-btn" data-type="Take Out">&#x1F6CD; Take Out</button>
-              </div>
-            </div>
-
-            <!-- Customer info -->
-            <input type="text" id="pos-customer-name" class="pos-customer-input" placeholder="Customer name" />
-            <select id="pos-table-number" class="pos-customer-input" style="cursor:pointer;">
-              <option value="">&#x1F4CB; No table / Takeout</option>
-              <option value="B01 - Indoor">B01 - Indoor</option>
-              <option value="B02 - Indoor">B02 - Indoor</option>
-              <option value="B03 - Indoor">B03 - Indoor</option>
-              <option value="T01 - Outdoor">T01 - Outdoor</option>
-              <option value="T02 - Outdoor">T02 - Outdoor</option>
-            </select>
-
-            <!-- Order list -->
-            <p style="font-size:0.75rem;font-weight:600;color:var(--mocha);text-transform:uppercase;letter-spacing:0.04em;">Order list</p>
-            <div class="pos-order-list" id="pos-cart-items">
-              <p class="pos-empty-order">No items added yet</p>
-            </div>
-
-            <!-- Totals -->
-            <div class="pos-totals">
-              <div class="pos-totals-row">
-                <span>Subtotal</span><span id="pos-subtotal">&#x20B1;0.00</span>
-              </div>
-              <div class="pos-totals-row">
-                <span class="pos-discount-label">Discount
-                  <select id="pos-discount-select" class="pos-discount-select">
-                    <option value="0">None</option>
-                    <option value="0.20">PWD / Senior (20%)</option>
-                  </select>
-                </span>
-                <span id="pos-discount" class="pos-discount-val">&#x20B1;0.00</span>
-              </div>
-              <div class="pos-totals-row">
-                <span>Tax (12% VAT)</span><span id="pos-tax">&#x20B1;0.00</span>
-              </div>
-              <div class="pos-totals-row total">
-                <span>Total</span><span id="pos-total">&#x20B1;0.00</span>
-              </div>
-            </div>
-
-            <!-- Payment method -->
-            <select id="pos-payment-method" class="pos-payment-select">
-              <option value="Cash">&#x1F4B5; Cash</option>
-              <option value="Card">&#x1F4B3; Card</option>
-              <option value="GCash">&#x1F4F1; GCash</option>
-              <option value="Maya">&#x1F4F1; Maya</option>
-            </select>
-
-            <!-- Cash tendered / Change due (Cash only) -->
-            <div id="pos-cash-row" class="pos-cash-row">
-              <span class="pos-label">Cash Tendered</span>
-              <input type="number" id="pos-cash-tendered" class="pos-customer-input"
-                     placeholder="&#x20B1;0.00" min="0" step="0.01" />
-              <div class="pos-totals-row">
-                <span>Change Due</span>
-                <span id="pos-change-due" class="pos-change-positive">&#x20B1;0.00</span>
-              </div>
-            </div>
-
-            <!-- Checkout -->
-            <button class="pos-checkout-btn" id="pos-checkout-btn">
-              <i data-lucide="check-circle" style="width:18px;height:18px;"></i>
-              <span>Place Order</span>
-              <span id="pos-checkout-total">&#x20B1;0.00</span>
-            </button>
-
-            <!-- Actions -->
-            <div class="pos-actions">
-              <button class="pos-action-btn" id="pos-clear-btn">&#x1F5D1; Clear</button>
-              <button class="pos-action-btn" id="pos-cancel-btn">&#x2715; Cancel</button>
-            </div>
-          </section>
+  <!-- RECEIPT MODAL -->
+  <div id="receipt-modal-overlay" class="receipt-modal-overlay" onclick="closeReceiptModal(event)">
+    <div class="receipt-modal" onclick="event.stopPropagation()">
+      <div class="receipt-paper" id="receipt-to-download">
+        <div class="receipt-head">
+          <div class="receipt-cafe-name">HANEUS CAFE</div>
+          <div class="receipt-cafe-addr">BRGY Balbautog Sitio Uwagan</div>
         </div>
-      </div><!-- /#pos-section -->
-
-    </main>
-  </div>
-</div>
-
-<!-- CASH PAYMENT MODAL -->
-<div id="cash-payment-modal" class="payment-modal-overlay" onclick="closeCashModal(event)">
-  <div class="payment-modal" onclick="event.stopPropagation()">
-    <div class="payment-modal-content">
-      <div style="margin-bottom:1.5rem;text-align:center;">
-        <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="cash-modal-order-num">#00001</strong></div>
-        <div style="font-size:0.9rem;color:#666;margin-bottom:1rem;">Customer #: <strong id="cash-modal-customer-num">CUST-00001</strong></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-meta">
+          <div class="receipt-meta-row"><span>Receipt #:</span><span id="rm-receipt-num"></span></div>
+          <div class="receipt-meta-row"><span>Customer #:</span><span id="rm-customer-num"></span></div>
+          <div class="receipt-meta-row"><span>Date:</span><span id="rm-date"></span></div>
+          <div class="receipt-meta-row"><span>Cashier:</span><span id="rm-cashier"></span></div>
+          <div class="receipt-meta-row"><span>Order Type:</span><span id="rm-order-type"></span></div>
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-items-header"><span>ORDER</span><span>PRICE</span></div>
+        <div id="rm-items" class="receipt-items-list"></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-totals">
+          <div class="receipt-row"><span>Subtotal</span><span id="rm-subtotal"></span></div>
+          <div class="receipt-row"><span>Discount</span><span id="rm-discount"></span></div>
+          <div class="receipt-row"><span>VAT (12%)</span><span id="rm-vat"></span></div>
+        </div>
+        <div class="receipt-divider receipt-divider-double"></div>
+        <div class="receipt-row receipt-total-row"><span>TOTAL</span><span id="rm-total"></span></div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-payment-rows">
+          <div class="receipt-row"><span>Payment:</span><span id="rm-payment"></span></div>
+          <div class="receipt-row"><span>Tendered:</span><span id="rm-tendered"></span></div>
+          <div class="receipt-row"><span>Change:</span><span id="rm-change"></span></div>
+        </div>
+        <div class="receipt-divider"></div>
+        <div class="receipt-footer">Thank you for visiting!</div>
       </div>
-      <div style="margin-bottom:1.5rem;">
-        <label style="display:block;font-size:0.875rem;font-weight:500;margin-bottom:0.5rem;color:#333;">Amount Customer Gives</label>
-        <input type="number" id="cash-modal-amount" class="payment-modal-input" placeholder="₱0.00" min="0" step="0.01" />
+      <div class="receipt-actions no-print">
+        <button class="receipt-btn receipt-btn-download" onclick="downloadReceiptPNG()">&#11015; Download
+          Receipt</button>
+        <button class="receipt-btn receipt-btn-ok" onclick="closeReceiptModal()">OK</button>
       </div>
-    </div>
-    <div class="payment-modal-actions">
-      <button id="cash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
-      <button id="cash-modal-ok-btn" class="payment-btn payment-btn-primary">OK</button>
-    </div>
-  </div>
-</div>
-
-<!-- GCASH PAYMENT MODAL -->
-<div id="gcash-payment-modal" class="payment-modal-overlay" onclick="closeGCashModal(event)">
-  <div class="payment-modal" onclick="event.stopPropagation()">
-    <div class="payment-modal-content">
-      <div style="margin-bottom:1.5rem;text-align:center;">
-        <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Order <strong id="gcash-modal-order-num">#00001</strong></div>
-        <div style="font-size:0.9rem;color:#666;margin-bottom:1.5rem;">Customer #: <strong id="gcash-modal-customer-num">CUST-00001</strong></div>
-      </div>
-      <div id="gcash-modal-qr" style="margin-bottom:1.5rem;border:1px solid #ddd;border-radius:0.5rem;padding:1.5rem;text-align:center;background:#f9f9f9;"></div>
-      <div style="text-align:center;margin-bottom:1.5rem;">
-        <div style="font-size:0.875rem;color:var(--mocha);margin-bottom:0.25rem;">Scan to Pay via GCash</div>
-        <div style="font-size:1.25rem;font-weight:600;color:#333;">Amount: <span id="gcash-modal-amount">₱0.00</span></div>
-      </div>
-    </div>
-    <div class="payment-modal-actions">
-      <button id="gcash-modal-cancel-btn" class="payment-btn payment-btn-secondary">CANCEL</button>
-      <button id="gcash-modal-confirm-btn" class="payment-btn payment-btn-primary">CONFIRM PAYMENT</button>
     </div>
   </div>
-</div>
 
-<!-- RECEIPT MODAL -->
-<div id="receipt-modal-overlay" class="receipt-modal-overlay" onclick="closeReceiptModal(event)">
-  <div class="receipt-modal" onclick="event.stopPropagation()">
-    <div class="receipt-paper" id="receipt-to-download">
-      <div class="receipt-head">
-        <div class="receipt-cafe-name">HANEUS CAFE</div>
-        <div class="receipt-cafe-addr">BRGY Balbautog Sitio Uwagan</div>
+  <!-- ORDER HISTORY PANEL -->
+  <div id="order-history-overlay" class="order-history-overlay" onclick="closeOrderHistory(event)">
+    <div class="order-history-card" onclick="event.stopPropagation()">
+      <div class="order-history-hdr">
+        <h3>&#x1F4CB; Order History</h3>
+        <button class="order-history-close" onclick="closeOrderHistory()">&#x2715;</button>
       </div>
-      <div class="receipt-divider"></div>
-      <div class="receipt-meta">
-        <div class="receipt-meta-row"><span>Receipt #:</span><span id="rm-receipt-num"></span></div>
-        <div class="receipt-meta-row"><span>Customer #:</span><span id="rm-customer-num"></span></div>
-        <div class="receipt-meta-row"><span>Date:</span><span id="rm-date"></span></div>
-        <div class="receipt-meta-row"><span>Cashier:</span><span id="rm-cashier"></span></div>
-        <div class="receipt-meta-row"><span>Order Type:</span><span id="rm-order-type"></span></div>
+      <div id="order-history-list" class="order-history-list">
+        <p style="color:var(--mocha);font-size:0.875rem;padding:1rem;">Loading&hellip;</p>
       </div>
-      <div class="receipt-divider"></div>
-      <div class="receipt-items-header"><span>ORDER</span><span>PRICE</span></div>
-      <div id="rm-items" class="receipt-items-list"></div>
-      <div class="receipt-divider"></div>
-      <div class="receipt-totals">
-        <div class="receipt-row"><span>Subtotal</span><span id="rm-subtotal"></span></div>
-        <div class="receipt-row"><span>Discount</span><span id="rm-discount"></span></div>
-        <div class="receipt-row"><span>VAT (12%)</span><span id="rm-vat"></span></div>
-      </div>
-      <div class="receipt-divider receipt-divider-double"></div>
-      <div class="receipt-row receipt-total-row"><span>TOTAL</span><span id="rm-total"></span></div>
-      <div class="receipt-divider"></div>
-      <div class="receipt-payment-rows">
-        <div class="receipt-row"><span>Payment:</span><span id="rm-payment"></span></div>
-        <div class="receipt-row"><span>Tendered:</span><span id="rm-tendered"></span></div>
-        <div class="receipt-row"><span>Change:</span><span id="rm-change"></span></div>
-      </div>
-      <div class="receipt-divider"></div>
-      <div class="receipt-footer">Thank you for visiting!</div>
-    </div>
-    <div class="receipt-actions no-print">
-      <button class="receipt-btn receipt-btn-download" onclick="downloadReceiptPNG()">&#11015; Download Receipt</button>
-      <button class="receipt-btn receipt-btn-ok" onclick="closeReceiptModal()">OK</button>
     </div>
   </div>
-</div>
 
-<!-- ORDER HISTORY PANEL -->
-<div id="order-history-overlay" class="order-history-overlay" onclick="closeOrderHistory(event)">
-  <div class="order-history-card" onclick="event.stopPropagation()">
-    <div class="order-history-hdr">
-      <h3>&#x1F4CB; Order History</h3>
-      <button class="order-history-close" onclick="closeOrderHistory()">&#x2715;</button>
-    </div>
-    <div id="order-history-list" class="order-history-list">
-      <p style="color:var(--mocha);font-size:0.875rem;padding:1rem;">Loading&hellip;</p>
-    </div>
-  </div>
-</div>
-
-<script src="js/role-control.js"></script>
-<script src="js/logout-modal.js"></script>
-<script src="js/alert-modal.js"></script>
-<script src="js/pos.js"></script>
-<script src="js/sidebar-toggle.js"></script>
-<script src="js/header-common.js"></script>
-<script>
-  // Initialize POS on load (standalone page — no switchView toggle needed)
-  document.addEventListener('DOMContentLoaded', function () {
-    // Guard: redirect to login if not authenticated
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
-    if (!user || !user.id) { window.location.href = 'login.html'; return; }
-    initPOS();
-    lucide.createIcons();
-  });
-</script>
+  <script src="js/role-control.js"></script>
+  <script src="js/logout-modal.js"></script>
+  <script src="js/alert-modal.js"></script>
+  <script src="js/auto-refresh.js"></script>
+  <script src="js/pos.js"></script>
+  <script src="js/sidebar-toggle.js"></script>
+  <script src="js/header-common.js"></script>
+  <script>
+    // Initialize POS on load (standalone page — no switchView toggle needed)
+    document.addEventListener('DOMContentLoaded', function () {
+      // Guard: redirect to login if not authenticated
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (!user || !user.id) { window.location.href = 'login.html'; return; }
+      initPOS();
+      lucide.createIcons();
+    });
+  </script>
 </body>
+
 </html>

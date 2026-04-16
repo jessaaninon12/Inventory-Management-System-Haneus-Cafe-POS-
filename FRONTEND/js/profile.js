@@ -391,3 +391,7 @@ document.addEventListener('keydown', (e) => {
 
 // ---------- Init ----------
 loadProfile();
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadProfile(), 60000, 'profile');
+}

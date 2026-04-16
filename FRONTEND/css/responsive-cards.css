@@ -1,0 +1,238 @@
+/* ════════════════════════════════════════════════════════════════════════
+   responsive-cards.css — Shared Table-to-Card Layout
+   ────────────────────────────────────────────────────────────────────────
+   Based on responsive.md — 2026 Responsive Standard
+   Desktop: Table (rows & columns)
+   Mobile (≤ 768px): Each row → independent Card
+   Touch targets: min 48×48px, 8px spacing
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* ── MOBILE CARD VIEW (≤ 768px) ─────────────────────────────────────── */
+@media screen and (max-width: 768px) {
+
+  /* ── 1. Reset container — kill scroll, kill min-width ── */
+  .table-container,
+  .table-wrapper {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    -webkit-overflow-scrolling: auto !important;
+  }
+
+  /* ── 2. Collapse table structure to block ── */
+  .table-container table,
+  .table-wrapper table {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    border: none !important;
+  }
+
+  .table-container thead,
+  .table-container tbody,
+  .table-container tr,
+  .table-container th,
+  .table-container td,
+  .table-wrapper thead,
+  .table-wrapper tbody,
+  .table-wrapper tr,
+  .table-wrapper th,
+  .table-wrapper td {
+    display: block !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  /* ── 3. HIDE table header row ── */
+  .table-container thead,
+  .table-wrapper thead {
+    display: none !important;
+  }
+
+  /* ── 4. Each <tr> becomes a CARD ── */
+  .table-container tbody tr,
+  .table-wrapper tbody tr {
+    display: flex !important;
+    flex-direction: column !important;
+    background: white !important;
+    border-radius: 0.875rem !important;
+    margin-bottom: 1rem !important;
+    padding: 1rem 1.125rem !important;
+    box-shadow: 0 2px 10px rgba(74,47,33,0.08) !important;
+    border: 1px solid #e1c8b2 !important;
+    gap: 0 !important;
+    transition: box-shadow 0.15s ease !important;
+  }
+
+  .table-container tbody tr:hover,
+  .table-wrapper tbody tr:hover {
+    background: white !important;
+    box-shadow: 0 4px 16px rgba(74,47,33,0.12) !important;
+  }
+
+  /* ── 5. Each <td> becomes a LABEL : VALUE row ── */
+  .table-container tbody td,
+  .table-wrapper tbody td {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 0.5rem 0 !important;
+    border-bottom: 1px solid rgba(225,200,178,0.3) !important;
+    border-top: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    white-space: normal !important;
+    font-size: 0.875rem !important;
+    color: #4a2f21 !important;
+    min-height: 2.5rem !important;
+    text-align: right !important;
+    width: 100% !important;
+  }
+
+  /* Last td — no bottom border */
+  .table-container tbody td:last-child,
+  .table-wrapper tbody td:last-child {
+    border-bottom: none !important;
+    padding-bottom: 0.25rem !important;
+  }
+
+  /* ── 6. Data labels via ::before pseudo-element ── */
+  .table-container tbody td::before,
+  .table-wrapper tbody td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #6e4f3e;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    margin-right: 1rem;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  /* ── 7. ACTIONS row — special treatment ── */
+  .table-container tbody td[data-label="Actions"],
+  .table-wrapper tbody td[data-label="Actions"] {
+    justify-content: center !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.25rem !important;
+    border-bottom: none !important;
+    margin-top: 0.25rem !important;
+    border-top: 1px solid rgba(225,200,178,0.4) !important;
+  }
+
+  /* Hide "ACTIONS" label */
+  .table-container tbody td[data-label="Actions"]::before,
+  .table-wrapper tbody td[data-label="Actions"]::before {
+    display: none !important;
+  }
+
+  /* Center action buttons */
+  .table-container tbody td[data-label="Actions"] .action-icons,
+  .table-container tbody td[data-label="Actions"] .actions,
+  .table-container tbody td .action-icons,
+  .table-container tbody td .actions,
+  .table-wrapper tbody td[data-label="Actions"] .action-icons,
+  .table-wrapper tbody td[data-label="Actions"] .actions,
+  .table-wrapper tbody td .action-icons,
+  .table-wrapper tbody td .actions {
+    display: flex !important;
+    width: 100% !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  /* ── 8. Touch-friendly buttons (48×48px min per responsive.md) ── */
+  .action-btn {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 0.5rem !important;
+    font-size: 0 !important;
+  }
+  .action-btn svg {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  /* Text action buttons — also touch-friendly */
+  .table-container tbody .btn,
+  .table-wrapper tbody .btn {
+    min-height: 44px !important;
+    min-width: 80px !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 0.82rem !important;
+    border-radius: 0.5rem !important;
+  }
+
+  /* ── 9. Status badges — ensure they don't shrink ── */
+  .status-badge,
+  .status,
+  .badge {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ── 10. Pagination — responsive wrap ── */
+  .pagination-container {
+    margin-top: 1rem !important;
+  }
+  .pagination {
+    flex-wrap: wrap !important;
+    gap: 0.35rem !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+  .page-btn {
+    min-width: 36px !important;
+    min-height: 36px !important;
+    padding: 0.4rem 0.7rem !important;
+    font-size: 0.82rem !important;
+  }
+}
+
+/* ── SMALL PHONES (≤ 480px) — Tighter spacing ───────────────────────── */
+@media screen and (max-width: 480px) {
+  .table-container tbody tr,
+  .table-wrapper tbody tr {
+    padding: 0.875rem 1rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .table-container tbody td,
+  .table-wrapper tbody td {
+    font-size: 0.82rem !important;
+    padding: 0.4rem 0 !important;
+  }
+
+  .table-container tbody td::before,
+  .table-wrapper tbody td::before {
+    font-size: 0.7rem !important;
+  }
+}
+
+/* ── VERY SMALL (≤ 360px) — Compact cards ───────────────────────────── */
+@media screen and (max-width: 360px) {
+  .table-container tbody tr,
+  .table-wrapper tbody tr {
+    padding: 0.75rem !important;
+    border-radius: 0.625rem !important;
+  }
+
+  .table-container tbody td,
+  .table-wrapper tbody td {
+    font-size: 0.78rem !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    text-align: left !important;
+    gap: 0.15rem !important;
+  }
+
+  .table-container tbody td::before,
+  .table-wrapper tbody td::before {
+    margin-right: 0 !important;
+    margin-bottom: 0.1rem !important;
+  }
+}

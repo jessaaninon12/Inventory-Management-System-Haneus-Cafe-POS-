@@ -805,3 +805,8 @@ async function _refreshNotifBadge() {
 // Run once immediately, then poll every 30 seconds
 _refreshNotifBadge();
 setInterval(_refreshNotifBadge, 30000);
+
+// -- AJAX Auto-Refresh -----------------------------------------
+if (typeof startAutoRefresh === 'function') {
+  startAutoRefresh(() => loadDashboard(), 15000, 'admin-dashboard');
+}
