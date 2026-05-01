@@ -17,6 +17,7 @@ from api.schema_serializers import (
 from application.dtos.sale_dto import CreateSaleDTO, UpdateSaleDTO
 from application.services.sale_service import SaleService
 from infrastructure.repositories.sale_repository import SaleRepository
+from infrastructure.repositories.activity_log_repository import ActivityLogRepository
 
 
 def _get_service():
@@ -157,6 +158,20 @@ class SaleListCreateController(APIView):
                 items=request.data.get("items", []),
             )
             sale = service.create_sale(dto)
+            # Log the sale creation
+            try:
+                xff = request.META.get("HTTP_X_FORWARDED_FOR")
+                ip = xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR")
+                ActivityLogRepository().log(
+                    user_name=dto.cashier_name or "System",
+                    action="SALE",
+                    target_type="sale",
+                    target_id=sale.sale_id,
+                    description=f"Sale {sale.sale_id} completed — Total: {sale.total}, Payment: {dto.payment_method}, Customer: {dto.customer_name or 'Walk-in'}",
+                    ip_address=ip,
+                )
+            except Exception:
+                pass  # Don't fail the sale if logging fails
             return Response(sale.to_dict(), status=status.HTTP_201_CREATED)
         except ValueError as e:
             return Response(

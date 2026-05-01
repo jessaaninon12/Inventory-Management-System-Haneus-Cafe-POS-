@@ -29,11 +29,11 @@
     <p class="sidebar-section-title">Main</p>
     <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
   </div>
-  <div class="sidebar-nav-section" data-role="staff">
+  <div class="sidebar-nav-section" data-role="supervisor">
     <p class="sidebar-section-title">Main</p>
     <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
   </div>
-  <div class="sidebar-nav-section" data-role="staff">
+  <div class="sidebar-nav-section" data-role="supervisor">
     <p class="sidebar-section-title">POS</p>
     <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
   </div>
@@ -49,6 +49,11 @@
   <div class="sidebar-nav-section" data-role="admin">
     <p class="sidebar-section-title">Sales</p>
     <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+  </div>
+  <div class="sidebar-nav-section" data-role="admin">
+    <p class="sidebar-section-title">System</p>
+    <a href="activitylogs.html" class="sidebar-link"><i data-lucide="scroll-text"></i> Activity Logs</a>
+    <a href="reports.html" class="sidebar-link"><i data-lucide="file-bar-chart"></i> Reports</a>
   </div>
   <div class="sidebar-nav-section" data-role="admin">
     <p class="sidebar-section-title">Users</p>
@@ -92,6 +97,66 @@
     <!-- Card Grid -->
     <div class="supplier-grid" id="supplierGrid">
       <p style="color:var(--mocha);padding:2rem;">Loading suppliers…</p>
+    </div>
+
+    <!-- ── Supplier Analytics Section ─────────────────────── -->
+    <div class="sa-section" id="supplierAnalytics">
+      <div class="sa-header">
+        <h2><i data-lucide="bar-chart-3"></i> Supplier Analytics</h2>
+        <p class="sa-subtitle">Performance classification based on sell-through rate and stock volume.</p>
+      </div>
+
+      <div class="sa-stats" id="saStats"></div>
+
+      <div class="sa-grid">
+        <div class="sa-panel sa-panel-top">
+          <div class="sa-panel-header">
+            <span class="sa-panel-icon" style="background:#dcfce7;color:#15803d;"><i data-lucide="trophy"></i></span>
+            <h3>Top Suppliers</h3>
+            <span class="sa-panel-badge sa-badge-green" id="saTopCount">0</span>
+          </div>
+          <div class="sa-panel-desc">High sell-through (&ge;50%) and strong revenue.</div>
+          <div class="sa-panel-body" id="saTopBody">
+            <div class="sa-loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="sa-panel sa-panel-low">
+          <div class="sa-panel-header">
+            <span class="sa-panel-icon" style="background:#fee2e2;color:#b91c1c;"><i data-lucide="alert-triangle"></i></span>
+            <h3>Low-Performing</h3>
+            <span class="sa-panel-badge sa-badge-red" id="saLowCount">0</span>
+          </div>
+          <div class="sa-panel-desc">Sell-through below 30%. Consider reducing orders.</div>
+          <div class="sa-panel-body" id="saLowBody">
+            <div class="sa-loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="sa-panel sa-panel-high">
+          <div class="sa-panel-header">
+            <span class="sa-panel-icon" style="background:#dbeafe;color:#1d4ed8;"><i data-lucide="package-plus"></i></span>
+            <h3>High Production</h3>
+            <span class="sa-panel-badge sa-badge-blue" id="saHighCount">0</span>
+          </div>
+          <div class="sa-panel-desc">Suppliers with the most stock delivered.</div>
+          <div class="sa-panel-body" id="saHighBody">
+            <div class="sa-loading">Loading...</div>
+          </div>
+        </div>
+
+        <div class="sa-panel sa-panel-low-prod">
+          <div class="sa-panel-header">
+            <span class="sa-panel-icon" style="background:#fef3c7;color:#92400e;"><i data-lucide="package-minus"></i></span>
+            <h3>Low Production</h3>
+            <span class="sa-panel-badge sa-badge-amber" id="saLowProdCount">0</span>
+          </div>
+          <div class="sa-panel-desc">Fewest products supplied. May need diversification.</div>
+          <div class="sa-panel-body" id="saLowProdBody">
+            <div class="sa-loading">Loading...</div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </main>

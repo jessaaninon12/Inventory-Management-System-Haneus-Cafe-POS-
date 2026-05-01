@@ -178,11 +178,12 @@ class SaleRepository(SaleRepositoryInterface):
                 sale_id=m.pk,
                 product_id=i.product_id,
                 product_name=i.product_name,
+                category=i.product.category if i.product else "",
                 quantity=i.quantity,
                 unit_price=float(i.unit_price),
                 cost_price=float(i.cost_price),
             )
-            for i in m.items.all()
+            for i in m.items.select_related("product").all()
         ]
         return Sale(
             id=m.pk,

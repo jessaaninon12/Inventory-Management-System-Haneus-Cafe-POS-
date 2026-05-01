@@ -8,7 +8,7 @@ let currentRefundingOrder = null;
 
 // ── Pagination state ───────────────────────────────────────────────
 let salesCurrentPage      = 1;
-const salesItemsPerPage   = 30;
+const salesItemsPerPage   = 25;
 let salesTotalPages        = 1;
 let currentFilteredOrders = [];
 
@@ -64,7 +64,7 @@ async function loadOrders() {
   } catch (e) {
     if (e.name === 'AbortError') return;
     console.error('Sales load failed', e);
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Failed to load sales. Make sure the backend is running.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:red;">Failed to load sales. Make sure the backend is running.</td></tr>';
   }
 }
 
@@ -81,7 +81,7 @@ function _renderOrderRows() {
   const start = (salesCurrentPage - 1) * salesItemsPerPage;
   const pageOrders = currentFilteredOrders.slice(start, start + salesItemsPerPage);
   if (!pageOrders.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No sales records found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;">No sales records found.</td></tr>';
     return;
   }
   tbody.innerHTML = pageOrders.map(o => {
@@ -89,6 +89,13 @@ function _renderOrderRows() {
     const orderId   = o.receipt_number || o.sale_id || String(o.id);
     const dateStr   = _fmtDate(o.created_at);
     const itemCount = (o.items && o.items.length) || o.items_count || 0;
+    // Extract product names and categories from items array
+    const productNames = (o.items && o.items.length)
+      ? o.items.map(i => i.product_name).filter(Boolean).join(', ')
+      : (o.product_name || '—');
+    const categories = (o.items && o.items.length)
+      ? [...new Set(o.items.map(i => i.category).filter(Boolean))].join(', ')
+      : (o.category || '—');
     const statusCls = o.status === 'Completed' ? 'status-completed'
                     : o.status === 'Pending'   ? 'status-pending'
                     : 'status-cancelled';
@@ -98,8 +105,9 @@ function _renderOrderRows() {
       ? `<button class="btn btn-small btn-edit" onclick="completeOrder(${o.id})">Complete</button>` : '';
     return `
       <tr data-order-id="${orderId}" data-status="${o.status.toLowerCase()}">
-        <td data-label="Order #">#${orderId}</td>
-        <td data-label="Customer">${o.customer_name || 'Walk-in'}</td>
+        <td data-label="Sales ID">#${orderId}</td>
+        <td data-label="Product" title="${productNames}">${productNames}</td>
+        <td data-label="Category">${categories}</td>
         <td data-label="Date">${dateStr}</td>
         <td data-label="Items">${itemCount} item${itemCount !== 1 ? 's' : ''}</td>
         <td data-label="Total" class="amount">${formatPeso(o.total)}</td>

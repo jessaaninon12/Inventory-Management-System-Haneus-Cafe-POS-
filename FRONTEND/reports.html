@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reports — Haneus Cafe</title>
+  <meta name="description" content="Stock, Sales, and Supplier reports for Haneus Cafe POS." />
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/reports.css?v=1">
+</head>
+
+<body>
+  <script>(function(){try{var s=localStorage.getItem('user');if(!s){window.location.href='login.html';return;}var u=JSON.parse(s||'{}');if(u.user_type!=='Admin'){window.location.href='staffdashboard.html';}}catch(e){try{localStorage.clear();}catch{}window.location.href='login.html';}})();</script>
+
+  <div class="app-container">
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <aside id="main-sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-logo-row">
+          <h2 class="sidebar-title">Haneus Cafe</h2>
+          <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+        </div>
+        <nav>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Main</p>
+            <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Inventory</p>
+            <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Stock</p>
+            <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+            <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Sales</p>
+            <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">System</p>
+            <a href="activitylogs.html" class="sidebar-link"><i data-lucide="scroll-text"></i> Activity Logs</a>
+            <a href="reports.html" class="sidebar-link active"><i data-lucide="file-bar-chart"></i> Reports</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Users</p>
+            <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Settings</p>
+            <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+            <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+
+      <header>
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div style="flex:1;"></div>
+        <span style="font-weight:600;font-size:0.9rem;color:var(--espresso);">Haneus Cafe</span>
+      </header>
+
+      <main class="content-area">
+
+        <!-- Page header -->
+        <div class="rpt-page-header">
+          <div>
+            <h1>Reports</h1>
+            <p class="rpt-subtitle">Stock, Sales, and Supplier performance reports.</p>
+          </div>
+        </div>
+
+        <!-- Tab bar -->
+        <div class="rpt-tabs">
+          <button class="rpt-tab active" data-tab="stock" onclick="switchTab('stock')">
+            <i data-lucide="package"></i> Stock Report
+          </button>
+          <button class="rpt-tab" data-tab="sales" onclick="switchTab('sales')">
+            <i data-lucide="trending-up"></i> Sales Report
+          </button>
+          <button class="rpt-tab" data-tab="suppliers" onclick="switchTab('suppliers')">
+            <i data-lucide="truck"></i> Supplier Report
+          </button>
+        </div>
+
+        <!-- Stock Report Tab -->
+        <div id="tab-stock" class="rpt-tab-content active">
+          <div class="rpt-stats-grid" id="stockStats"></div>
+          <div class="rpt-table-container">
+            <table class="rpt-table" id="stockTable">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Category</th>
+                  <th>Stock</th>
+                  <th>Unit</th>
+                  <th>Cost</th>
+                  <th>Price</th>
+                  <th>Stock Value</th>
+                  <th>Status</th>
+                  <th>Supplier</th>
+                </tr>
+              </thead>
+              <tbody id="stockBody">
+                <tr><td colspan="9" class="rpt-loading">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Sales Report Tab -->
+        <div id="tab-sales" class="rpt-tab-content">
+          <div class="rpt-period-bar">
+            <label>Period:</label>
+            <select id="salesPeriod" onchange="loadSalesReport()">
+              <option value="7">Last 7 Days</option>
+              <option value="30" selected>Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+              <option value="365">Last Year</option>
+            </select>
+          </div>
+          <div class="rpt-stats-grid" id="salesStats"></div>
+          <div class="rpt-two-col">
+            <div class="rpt-table-container">
+              <h3 class="rpt-section-title">Top Products</h3>
+              <table class="rpt-table">
+                <thead>
+                  <tr><th>#</th><th>Product</th><th>Qty Sold</th><th>Revenue</th></tr>
+                </thead>
+                <tbody id="salesTopBody">
+                  <tr><td colspan="4" class="rpt-loading">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="rpt-table-container">
+              <h3 class="rpt-section-title">Payment Methods</h3>
+              <table class="rpt-table">
+                <thead>
+                  <tr><th>Method</th><th>Transactions</th><th>Total</th></tr>
+                </thead>
+                <tbody id="salesPaymentBody">
+                  <tr><td colspan="3" class="rpt-loading">Loading...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Supplier Report Tab -->
+        <div id="tab-suppliers" class="rpt-tab-content">
+          <div class="rpt-stats-grid" id="supplierStats"></div>
+          <div class="rpt-table-container">
+            <table class="rpt-table" id="supplierTable">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Products</th>
+                  <th>Total Stock</th>
+                  <th>Avg Price</th>
+                  <th>Stock Value</th>
+                  <th>Total Sold</th>
+                  <th>Revenue</th>
+                  <th>Sell-Through</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="supplierBody">
+                <tr><td colspan="9" class="rpt-loading">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="js/role-control.js"></script>
+  <script src="js/logout-modal.js"></script>
+  <script src="js/alert-modal.js"></script>
+  <script src="js/reports.js?v=1"></script>
+  <script src="js/sidebar-toggle.js"></script>
+</body>
+
+</html>

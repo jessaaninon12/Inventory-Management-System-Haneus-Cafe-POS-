@@ -11,6 +11,7 @@ class SaleItemDTO:
         id=None,
         product_id=None,
         product_name="",
+        category="",
         quantity=1,
         unit_price=0.0,
         cost_price=0.0,
@@ -19,6 +20,7 @@ class SaleItemDTO:
         self.id = id
         self.product_id = product_id
         self.product_name = product_name
+        self.category = category
         self.quantity = quantity
         self.unit_price = unit_price
         self.cost_price = cost_price
@@ -30,6 +32,7 @@ class SaleItemDTO:
             id=entity.id,
             product_id=entity.product_id,
             product_name=entity.product_name,
+            category=getattr(entity, 'category', ''),
             quantity=entity.quantity,
             unit_price=entity.unit_price,
             cost_price=entity.cost_price,
@@ -41,6 +44,7 @@ class SaleItemDTO:
             "id": self.id,
             "product_id": self.product_id,
             "product_name": self.product_name,
+            "category": self.category,
             "quantity": self.quantity,
             "unit_price": str(self.unit_price),
             "cost_price": str(self.cost_price),

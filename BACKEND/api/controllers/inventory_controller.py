@@ -17,6 +17,7 @@ from application.dtos.inventory_dto import CreateTransactionDTO
 from application.services.inventory_service import InventoryService
 from infrastructure.repositories.inventory_repository import InventoryRepository
 from infrastructure.repositories.product_repository import ProductRepository
+from infrastructure.repositories.activity_log_repository import ActivityLogRepository
 
 
 def _get_service():
@@ -74,6 +75,22 @@ class StockAdjustController(APIView):
                             cache.delete(f"products:list:v1:{page}:{limit}")
                             cache.delete(f"products:list:v2:{page}:{limit}")
                     cache.delete("products:low_stock")
+            except Exception:
+                pass
+
+            # Log stock adjustment
+            try:
+                xff = request.META.get("HTTP_X_FORWARDED_FOR")
+                ip = xff.split(",")[0].strip() if xff else request.META.get("REMOTE_ADDR")
+                sign = "+" if txn.quantity_change > 0 else ""
+                ActivityLogRepository().log(
+                    user_name=request.data.get("reference", "System"),
+                    action="STOCK_ADJUST",
+                    target_type="stock",
+                    target_id=str(dto.product_id),
+                    description=f"Stock adjusted: {txn.product_name} ({sign}{txn.quantity_change}), Type: {txn.transaction_type}",
+                    ip_address=ip,
+                )
             except Exception:
                 pass
 

@@ -81,6 +81,8 @@ class Product:
             errors.append(f"Invalid category: {self.category}")
         if self.price < 0:
             errors.append("Price cannot be negative.")
+        if self.cost > 0 and self.price <= self.cost:
+            errors.append("Selling price must be greater than cost per unit.")
         if self.stock < 0:
             errors.append("Stock cannot be negative.")
         return errors

@@ -33,8 +33,8 @@ class UserService:
         errors = entity.validate()
 
         # user_type validation
-        if dto.user_type not in ("Admin", "Staff"):
-            errors.append("Account type must be Admin or Staff.")
+        if dto.user_type not in ("Admin", "Supervisor", "Cashier"):
+            errors.append("Account type must be Admin, Supervisor, or Cashier.")
 
         # Password length check
         if not dto.password or len(str(dto.password)) < 6:

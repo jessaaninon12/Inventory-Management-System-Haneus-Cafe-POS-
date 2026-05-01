@@ -97,8 +97,8 @@ const GREETINGS = [
 function getFirstName() {
   try {
     const u = JSON.parse(localStorage.getItem('user'));
-    return u?.first_name || u?.username || 'Staff';
-  } catch { return 'Staff'; }
+    return u?.first_name || u?.username || 'User';
+  } catch { return 'User'; }
 }
 
 function getRandomGreeting() {
@@ -283,6 +283,8 @@ async function loadStaffDashboard() {
 
     // ── Task 6 — Best Seller list ──
     renderBestSellers(data.best_sellers || []);
+    // Also load analytics-powered best sellers (with price history)
+    _loadStaffAnalytics();
 
     // ── Task 6 — Recent Transactions ──
     renderRecentTransactions(data.recent_transactions || []);
@@ -306,9 +308,8 @@ function renderBestSellers(items) {
   const container = document.querySelector('.dash-best-list');
   if (!container) return;
 
-  // Show max 6, hide View All if <= 6
-  const show = items.slice(0, 6);
-  const viewAllBtn = container.closest('.dash-panel')?.querySelector('.dash-view-all-btn');
+  var show = items.slice(0, 6);
+  var viewAllBtn = container.closest('.dash-panel')?.querySelector('.dash-view-all-btn');
   if (viewAllBtn) viewAllBtn.style.display = items.length > 6 ? '' : 'none';
 
   if (show.length === 0) {
@@ -316,23 +317,31 @@ function renderBestSellers(items) {
     return;
   }
 
-  container.innerHTML = show.map(item => {
-    const imgSrc = item.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=120&q=80';
-    return `
-    <div class="dash-best-item">
-      <img src="${imgSrc}" alt="${item.product_name}" onerror="this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=120&q=80'">
-      <div class="dash-best-info">
-        <div class="dash-best-name">${item.product_name}</div>
-        <div class="dash-best-price">${fmt(item.total_revenue)}</div>
-      </div>
-      <div class="dash-best-sales">
-        <span>Sales</span>
-        <strong>${item.total_quantity}</strong>
-      </div>
-    </div>
-  `}).join('');
+  container.innerHTML = show.map(function(item) {
+    var imgSrc = item.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=120&q=80';
+    var ph = item.price_history || [];
+    var priceHtml = '';
+    if (ph.length) {
+      priceHtml = '<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;">';
+      ph.forEach(function(p) {
+        priceHtml += '<span style="display:inline-block;background:rgba(74,47,33,0.08);border:1px solid rgba(74,47,33,0.15);border-radius:4px;padding:0.1rem 0.35rem;font-size:0.68rem;white-space:nowrap;">\u20b1' + p.unit_price + ' \u00d7 ' + p.quantity_sold + '</span>';
+      });
+      priceHtml += '</div>';
+    }
+    return '<div class="dash-best-item">' +
+      '<img src="' + imgSrc + '" alt="' + item.product_name + '" onerror="this.src=\'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=120&q=80\'">' +
+      '<div class="dash-best-info">' +
+        '<div class="dash-best-name">' + item.product_name + '</div>' +
+        '<div class="dash-best-price">' + fmt(item.total_revenue) + '</div>' +
+        priceHtml +
+      '</div>' +
+      '<div class="dash-best-sales">' +
+        '<span>Sales</span>' +
+        '<strong>' + item.total_quantity + '</strong>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 
-  // Store full list for modal
   window._allBestSellers = items;
 }
 
@@ -383,6 +392,22 @@ function renderRecentTransactions(items) {
 
   // Store full list for modal
   window._allTransactions = items;
+}
+
+
+// ═══════════════════════════════════════════════════════════════════
+//  ANALYTICS — Load Top Selling with Price History
+// ═══════════════════════════════════════════════════════════════════
+
+async function _loadStaffAnalytics() {
+  try {
+    var res = await fetch(API + '/analytics/top-selling/?limit=10');
+    if (!res.ok) return;
+    var data = await res.json();
+    renderBestSellers(data);
+  } catch (e) {
+    console.error('Staff analytics load failed:', e);
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════

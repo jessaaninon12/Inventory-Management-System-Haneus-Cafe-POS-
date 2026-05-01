@@ -253,3 +253,52 @@ class InventoryTransactionModel(models.Model):
     def __str__(self):
         sign = "+" if self.quantity_change > 0 else ""
         return f"{self.product_name}: {sign}{self.quantity_change}"
+
+
+# ------------------------------------------------------------------
+# Activity Log
+# ------------------------------------------------------------------
+class ActivityLogModel(models.Model):
+    """Maps to the ``activity_logs`` table. Tracks all significant user actions."""
+
+    ACTION_CHOICES = [
+        ("CREATE", "Create"),
+        ("UPDATE", "Update"),
+        ("DELETE", "Delete"),
+        ("LOGIN", "Login"),
+        ("LOGOUT", "Logout"),
+        ("STOCK_ADJUST", "Stock Adjustment"),
+        ("SALE", "Sale"),
+        ("PASSWORD_RESET", "Password Reset"),
+        ("APPROVAL", "Approval"),
+    ]
+
+    TARGET_CHOICES = [
+        ("product", "Product"),
+        ("sale", "Sale"),
+        ("user", "User"),
+        ("stock", "Stock"),
+        ("order", "Order"),
+        ("auth", "Authentication"),
+        ("system", "System"),
+    ]
+
+    user_name = models.CharField(max_length=150)
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    target_type = models.CharField(max_length=50, choices=TARGET_CHOICES)
+    target_id = models.CharField(max_length=50, blank=True, default="")
+    description = models.TextField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "activity_logs"
+        ordering = ["-timestamp"]
+        indexes = [
+            models.Index(fields=["action", "timestamp"], name="idx_actlog_action_time"),
+            models.Index(fields=["target_type", "timestamp"], name="idx_actlog_target_time"),
+        ]
+
+    def __str__(self):
+        return f"[{self.action}] {self.user_name} → {self.target_type}:{self.target_id}"
+

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activity Logs — Haneus Cafe</title>
+  <meta name="description" content="View and manage activity logs for Haneus Cafe POS system." />
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/activitylogs.css?v=1">
+</head>
+
+<body>
+  <script>(function(){try{var s=localStorage.getItem('user');if(!s){window.location.href='login.html';return;}var u=JSON.parse(s||'{}');if(u.user_type!=='Admin'){window.location.href='staffdashboard.html';}}catch(e){try{localStorage.clear();}catch{}window.location.href='login.html';}})();</script>
+
+  <div class="app-container">
+    <!-- Mobile sidebar overlay -->
+    <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+    <!--Sidebar-->
+    <aside id="main-sidebar">
+      <div class="sidebar-inner">
+        <div class="sidebar-logo-row">
+          <h2 class="sidebar-title">Haneus Cafe</h2>
+          <button class="sidebar-close-btn" aria-label="Close sidebar"><i data-lucide="panel-left-close"></i></button>
+        </div>
+        <nav>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Main</p>
+            <a href="dashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Inventory</p>
+            <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Stock</p>
+            <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
+            <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Sales</p>
+            <a href="sales.html" class="sidebar-link"><i data-lucide="dollar-sign"></i> Sales</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">System</p>
+            <a href="activitylogs.html" class="sidebar-link active"><i data-lucide="scroll-text"></i> Activity Logs</a>
+            <a href="reports.html" class="sidebar-link"><i data-lucide="file-bar-chart"></i> Reports</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="admin">
+            <p class="sidebar-section-title">Users</p>
+            <a href="usermanagement.html" class="sidebar-link"><i data-lucide="shield-user"></i> User Management</a>
+          </div>
+          <div class="sidebar-nav-section" data-role="all">
+            <p class="sidebar-section-title">Settings</p>
+            <a href="profile.html" class="sidebar-link"><i data-lucide="user"></i> Profile</a>
+            <a href="#" onclick="confirmLogout(event)" class="sidebar-link"><i data-lucide="log-out"></i> Logout</a>
+          </div>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+
+      <header>
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Toggle sidebar" style="flex-shrink:0;">
+          <i data-lucide="panel-left"></i>
+        </button>
+        <div style="flex:1;"></div>
+        <span style="font-weight:600;font-size:0.9rem;color:var(--espresso);">Haneus Cafe</span>
+      </header>
+
+      <main class="content-area">
+
+        <!-- Page header -->
+        <div class="al-page-header">
+          <div>
+            <h1>Activity Logs</h1>
+            <p class="al-subtitle">Track all system actions, user operations, and data changes.</p>
+          </div>
+        </div>
+
+        <!-- Stats cards -->
+        <div class="al-stats-grid">
+          <div class="al-stat-card">
+            <div class="al-stat-icon" style="background:rgba(74,47,33,0.1);color:var(--espresso);">
+              <i data-lucide="scroll-text"></i>
+            </div>
+            <div>
+              <div class="al-stat-value" id="statTotal">—</div>
+              <div class="al-stat-label">Total Logs</div>
+            </div>
+          </div>
+          <div class="al-stat-card">
+            <div class="al-stat-icon" style="background:rgba(34,197,94,0.1);color:#15803d;">
+              <i data-lucide="calendar-check"></i>
+            </div>
+            <div>
+              <div class="al-stat-value" id="statToday">—</div>
+              <div class="al-stat-label">Today</div>
+            </div>
+          </div>
+          <div class="al-stat-card">
+            <div class="al-stat-icon" style="background:rgba(59,130,246,0.1);color:#1d4ed8;">
+              <i data-lucide="calendar-range"></i>
+            </div>
+            <div>
+              <div class="al-stat-value" id="statWeek">—</div>
+              <div class="al-stat-label">This Week</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="al-filters">
+          <div class="al-search-wrap">
+            <i data-lucide="search" class="al-search-icon"></i>
+            <input type="text" id="alSearch" placeholder="Search logs..." class="al-search-input" />
+          </div>
+          <select id="alFilterAction" class="al-filter-select">
+            <option value="">All Actions</option>
+            <option value="CREATE">Create</option>
+            <option value="UPDATE">Update</option>
+            <option value="DELETE">Delete</option>
+            <option value="LOGIN">Login</option>
+            <option value="LOGOUT">Logout</option>
+            <option value="STOCK_ADJUST">Stock Adjust</option>
+            <option value="SALE">Sale</option>
+            <option value="PASSWORD_RESET">Password Reset</option>
+            <option value="APPROVAL">Approval</option>
+          </select>
+          <select id="alFilterTarget" class="al-filter-select">
+            <option value="">All Types</option>
+            <option value="product">Product</option>
+            <option value="sale">Sale</option>
+            <option value="user">User</option>
+            <option value="stock">Stock</option>
+            <option value="order">Order</option>
+            <option value="auth">Auth</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+
+        <!-- Logs table -->
+        <div class="al-table-container">
+          <table class="al-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>User</th>
+                <th>Action</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th>IP</th>
+              </tr>
+            </thead>
+            <tbody id="alTableBody">
+              <tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--mocha);">Loading logs...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div class="al-pagination" id="alPagination"></div>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="js/role-control.js"></script>
+  <script src="js/logout-modal.js"></script>
+  <script src="js/alert-modal.js"></script>
+  <script src="js/activitylogs.js?v=1"></script>
+  <script src="js/sidebar-toggle.js"></script>
+</body>
+
+</html>

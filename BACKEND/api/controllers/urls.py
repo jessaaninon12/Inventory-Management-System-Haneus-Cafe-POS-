@@ -84,6 +84,25 @@ from api.controllers.sale_controller import (
     SaleDetailController,
     SaleComputeTotalsController,
 )
+from api.controllers.analytics_controller import (
+    QuarterlyTopSellingController,
+    QuarterlyBestSellingController,
+    PriceHistoryController,
+    MonthlyPredictionsController,
+    ToBeSoldController,
+    NotToBeSoldController,
+    SupplierAnalyticsController,
+)
+from api.controllers.activity_log_controller import (
+    ActivityLogListController,
+    ActivityLogCreateController,
+    ActivityLogStatsController,
+)
+from api.controllers.reports_controller import (
+    StockReportController,
+    SalesReportController,
+    SupplierReportController,
+)
 
 urlpatterns = [
     # ── Auth ──────────────────────────────────────────────────────
@@ -173,4 +192,23 @@ urlpatterns = [
     path("admin/check-approval-status/", CheckApprovalStatusController.as_view(), name="admin-check-approval-status"),
     path("admin/approve-user/<int:pk>/", ApproveUserController.as_view(), name="admin-approve-user"),
     path("admin/reject-user/<int:pk>/", RejectUserController.as_view(), name="admin-reject-user"),
+
+    # ── Analytics ───────────────────────────────────────────────────────────
+    path("analytics/top-selling/", QuarterlyTopSellingController.as_view(), name="analytics-top-selling"),
+    path("analytics/best-selling/", QuarterlyBestSellingController.as_view(), name="analytics-best-selling"),
+    path("analytics/price-history/", PriceHistoryController.as_view(), name="analytics-price-history"),
+    path("analytics/predictions/", MonthlyPredictionsController.as_view(), name="analytics-predictions"),
+    path("analytics/to-be-sold/", ToBeSoldController.as_view(), name="analytics-to-be-sold"),
+    path("analytics/not-to-be-sold/", NotToBeSoldController.as_view(), name="analytics-not-to-be-sold"),
+    path("analytics/supplier-analytics/", SupplierAnalyticsController.as_view(), name="analytics-supplier"),
+
+    # ── Activity Logs ──────────────────────────────────────────────────────
+    path("activity-logs/", ActivityLogListController.as_view(), name="activity-logs-list"),
+    path("activity-logs/create/", ActivityLogCreateController.as_view(), name="activity-logs-create"),
+    path("activity-logs/stats/", ActivityLogStatsController.as_view(), name="activity-logs-stats"),
+
+    # ── Reports ────────────────────────────────────────────────────────────
+    path("reports/stock/", StockReportController.as_view(), name="reports-stock"),
+    path("reports/sales/", SalesReportController.as_view(), name="reports-sales"),
+    path("reports/suppliers/", SupplierReportController.as_view(), name="reports-suppliers"),
 ]
