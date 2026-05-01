@@ -51,6 +51,7 @@ document.getElementById('createProductForm').addEventListener('submit', async fu
   if (!category) { showErrorModal('Please select a category'); valid = false; }
   if (isNaN(price) || price <= 0) { showErrorModal('Please enter a valid price'); valid = false; }
   if (isNaN(stock) || stock < 0) { showErrorModal('Please enter a valid stock quantity'); valid = false; }
+  if (cost > 0 && price <= cost) { showErrorModal('Selling price must be greater than cost per unit.'); valid = false; }
 
   if (!valid) return;
 

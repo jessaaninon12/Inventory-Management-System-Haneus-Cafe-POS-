@@ -73,10 +73,11 @@ loginForm.addEventListener('submit', async function (e) {
           var role = data.user.user_type;
           if (role === 'Admin') {
             window.location.href = 'dashboard.html';
-          } else if (role === 'Staff') {
-            window.location.href = 'staffdashboard.html';
+          } else if (role === 'Cashier') {
+            window.location.href = 'pos.html';
           } else {
-            window.location.href = 'dashboard.html';
+            // Supervisor (and legacy Staff)
+            window.location.href = 'staffdashboard.html';
           }
         }, 2000);
       }
@@ -509,13 +510,14 @@ document.getElementById('btnCodeChangePw').addEventListener('click', async funct
         loginForm.closest('.right').style.visibility = 'hidden';
 
         setTimeout(function () {
-          var role = user ? user.user_type : 'Staff';
+          var role = user ? user.user_type : 'Supervisor';
           if (role === 'Admin') {
             window.location.href = 'dashboard.html';
-          } else if (role === 'Staff') {
-            window.location.href = 'staffdashboard.html';
+          } else if (role === 'Cashier') {
+            window.location.href = 'pos.html';
           } else {
-            window.location.href = 'dashboard.html';
+            // Supervisor (and legacy Staff)
+            window.location.href = 'staffdashboard.html';
           }
         }, 2000);
       } else {

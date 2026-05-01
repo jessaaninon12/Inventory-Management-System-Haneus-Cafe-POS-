@@ -169,6 +169,8 @@ class DashboardRepository(DashboardRepositoryInterface):
 
     # ------------------------------------------------------------------
     # Lists
+
+
     # ------------------------------------------------------------------
 
     def get_top_selling_products(self, limit=5):

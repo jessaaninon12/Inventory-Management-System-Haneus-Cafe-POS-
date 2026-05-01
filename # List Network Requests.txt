@@ -1,0 +1,10 @@
+# List Network Requests
+
+| reqid | method | url | status |
+|---|---|---|---|
+| 31 | GET | https://unpkg.com/lucide@latest/dist/umd/lucide.js | failed - 302 |
+| 36 | GET | http://localhost:8000/js/role-control.js | success - 200 |
+| 37 | GET | http://localhost:8000/js/profile.js | success - 200 |
+| 38 | GET | http://localhost:8000/js/logout-modal.js | success - 200 |
+| 39 | GET | http://localhost:8000/js/sidebar-toggle.js | failed - 304 |
+| 40 | GET | https://unpkg.com/lucide@1.7.0/dist/umd/lucide.js | success - 200 |

@@ -7,16 +7,17 @@ class User(AbstractUser):
 
     USER_TYPE_CHOICES = [
         ("Admin", "Admin"),
-        ("Staff", "Staff"),
+        ("Supervisor", "Supervisor"),
+        ("Cashier", "Cashier"),
     ]
 
     phone = models.CharField(max_length=30, blank=True, default="")
     bio = models.TextField(blank=True, default="")
     avatar_url = models.CharField(max_length=500, blank=True, default="")
     user_type = models.CharField(
-        max_length=10,
+        max_length=15,
         choices=USER_TYPE_CHOICES,
-        default="Staff",
+        default="Supervisor",
     )
     # Security fields for password reset flow
     require_password_change = models.BooleanField(default=False)  # Force password change on next login
@@ -33,8 +34,10 @@ class User(AbstractUser):
         """Return full account type label for display (e.g. 'Admin • Haneus Cafe Owner')."""
         if self.user_type == "Admin":
             return "Admin • Haneus Cafe Owner"
-        elif self.user_type == "Staff":
-            return "Staff • Haneus Cafe Employee"
+        elif self.user_type == "Supervisor":
+            return "Supervisor • Haneus Cafe Supervisor"
+        elif self.user_type == "Cashier":
+            return "Cashier • Haneus Cafe Cashier"
         return self.user_type
 
 

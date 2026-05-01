@@ -1368,3 +1368,235 @@ h1 { font-size:1.875rem; font-weight:700; color:var(--espresso); }
   .no-print                     { display: none !important; }
   .receipt-paper                { padding: 0 !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   PREMIUM ANIMATIONS & EFFECTS  — Dashboard Redesign (Task 5)
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Staggered fade-in on page load ───────────────────────────── */
+@keyframes dashFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card,
+.bar-chart-container,
+.top-selling-section,
+.best-selling-section {
+  animation: dashFadeUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+/* Stagger each card */
+.grid-1-2-4 > :nth-child(1) { animation-delay: 0.05s; }
+.grid-1-2-4 > :nth-child(2) { animation-delay: 0.1s; }
+.grid-1-2-4 > :nth-child(3) { animation-delay: 0.15s; }
+.grid-1-2-4 > :nth-child(4) { animation-delay: 0.2s; }
+
+.grid-1-2 > :nth-child(1) { animation-delay: 0.08s; }
+.grid-1-2 > :nth-child(2) { animation-delay: 0.14s; }
+
+.grid-1-3 > :nth-child(1) { animation-delay: 0.18s; }
+.grid-1-3 > :nth-child(2) { animation-delay: 0.24s; }
+
+/* ── Card hover lift effect ───────────────────────────────────── */
+.card {
+  transition: transform 0.22s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+              box-shadow 0.22s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(74, 47, 33, 0.14),
+              0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* ── Glassmorphism accent on summary cards ────────────────────── */
+.card-primary,
+.card-mocha,
+.card-cappuccino,
+.card-latte {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-primary::before,
+.card-mocha::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -20%;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.card-primary::after,
+.card-mocha::after {
+  content: '';
+  position: absolute;
+  bottom: -20%;
+  left: -10%;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+
+/* ── Stat value counter shimmer ───────────────────────────────── */
+@keyframes shimmerValue {
+  0%   { background-position: -100% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.stat-value {
+  background: linear-gradient(90deg, currentColor 40%, rgba(255,255,255,0.6) 50%, currentColor 60%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: shimmerValue 2s ease-in-out 0.5s 1;
+}
+
+/* ── Percentage change badge pulse ────────────────────────────── */
+@keyframes pctPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+.pct-change {
+  transition: transform 0.2s;
+}
+.pct-change:hover {
+  animation: pctPulse 0.6s ease;
+}
+
+/* ── Bar chart grow animation ─────────────────────────────────── */
+@keyframes barGrow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+.bar {
+  transform-origin: bottom;
+  animation: barGrow 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: opacity 0.2s, filter 0.2s;
+}
+
+/* Stagger bar animations */
+.bar:nth-child(1)  { animation-delay: 0.05s; }
+.bar:nth-child(2)  { animation-delay: 0.1s; }
+.bar:nth-child(3)  { animation-delay: 0.15s; }
+.bar:nth-child(4)  { animation-delay: 0.2s; }
+.bar:nth-child(5)  { animation-delay: 0.25s; }
+.bar:nth-child(6)  { animation-delay: 0.3s; }
+.bar:nth-child(7)  { animation-delay: 0.35s; }
+.bar:nth-child(8)  { animation-delay: 0.4s; }
+.bar:nth-child(9)  { animation-delay: 0.45s; }
+.bar:nth-child(10) { animation-delay: 0.5s; }
+.bar:nth-child(11) { animation-delay: 0.55s; }
+.bar:nth-child(12) { animation-delay: 0.6s; }
+
+/* Bar hover glow */
+.bar:hover {
+  opacity: 0.85;
+  filter: brightness(1.15);
+}
+
+/* ── Progress bar fill animation ──────────────────────────────── */
+@keyframes progressFill {
+  from { width: 0; }
+}
+
+.progress-fill {
+  animation: progressFill 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: 0.3s;
+}
+
+/* ── Product item hover slide ─────────────────────────────────── */
+.product-item {
+  transition: transform 0.18s, background 0.18s;
+  border-radius: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  margin: 0 -0.5rem;
+}
+.product-item:hover {
+  transform: translateX(4px);
+  background: rgba(225, 200, 178, 0.12);
+}
+
+/* ── Section title underline animation ────────────────────────── */
+.card h3 {
+  position: relative;
+  display: inline-block;
+}
+.card h3::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+  transition: width 0.3s ease;
+}
+.card:hover h3::after {
+  width: 100%;
+}
+
+/* ── Period button ripple effect ──────────────────────────────── */
+.period-btn {
+  position: relative;
+  overflow: hidden;
+}
+.period-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(196,123,66,0.15) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.period-btn:hover::after {
+  opacity: 1;
+}
+
+/* ── View-All button micro-animation ──────────────────────────── */
+.btn-view-all,
+[id^="viewAll"] {
+  transition: all 0.2s ease;
+}
+.btn-view-all:hover,
+[id^="viewAll"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(196, 123, 66, 0.2);
+}
+
+/* ── Chart container subtle border glow ───────────────────────── */
+.bar-chart-container {
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.bar-chart-container:hover {
+  border-color: rgba(196, 123, 66, 0.3);
+  box-shadow: 0 8px 24px rgba(74, 47, 33, 0.12);
+}
+
+/* ── Smooth scrollbar for main content ────────────────────────── */
+main::-webkit-scrollbar { width: 6px; }
+main::-webkit-scrollbar-track { background: transparent; }
+main::-webkit-scrollbar-thumb {
+  background: var(--latte);
+  border-radius: 3px;
+}
+main::-webkit-scrollbar-thumb:hover { background: var(--cappuccino); }
+
+/* ── Reduce motion for accessibility ──────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+

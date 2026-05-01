@@ -204,7 +204,7 @@ async function loadUsers() {
     const admins = (Array.isArray(adminData) ? adminData : adminData.results || [])
       .map(u => ({ ...u, user_type: u.user_type || 'Admin' }));
     const staff  = (Array.isArray(staffData) ? staffData : staffData.results || [])
-      .map(u => ({ ...u, user_type: u.user_type || 'Staff' }));
+      .map(u => ({ ...u, user_type: u.user_type || 'Supervisor' }));
 
     allUsers = [...admins, ...staff];
     applyFilter();

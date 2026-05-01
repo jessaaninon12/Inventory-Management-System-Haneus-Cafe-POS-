@@ -46,6 +46,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 ├── responsive.md                       # 2026 Responsive UI/UX specification
 ├── readysecurityanddeploymentready.md  # Security & deployment readiness audit
 ├── IMP AND ERROR.md                    # Implementation log & error resolutions
+├── MLandAISuggestion.md                # ML & AI implementation suggestions
 │
 ├── .github/
 │   └── workflows/
@@ -422,6 +423,36 @@ The Haneus Cafe POS system has completed its stabilization phases in April 2026 
 - Complete security audit and deployment readiness documentation
 - Deep system intelligence documentation (AGENTS.md — 1800+ lines)
 - Formula mapping for all financial calculations with calculator examples
+- ML & AI readiness: 9 lightweight suggestions documented with algorithms and integration points
+
+---
+
+## L-2. ML & AI Features
+
+### Already Implemented (Lightweight Rule-Based Intelligence)
+
+| Feature | Algorithm | File |
+|---|---|---|
+| Password Reset Risk Scoring | Weighted rule engine (3 features → score 0.0-1.0) | `domain/entities/reset_attempt.py` L73-155 |
+| Stock Status Classification | Threshold comparison (4 levels) | `domain/entities/product.py` L49-59 |
+| Profit Margin Computation | `((price - cost) / price) × 100` | `domain/entities/product.py` L61-66 |
+| Week-over-Week Trends | Percentage change comparison | `application/services/dashboard_service.py` L41-55 |
+
+### Future Suggestions (Documented in MLandAISuggestion.md)
+
+| Priority | Feature | Algorithm | Dependencies |
+|---|---|---|---|
+| P0 | Smart Reorder Point | `(Avg Daily × Lead Time) + Safety Stock` | Pure Python `statistics` |
+| P0 | Sales Forecasting | Simple Moving Average + Linear Regression | Pure Python `statistics` |
+| P1 | Anomaly Detection | Z-Score deviation flagging | Pure Python `statistics` |
+| P1 | Fuzzy Search | Levenshtein edit distance | Pure JavaScript |
+| P2 | Product Recommendations | Co-occurrence matrix (Market Basket) | Pure Python |
+| P2 | Enhanced Login Risk | Extended rule engine + IP heuristics | Extends existing `RiskRules` |
+| P3 | Staff Performance | Multi-metric composite scoring | Pure Python |
+| P3 | Dynamic Pricing | Price elasticity scoring | Pure Python |
+| P3 | Customer Segmentation | RFM (Recency, Frequency, Monetary) | Pure Python |
+
+> **Design Philosophy:** Zero-infrastructure ML — no GPU, no Redis, no Celery, no cloud APIs. Pure Python stdlib first.
 
 ---
 
@@ -435,3 +466,4 @@ The Haneus Cafe POS system has completed its stabilization phases in April 2026 
 | `readysecurityanddeploymentready.md` | Root | Security audit & deployment checklist (9 categories) |
 | `responsive.md` | Root | 2026 Responsive UI/UX specification |
 | `IMP AND ERROR.md` | Root | Implementation log & error resolution history |
+| `MLandAISuggestion.md` | Root | ML & AI suggestions — 9 features, algorithms, integration points |

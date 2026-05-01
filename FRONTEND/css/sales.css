@@ -240,15 +240,15 @@ select {
 .table-container {
   background: white;
   border-radius: 0.75rem;
-  overflow: hidden;
   box-shadow: 0 2px 10px rgba(0,0,0,0.06);
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 900px;
+  min-width: 1050px;
 }
 
 th, td {
@@ -258,10 +258,27 @@ th, td {
   white-space: nowrap;
 }
 
+/* Product Name column — allow wrapping for multi-product sales */
+td[data-label="Product"] {
+  white-space: normal;
+  max-width: 220px;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+/* Category column */
+td[data-label="Category"] {
+  white-space: normal;
+  max-width: 140px;
+}
+
 th {
   background: var(--cream);
   font-weight: 600;
   color: var(--espresso);
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 tr:hover { background: rgba(225,200,178,0.08); }
@@ -348,7 +365,7 @@ tr:hover { background: rgba(225,200,178,0.08); }
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-x: contain;
 }
-table { min-width: 700px; }
+table { min-width: 1050px; }
 
 /* ── Tablet (768px – 1024px) ── */
 @media (min-width: 768px) and (max-width: 1024px) {

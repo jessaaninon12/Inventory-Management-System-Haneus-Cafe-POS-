@@ -32,7 +32,10 @@ document.addEventListener('click', (e) => {
     const typeEl = document.getElementById('flyoutAccountType');
     if (nameEl) nameEl.textContent = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || 'User';
     if (idEl) idEl.textContent = `ID: #${userId || '—'}`;
-    if (typeEl) typeEl.textContent = user.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee';
+    if (typeEl) {
+      const roleLabels = { Admin: 'Admin • Haneus Cafe Owner', Supervisor: 'Supervisor • Haneus Cafe Supervisor', Cashier: 'Cashier • Haneus Cafe Cashier' };
+      typeEl.textContent = roleLabels[user.user_type] || user.user_type || '—';
+    }
 
     // Fetch full profile for image
     if (userId) {
@@ -49,7 +52,10 @@ document.addEventListener('click', (e) => {
         }
         // Update name from API data
         if (nameEl) nameEl.textContent = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'User';
-        if (typeEl) typeEl.textContent = p.account_type_label || (p.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee');
+        if (typeEl) {
+          const roleLabels2 = { Admin: 'Admin • Haneus Cafe Owner', Supervisor: 'Supervisor • Haneus Cafe Supervisor', Cashier: 'Cashier • Haneus Cafe Cashier' };
+          typeEl.textContent = p.account_type_label || roleLabels2[p.user_type] || p.user_type || '—';
+        }
       }
     }
   } catch (e) { console.warn('Profile flyout init error:', e); }
@@ -179,34 +185,80 @@ function renderTopSelling(items) {
   const container = document.getElementById("top-selling-list");
   if (!container) return;
   window._dashTopSelling = items;
-
   if (!items.length) {
-    container.innerHTML = '<p style="opacity:0.7;font-size:0.875rem;">No sales data yet.</p>';
+    container.innerHTML = '<p style="opacity:0.7;font-size:0.875rem;">No sales data for this quarter.</p>';
     return;
   }
-
-  // Task 7: Show only first 6 items, View All if > 6
-  const show = items.slice(0, 6);
-  const maxRevenue = Math.max(...items.map((i) => parseFloat(i.total_revenue) || 0), 1);
-
-  container.innerHTML = show
-    .map((item) => {
-      const revenue = parseFloat(item.total_revenue) || 0;
-      const pct = Math.round((revenue / maxRevenue) * 100);
-      return `
-        <div>
-          <div style="display:flex; justify-content:space-between; font-size:0.875rem; margin-bottom:0.375rem;">
-            <span>${item.product_name}</span>
-            <span style="font-weight:500;">${formatCurrency(item.total_revenue)}</span>
-          </div>
-          <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;"></div></div>
-        </div>`;
-    })
-    .join("");
-
-  // View All button
-  const viewAllBtn = container.closest("div")?.querySelector("button");
+  var show = items.slice(0, 6);
+  var html = '<table style="width:100%;border-collapse:collapse;font-size:0.8rem;min-width:440px;">';
+  html += '<thead><tr style="border-bottom:1px solid rgba(225,200,178,0.25);">';
+  html += '<th style="text-align:left;padding:0.4rem 0.5rem;color:rgba(225,200,178,0.7);font-weight:500;font-size:0.75rem;">#</th>';
+  html += '<th style="text-align:left;padding:0.4rem 0.5rem;color:rgba(225,200,178,0.7);font-weight:500;font-size:0.75rem;">Product</th>';
+  html += '<th style="text-align:right;padding:0.4rem 0.5rem;color:rgba(225,200,178,0.7);font-weight:500;font-size:0.75rem;">Qty</th>';
+  html += '<th style="text-align:left;padding:0.4rem 0.5rem;color:rgba(225,200,178,0.7);font-weight:500;font-size:0.75rem;">Old Price \u00d7 Qty</th>';
+  html += '<th style="text-align:right;padding:0.4rem 0.5rem;color:rgba(225,200,178,0.7);font-weight:500;font-size:0.75rem;">Revenue</th>';
+  html += '</tr></thead><tbody>';
+  show.forEach(function(item) {
+    var ph = item.price_history || [];
+    var priceCell = '';
+    if (ph.length) {
+      ph.forEach(function(p) {
+        priceCell += '<span style="display:inline-block;background:rgba(225,200,178,0.1);border:1px solid rgba(225,200,178,0.2);border-radius:4px;padding:0.125rem 0.375rem;margin:0.125rem;font-size:0.72rem;white-space:nowrap;">\u20b1' + p.unit_price + ' \u00d7 ' + p.quantity_sold + '</span>';
+      });
+    } else {
+      priceCell = '<span style="font-size:0.72rem;opacity:0.5;">\u20b1' + (item.current_price || '\u2014') + '</span>';
+    }
+    html += '<tr style="border-bottom:1px solid rgba(225,200,178,0.1);">';
+    html += '<td style="padding:0.5rem;font-weight:600;color:rgba(225,200,178,0.5);">' + item.rank + '</td>';
+    html += '<td style="padding:0.5rem;"><div style="font-weight:500;">' + item.product_name + '</div>';
+    if (item.category) html += '<div style="font-size:0.7rem;opacity:0.5;margin-top:1px;">' + item.category + '</div>';
+    html += '</td>';
+    html += '<td style="text-align:right;padding:0.5rem;font-weight:600;">' + item.total_quantity + '</td>';
+    html += '<td style="padding:0.5rem;">' + priceCell + '</td>';
+    html += '<td style="text-align:right;padding:0.5rem;font-weight:600;color:#c4a882;">' + formatCurrency(item.total_revenue) + '</td>';
+    html += '</tr>';
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+  var viewAllBtn = document.getElementById('viewAllTopSellingBtn');
   if (viewAllBtn) viewAllBtn.style.display = items.length > 6 ? "" : "none";
+}
+
+// -- Quarterly filter for Top/Best Selling --
+function _initQuarterFilter() {
+  var sel = document.getElementById('quarterFilter');
+  if (!sel) return;
+  var now = new Date();
+  var year = now.getFullYear();
+  var currentQ = Math.ceil((now.getMonth() + 1) / 3);
+  sel.innerHTML = '';
+  for (var q = 1; q <= 4; q++) {
+    var opt = document.createElement('option');
+    opt.value = year + '-Q' + q;
+    opt.textContent = 'Q' + q + ' ' + year;
+    if (q === currentQ) opt.selected = true;
+    sel.appendChild(opt);
+  }
+}
+_initQuarterFilter();
+
+async function loadTopSellingByQuarter() {
+  var sel = document.getElementById('quarterFilter');
+  var quarter = sel ? sel.value : null;
+  var container = document.getElementById("top-selling-list");
+  if (container) container.innerHTML = '<p style="opacity:0.7;font-size:0.875rem;">Loading...</p>';
+  try {
+    var url = quarter
+      ? API_BASE + '/analytics/top-selling/?quarter=' + quarter + '&limit=10'
+      : API_BASE + '/analytics/top-selling/?limit=10';
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    var data = await res.json();
+    renderTopSelling(data);
+  } catch (e) {
+    console.error('Failed to load top selling:', e);
+    if (container) container.innerHTML = '<p style="opacity:0.7;font-size:0.875rem;">Failed to load.</p>';
+  }
 }
 
 function renderLowStock(items) {
@@ -298,33 +350,42 @@ function _createDashModal(id) {
   return modal;
 }
 
-// Top Selling View All — shows top 25
+// Top Selling View All — shows top 25 with price history table
 function openDashTopSellingModal() {
-  const items = (window._dashTopSelling || []).slice(0, 25);
-  const modal = _createDashModal('dashTopSellingModal');
-  modal.innerHTML = `
-    <div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:90%;max-width:600px;max-height:80vh;animation:fadeInUp .2s ease;">
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">
-        <h2 style="font-size:1rem;font-weight:600;margin:0;">🏆 Top ${items.length} Best Sellers</h2>
-        <button onclick="document.getElementById('dashTopSellingModal').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">✕</button>
-      </div>
-      <div style="max-height:65vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">
-        <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-          <thead><tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:0.5rem;">#</th><th style="text-align:left;padding:0.5rem;">Product</th><th style="text-align:right;padding:0.5rem;">Qty</th><th style="text-align:right;padding:0.5rem;">Revenue</th></tr></thead>
-          <tbody>
-            ${items.map((item, i) => `
-              <tr style="border-bottom:1px solid #f5f5f5;">
-                <td style="padding:0.5rem;">${i + 1}</td>
-                <td style="padding:0.5rem;">${item.product_name}</td>
-                <td style="text-align:right;padding:0.5rem;">${item.total_quantity}</td>
-                <td style="text-align:right;padding:0.5rem;">${formatCurrency(item.total_revenue)}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
+  var items = (window._dashTopSelling || []).slice(0, 25);
+  var modal = _createDashModal('dashTopSellingModal');
+  var rows = items.map(function(item) {
+    var ph = item.price_history || [];
+    var priceCell = '';
+    if (ph.length) {
+      ph.forEach(function(p) {
+        priceCell += '<span style="display:inline-block;background:#f5f0ea;border:1px solid #e5ddd4;border-radius:4px;padding:0.125rem 0.5rem;margin:0.125rem 0.25rem 0 0;font-size:0.78rem;">\u20b1' + p.unit_price + ' \u00d7 ' + p.quantity_sold + '</span>';
+      });
+    } else {
+      priceCell = '<span style="color:#999;">\u20b1' + (item.current_price || '\u2014') + '</span>';
+    }
+    return '<tr style="border-bottom:1px solid #f5f5f5;">' +
+      '<td style="padding:0.5rem;font-weight:600;color:#999;">' + item.rank + '</td>' +
+      '<td style="padding:0.5rem;"><div style="font-weight:500;">' + item.product_name + '</div>' +
+        (item.category ? '<div style="font-size:0.75rem;color:#999;">' + item.category + '</div>' : '') +
+      '</td>' +
+      '<td style="text-align:right;padding:0.5rem;font-weight:600;">' + item.total_quantity + '</td>' +
+      '<td style="padding:0.5rem;">' + priceCell + '</td>' +
+      '<td style="text-align:right;padding:0.5rem;font-weight:600;color:#4a2f21;">' + formatCurrency(item.total_revenue) + '</td>' +
+    '</tr>';
+  }).join('');
+  modal.innerHTML = '<div style="background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,0.15);width:95%;max-width:800px;max-height:85vh;animation:fadeInUp .2s ease;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:1rem 1.25rem;border-bottom:1px solid #eee;">' +
+      '<h2 style="font-size:1rem;font-weight:600;margin:0;">\U0001f3c6 Top ' + items.length + ' Best Sellers</h2>' +
+      '<button onclick="document.getElementById(\'dashTopSellingModal\').style.display=\'none\'" style="background:none;border:none;cursor:pointer;font-size:1.25rem;">\u2715</button>' +
+    '</div>' +
+    '<div style="max-height:70vh;overflow-y:auto;padding:0.75rem 1.25rem 1.25rem;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:0.875rem;">' +
+        '<thead><tr style="border-bottom:2px solid #eee;"><th style="text-align:left;padding:0.5rem;">#</th><th style="text-align:left;padding:0.5rem;">Product</th><th style="text-align:right;padding:0.5rem;">Qty</th><th style="text-align:left;padding:0.5rem;">Old Price \u00d7 Qty</th><th style="text-align:right;padding:0.5rem;">Revenue</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody>' +
+      '</table>' +
+    '</div>' +
+  '</div>';
   modal.style.display = 'flex';
 }
 
@@ -406,6 +467,8 @@ async function loadDashboard() {
     renderSummaryCards(data);
     renderBarChart(data.monthly_sales);
     renderTopSelling(data.top_selling);
+    // Also load analytics-powered top selling (with price history)
+    loadTopSellingByQuarter();
     renderLowStock(data.low_stock_products);
     renderRecentSales(data.recent_sales);
   } catch (err) {

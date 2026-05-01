@@ -528,3 +528,75 @@ document.getElementById('supplierSearch')?.addEventListener('input', applySearch
 if (typeof startAutoRefresh === 'function') {
   startAutoRefresh(async () => { await fetchProducts(); renderSuppliers(suppliers); }, 30000, 'supplier');
 }
+
+// ══════════════════════════════════════════════════════════════════
+//  SUPPLIER ANALYTICS — 4-category panels (Task 9)
+// ══════════════════════════════════════════════════════════════════
+
+async function loadSupplierAnalytics() {
+  try {
+    const res = await fetch(`${PRODUCTS_API}/analytics/supplier-analytics/`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    renderSAStats(data);
+    renderSAPanel('saTopBody', 'saTopCount', data.top_suppliers, 'green');
+    renderSAPanel('saLowBody', 'saLowCount', data.low_performing, 'red');
+    renderSAPanel('saHighBody', 'saHighCount', data.high_production, 'blue');
+    renderSAPanel('saLowProdBody', 'saLowProdCount', data.low_production, 'amber');
+    lucide.createIcons();
+  } catch (e) {
+    console.error('Supplier analytics failed:', e);
+    ['saTopBody','saLowBody','saHighBody','saLowProdBody'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '<div class="sa-empty">Could not load analytics.</div>';
+    });
+  }
+}
+
+function renderSAStats(data) {
+  const el = document.getElementById('saStats');
+  if (!el) return;
+  el.innerHTML =
+    saStatCard('#4a2f21', 'truck', data.total_suppliers || 0, 'Total Suppliers') +
+    saStatCard('#15803d', 'trophy', (data.top_suppliers || []).length, 'Top Performers') +
+    saStatCard('#b91c1c', 'alert-triangle', (data.low_performing || []).length, 'Low Performing') +
+    saStatCard('#1d4ed8', 'package-plus', (data.high_production || []).length, 'High Production');
+  lucide.createIcons();
+}
+
+function saStatCard(color, icon, val, label) {
+  return '<div class="sa-stat-card">' +
+    '<div class="sa-stat-icon" style="background:' + color + '15;color:' + color + ';">' +
+    '<i data-lucide="' + icon + '"></i></div>' +
+    '<div><div class="sa-stat-val">' + val + '</div>' +
+    '<div class="sa-stat-lbl">' + label + '</div></div></div>';
+}
+
+function renderSAPanel(bodyId, countId, items, barColor) {
+  const body = document.getElementById(bodyId);
+  const count = document.getElementById(countId);
+  if (!body) return;
+  if (count) count.textContent = (items || []).length;
+
+  if (!items || items.length === 0) {
+    body.innerHTML = '<div class="sa-empty">No suppliers in this category.</div>';
+    return;
+  }
+
+  body.innerHTML = items.map(function(s) {
+    var pct = Math.min(s.sell_through_rate || 0, 100);
+    var rev = new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(s.total_revenue || 0);
+    return '<div class="sa-item">' +
+      '<div class="sa-item-info">' +
+      '<div class="sa-item-name">' + escHtml(s.supplier_name) + '</div>' +
+      '<div class="sa-item-meta">' + s.product_count + ' products | ' + s.total_sold + ' sold | ' + s.total_stock + ' stock</div>' +
+      '</div>' +
+      '<div class="sa-item-bar"><div class="sa-item-bar-fill ' + barColor + '" style="width:' + pct + '%;"></div></div>' +
+      '<div class="sa-item-pct" style="color:' + (pct >= 50 ? '#15803d' : pct >= 30 ? '#92400e' : '#b91c1c') + ';">' + pct + '%</div>' +
+      '</div>';
+  }).join('');
+}
+
+// Load analytics on page init
+loadSupplierAnalytics();
+

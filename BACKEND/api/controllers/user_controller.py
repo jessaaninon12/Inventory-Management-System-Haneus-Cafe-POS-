@@ -38,6 +38,7 @@ from application.services.user_service import UserService
 from application.services.reset_risk_service import ResetRiskService
 from infrastructure.repositories.user_repository import UserRepository
 from infrastructure.repositories.reset_attempt_repository import ResetAttemptRepository
+from infrastructure.repositories.activity_log_repository import ActivityLogRepository
 
 
 def _get_service():
@@ -156,6 +157,18 @@ class LoginController(APIView):
                 {"error": "Invalid username or password."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
+        # Log successful login
+        try:
+            ActivityLogRepository().log(
+                user_name=user_dto.username,
+                action="LOGIN",
+                target_type="auth",
+                target_id=str(user_dto.id),
+                description=f"{user_dto.username} ({user_dto.user_type}) logged in successfully",
+                ip_address=_get_client_ip(request),
+            )
+        except Exception:
+            pass
         return Response({"success": True, "user": user_dto.to_dict()})
 
 

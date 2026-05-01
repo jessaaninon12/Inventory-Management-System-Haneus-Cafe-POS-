@@ -488,6 +488,7 @@ async function submitProductForm() {
   if (!category)                  { showErrorModal('Please select a category.');         return; }
   if (isNaN(price) || price < 0)  { showErrorModal('Please enter a valid selling price.'); return; }
   if (isNaN(cost)  || cost  < 0)  { showErrorModal('Please enter a valid cost per unit.'); return; }
+  if (cost > 0 && price <= cost)  { showErrorModal('Selling price must be greater than cost per unit.'); return; }
   if (!unit)                      { showErrorModal('Please select a unit of measure.');  return; }
   if (isNaN(threshold) || threshold < 0) { showErrorModal('Please enter a valid low-stock threshold.'); return; }
 

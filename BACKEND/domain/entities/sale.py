@@ -14,6 +14,7 @@ class SaleItem:
         sale_id=None,
         product_id=None,
         product_name="",
+        category="",
         quantity=1,
         unit_price=0.0,
         cost_price=0.0,
@@ -22,6 +23,7 @@ class SaleItem:
         self.sale_id = sale_id
         self.product_id = product_id
         self.product_name = product_name
+        self.category = category
         self.quantity = int(quantity)
         self.unit_price = float(unit_price)
         self.cost_price = float(cost_price)  # used for COGS calculation

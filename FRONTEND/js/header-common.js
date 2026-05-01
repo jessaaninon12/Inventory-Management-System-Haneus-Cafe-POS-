@@ -71,8 +71,8 @@ if (typeof window._dashboardNotifInit === 'undefined') {
 
   // Detect current user role
   function _hcGetUserRole() {
-    try { return JSON.parse(localStorage.getItem('user') || '{}').user_type || 'Staff'; }
-    catch { return 'Staff'; }
+    try { return JSON.parse(localStorage.getItem('user') || '{}').user_type || 'Supervisor'; }
+    catch { return 'Supervisor'; }
   }
   function _hcGetUsername() {
     try { const u = JSON.parse(localStorage.getItem('user') || '{}'); return u.first_name || u.username || 'User'; }
