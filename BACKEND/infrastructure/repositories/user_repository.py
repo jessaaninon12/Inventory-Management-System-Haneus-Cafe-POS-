@@ -67,7 +67,7 @@ class UserRepository(UserRepositoryInterface):
         """Create and persist a new user with a hashed password.
         Also inserts a row in the matching role table (useradmin / userstaff).
         """
-        user_type = getattr(dto, "user_type", "Staff") or "Staff"
+        user_type = getattr(dto, "user_type", "Supervisor") or "Supervisor"
         orm_user = UserModel.objects.create_user(
             username=dto.username,
             email=dto.email,
@@ -204,7 +204,7 @@ class UserRepository(UserRepositoryInterface):
             avatar_url=m.avatar_url,
             date_joined=m.date_joined,
             is_active=m.is_active,
-            user_type=getattr(m, "user_type", "Staff"),
+            user_type=getattr(m, "user_type", "Supervisor"),
         )
         entity.require_password_change = getattr(m, "require_password_change", False)
         entity.profile_picture_url = getattr(m, "profile_picture_url", "")

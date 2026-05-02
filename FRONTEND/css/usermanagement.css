@@ -234,8 +234,10 @@ tr:hover { background: rgba(225,200,178,0.08); }
   font-weight: 600;
 }
 
-.badge-admin { background: #fef3c7; color: #92400e; }
-.badge-staff { background: #dbeafe; color: #1e40af; }
+.badge-admin      { background: #fef3c7; color: #92400e; }
+.badge-staff      { background: #dbeafe; color: #1e40af; }
+.badge-supervisor { background: #dbeafe; color: #1e40af; }
+.badge-cashier    { background: #dcfce7; color: #166534; }
 
 /* Action buttons */
 .actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }

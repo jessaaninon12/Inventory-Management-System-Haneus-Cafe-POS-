@@ -16,7 +16,7 @@ class RegisterRequestSchema(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField()
     confirm_password = serializers.CharField()
-    user_type = serializers.ChoiceField(choices=["Admin", "Staff"])
+    user_type = serializers.ChoiceField(choices=["Admin", "Supervisor", "Cashier"])
 
 
 class UserResponseSchema(serializers.Serializer):
@@ -36,7 +36,7 @@ class AuthSuccessSchema(serializers.Serializer):
 class LoginRequestSchema(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
-    user_type = serializers.ChoiceField(choices=["Admin", "Staff"])
+    user_type = serializers.ChoiceField(choices=["Admin", "Supervisor", "Cashier"], required=False)
 
 
 class ErrorSchema(serializers.Serializer):

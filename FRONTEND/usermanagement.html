@@ -34,7 +34,7 @@
     <p class="sidebar-section-title">Main</p>
     <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
   </div>
-  <div class="sidebar-nav-section" data-role="supervisor">
+  <div class="sidebar-nav-section" data-role="cashier">
     <p class="sidebar-section-title">POS</p>
     <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
   </div>
@@ -42,7 +42,7 @@
     <p class="sidebar-section-title">Inventory</p>
     <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
   </div>
-  <div class="sidebar-nav-section" data-role="all">
+  <div class="sidebar-nav-section" data-role="admin,supervisor">
     <p class="sidebar-section-title">Stock</p>
     <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
     <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
@@ -78,7 +78,7 @@
         </button>
         <div>
           <h1>User Management</h1>
-          <div class="subtitle">Manage Admin and Staff accounts</div>
+          <div class="subtitle">Manage Admin, Supervisor and Cashier accounts</div>
         </div>
       </div>
       <button class="btn btn-primary" onclick="openCreateModal()">
@@ -93,9 +93,10 @@
         <input type="text" id="searchInput" class="search-input" placeholder="     Search by username, email or type…" oninput="applyFilter()"/>
       </div>
       <div class="filter-group">
-        <button class="filter-btn active" data-type="all"   onclick="setFilter('all',   this)">All</button>
-        <button class="filter-btn"        data-type="Admin" onclick="setFilter('Admin',  this)">Admin</button>
-        <button class="filter-btn"        data-type="Staff" onclick="setFilter('Staff',  this)">Staff</button>
+        <button class="filter-btn active" data-type="all"        onclick="setFilter('all',        this)">All</button>
+        <button class="filter-btn"        data-type="Admin"      onclick="setFilter('Admin',      this)">Admin</button>
+        <button class="filter-btn"        data-type="Supervisor" onclick="setFilter('Supervisor', this)">Supervisor</button>
+        <button class="filter-btn"        data-type="Cashier"    onclick="setFilter('Cashier',    this)">Cashier</button>
       </div>
     </div>
 
@@ -178,7 +179,8 @@
           <div class="form-group full-width">
             <label>User Type</label>
             <select id="cUserType" required>
-              <option value="Staff">Staff</option>
+              <option value="Supervisor">Supervisor</option>
+              <option value="Cashier">Cashier</option>
               <option value="Admin">Admin</option>
             </select>
           </div>

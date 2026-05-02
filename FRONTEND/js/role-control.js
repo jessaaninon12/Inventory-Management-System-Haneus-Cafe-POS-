@@ -2,13 +2,16 @@
  * Role-Based Sidebar Access Control
  * Filters sidebar sections based on user role (Admin / Supervisor / Cashier)
  *
- * The user object stored in localStorage after login has a `user_type` field
- * set by the backend (UserDTO.to_dict()) with value "Admin", "Supervisor", or "Cashier".
- *
  * Roles:
- * - admin: Full access to all menus
- * - supervisor: Dashboard, POS, Manage Stock, Profile, Sales (limited)
- * - cashier: POS only, NO sidebar
+ * - Admin:      Full sidebar except POS
+ * - Supervisor:  Dashboard, Manage Stock, Profile, Logout (NO POS)
+ * - Cashier:    POS, Profile, Logout only
+ *
+ * Anti-flash strategy:
+ *   CSS hides sidebar <nav> via visibility:hidden.
+ *   This script filters [data-role] items with display:none,
+ *   then adds .role-filtered to <nav> to reveal it.
+ *   Result: sidebar contents only appear AFTER filtering — zero flash.
  */
 
 function applyRoleBasedAccess() {
@@ -20,33 +23,26 @@ function applyRoleBasedAccess() {
     }
 
     const user = JSON.parse(userStr);
-    // Map user_type to role key (backward compat: old "Staff" maps to "supervisor")
     let actualRole;
     if (user.user_type === 'Admin') actualRole = 'admin';
     else if (user.user_type === 'Cashier') actualRole = 'cashier';
     else actualRole = 'supervisor'; // Supervisor + legacy Staff
 
-    // Cashier: hide entire sidebar
-    if (actualRole === 'cashier') {
-      const sidebar = document.getElementById('main-sidebar');
-      if (sidebar) sidebar.style.display = 'none';
-      const overlay = document.getElementById('sidebar-overlay');
-      if (overlay) overlay.style.display = 'none';
-      // Remove sidebar margin from main content
-      const mainWrapper = document.querySelector('.main-wrapper') || document.querySelector('main');
-      if (mainWrapper) {
-        mainWrapper.style.marginLeft = '0';
-        mainWrapper.style.width = '100%';
-      }
-      // Hide sidebar toggle button
-      const toggleBtn = document.getElementById('sidebar-toggle-btn');
-      if (toggleBtn) toggleBtn.style.display = 'none';
-    }
-
+    // Filter every [data-role] element on the page
     document.querySelectorAll('[data-role]').forEach(el => {
       const allowed = el.dataset.role.split(',').map(r => r.trim().toLowerCase());
-      el.style.display = (allowed.includes('all') || allowed.includes(actualRole)) ? '' : 'none';
+      if (allowed.includes('all') || allowed.includes(actualRole)) {
+        el.style.display = '';   // show
+      } else {
+        el.style.display = 'none'; // hide
+      }
     });
+
+    // Reveal sidebar nav (anti-flash unlock)
+    const sidebarNav = document.querySelector('#main-sidebar nav');
+    if (sidebarNav) {
+      sidebarNav.classList.add('role-filtered');
+    }
 
   } catch (err) {
     try { localStorage.clear(); } catch {}
@@ -65,7 +61,6 @@ function enforceAuth(requiredRole) {
     const role = user.user_type;
     if (requiredRole) {
       if (requiredRole === 'Admin' && role !== 'Admin') {
-        // Non-admin trying to access admin page
         if (role === 'Cashier') window.location.href = 'pos.html';
         else window.location.href = 'staffdashboard.html';
         return;
