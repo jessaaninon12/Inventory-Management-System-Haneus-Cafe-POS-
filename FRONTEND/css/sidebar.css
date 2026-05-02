@@ -17,6 +17,15 @@
   overflow: hidden;
 }
 
+/* ── Anti-flash: hide sidebar nav until role-control.js finishes ── */
+/* JS sets each [data-role] to display:none or '', then makes nav visible */
+#main-sidebar nav {
+  visibility: hidden;
+}
+#main-sidebar nav.role-filtered {
+  visibility: visible;
+}
+
 /* ── Fixed Sidebar ──────────────────────────────────────────────── */
 #main-sidebar {
   width: 250px;

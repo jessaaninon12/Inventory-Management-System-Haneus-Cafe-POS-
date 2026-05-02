@@ -110,7 +110,7 @@ class RegisterController(APIView):
                 email=request.data.get("email", ""),
                 password=request.data.get("password", ""),
                 confirm_password=request.data.get("confirm_password", ""),
-                user_type=request.data.get("user_type", "Staff"),
+                user_type=request.data.get("user_type", "Supervisor"),
             )
             user_dto = service.register(dto)
             
@@ -551,14 +551,16 @@ class AdminUserPartialEditController(APIView):
 
 class StaffUserListController(APIView):
     """
-    GET /api/users/staff/view/  → list all Staff users
+    GET /api/users/staff/view/  → list all non-Admin users (Supervisor + Cashier)
     """
 
     @extend_schema(tags=["Users – Staff"], responses=ProfileResponseSchema(many=True))
     def get(self, request):
         service = _get_service()
-        users = service.get_all_users_by_type("Staff")
-        return Response([u.to_dict() for u in users])
+        supervisors = service.get_all_users_by_type("Supervisor")
+        cashiers = service.get_all_users_by_type("Cashier")
+        all_staff = supervisors + cashiers
+        return Response([u.to_dict() for u in all_staff])
 
 
 class StaffUserDetailController(APIView):
@@ -570,7 +572,7 @@ class StaffUserDetailController(APIView):
     def get(self, request, pk):
         service = _get_service()
         user = service.get_profile(pk)
-        if user is None or user.user_type != "Staff":
+        if user is None or user.user_type not in ("Supervisor", "Cashier"):
             return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
         return Response(user.to_dict())
 
@@ -595,7 +597,7 @@ class StaffUserCreateController(APIView):
                 email=request.data.get("email", ""),
                 password=request.data.get("password", ""),
                 confirm_password=request.data.get("confirm_password", ""),
-                user_type="Staff",
+                user_type=request.data.get("user_type", "Supervisor"),
             )
             user_dto = service.register(dto)
             return Response({"success": True, "user": user_dto.to_dict()}, status=status.HTTP_201_CREATED)
@@ -619,7 +621,7 @@ class StaffUserEditController(APIView):
     def put(self, request, pk):
         service = _get_service()
         existing = service.get_profile(pk)
-        if existing is None or existing.user_type != "Staff":
+        if existing is None or existing.user_type not in ("Supervisor", "Cashier"):
             return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
         dto = UpdateUserDTO(
             first_name=request.data.get("first_name"),
@@ -644,7 +646,7 @@ class StaffUserDeleteController(APIView):
     def delete(self, request, pk):
         service = _get_service()
         existing = service.get_profile(pk)
-        if existing is None or existing.user_type != "Staff":
+        if existing is None or existing.user_type not in ("Supervisor", "Cashier"):
             return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
         service.delete_user(pk)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -663,7 +665,7 @@ class StaffUserPartialEditController(APIView):
     def patch(self, request, pk):
         service = _get_service()
         existing = service.get_profile(pk)
-        if existing is None or existing.user_type != "Staff":
+        if existing is None or existing.user_type not in ("Supervisor", "Cashier"):
             return Response({"error": "Staff user not found."}, status=status.HTTP_404_NOT_FOUND)
         dto = UpdateUserDTO(
             first_name=request.data.get("first_name"),

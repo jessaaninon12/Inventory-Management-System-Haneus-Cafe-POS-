@@ -50,7 +50,10 @@ let _userDebounce = null; // Debounce timer for search
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 function typeBadge(type) {
-  const cls = type === 'Admin' ? 'badge-admin' : 'badge-staff';
+  let cls = 'badge-staff';
+  if (type === 'Admin') cls = 'badge-admin';
+  else if (type === 'Cashier') cls = 'badge-cashier';
+  else if (type === 'Supervisor') cls = 'badge-supervisor';
   return `<span class="badge ${cls}">${type}</span>`;
 }
 

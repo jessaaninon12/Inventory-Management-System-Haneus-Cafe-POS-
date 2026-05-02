@@ -20,7 +20,7 @@ class User:
         avatar_url="",
         date_joined=None,
         is_active=True,
-        user_type="Staff",
+        user_type="Supervisor",
     ):
         self.id = id
         self.username = username

@@ -102,7 +102,7 @@ class UserService:
         return UserDTO.from_entity(saved)
 
     def get_all_users_by_type(self, user_type):
-        """Return a list of UserDTOs filtered by user_type ('Admin' or 'Staff')."""
+        """Return a list of UserDTOs filtered by user_type ('Admin', 'Supervisor', or 'Cashier')."""
         entities = self.repository.get_all_by_type(user_type)
         return [UserDTO.from_entity(e) for e in entities]
 

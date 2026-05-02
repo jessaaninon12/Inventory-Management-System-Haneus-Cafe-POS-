@@ -39,7 +39,7 @@
             <p class="sidebar-section-title">Main</p>
             <a href="staffdashboard.html" class="sidebar-link"><i data-lucide="layout-dashboard"></i> Dashboard</a>
           </div>
-          <div class="sidebar-nav-section" data-role="supervisor">
+          <div class="sidebar-nav-section" data-role="cashier">
             <p class="sidebar-section-title">POS</p>
             <a href="pos.html" class="sidebar-link"><i data-lucide="shopping-cart"></i> Point of Sale</a>
           </div>
@@ -47,7 +47,7 @@
             <p class="sidebar-section-title">Inventory</p>
             <a href="products.html" class="sidebar-link"><i data-lucide="box"></i> Products</a>
           </div>
-          <div class="sidebar-nav-section" data-role="all">
+          <div class="sidebar-nav-section" data-role="admin,supervisor">
             <p class="sidebar-section-title">Stock</p>
             <a href="managestock.html" class="sidebar-link"><i data-lucide="package"></i> Manage Stock</a>
             <a href="supplier.html" class="sidebar-link" data-role="admin"><i data-lucide="truck"></i> Supplier</a>
@@ -156,7 +156,7 @@
               <div style="border-top:1px solid #eee;padding-top:0.75rem;display:flex;gap:0.5rem;">
                 <a href="profile.html"
                   style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#f5f5f5;font-size:0.8rem;color:#333;text-decoration:none;">Profile</a>
-                <a href="#" onclick="event.preventDefault();localStorage.clear();window.location.href='login.html'"
+                <a href="#" onclick="confirmLogout(event)"
                   style="flex:1;text-align:center;padding:0.4rem;border-radius:6px;background:#fef2f2;font-size:0.8rem;color:#dc2626;text-decoration:none;">Logout</a>
               </div>
             </div>

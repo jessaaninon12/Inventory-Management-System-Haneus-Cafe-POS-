@@ -38,7 +38,7 @@ if (typeof window._dashboardProfileInit === 'undefined') {
       const typeEl = document.getElementById('flyoutAccountType');
       if (nameEl) nameEl.textContent = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.username || 'User';
       if (idEl)   idEl.textContent = `ID: #${userId || '—'}`;
-      if (typeEl) typeEl.textContent = user.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee';
+      if (typeEl) typeEl.textContent = user.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : user.user_type === 'Cashier' ? 'Cashier • Haneus Cafe Cashier' : 'Supervisor • Haneus Cafe Supervisor';
 
       if (userId) {
         const res = await fetch(`${HC_API}/profile/${userId}/`);
@@ -53,7 +53,7 @@ if (typeof window._dashboardProfileInit === 'undefined') {
             if (flyoutImg) flyoutImg.src = src;
           }
           if (nameEl) nameEl.textContent = [p.first_name, p.last_name].filter(Boolean).join(' ') || p.username || 'User';
-          if (typeEl) typeEl.textContent = p.account_type_label || (p.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : 'Staff • Haneus Cafe Employee');
+          if (typeEl) typeEl.textContent = p.account_type_label || (p.user_type === 'Admin' ? 'Admin • Haneus Cafe Owner' : p.user_type === 'Cashier' ? 'Cashier • Haneus Cafe Cashier' : 'Supervisor • Haneus Cafe Supervisor');
         }
       }
     } catch (e) { console.warn('Profile flyout init error:', e); }

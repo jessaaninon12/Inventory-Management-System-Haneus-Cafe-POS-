@@ -321,7 +321,7 @@ signupForm.addEventListener('submit', async (e) => {
         hideError();
         showAdminApprovalWaiting(userId);
       } else {
-        // For Staff accounts, show normal success message
+        // For Supervisor/Cashier accounts, show normal success message
         document.getElementById('regSuccessMsg').textContent =
           `${user_type} Account Successfully Created!`;
         document.getElementById('regSuccessOverlay').style.display = 'flex';

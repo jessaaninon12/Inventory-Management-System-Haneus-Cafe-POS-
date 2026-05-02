@@ -17,7 +17,7 @@ class UserDTO:
         bio="",
         avatar_url="",
         date_joined=None,
-        user_type="Staff",
+        user_type="Supervisor",
         require_password_change=False,
         profile_picture_url="",
     ):
@@ -39,8 +39,10 @@ class UserDTO:
         """Return formatted account type label with cafe designation."""
         if self.user_type == "Admin":
             return "Admin • Haneus Cafe Owner"
+        elif self.user_type == "Cashier":
+            return "Cashier • Haneus Cafe Cashier"
         else:
-            return "Staff • Haneus Cafe Employee"
+            return "Supervisor • Haneus Cafe Supervisor"
 
     @staticmethod
     def from_entity(entity):
@@ -54,7 +56,7 @@ class UserDTO:
             bio=entity.bio,
             avatar_url=entity.avatar_url,
             date_joined=entity.date_joined,
-            user_type=getattr(entity, "user_type", "Staff"),
+            user_type=getattr(entity, "user_type", "Supervisor"),
             require_password_change=getattr(entity, "require_password_change", False),
             profile_picture_url=getattr(entity, "profile_picture_url", ""),
         )
@@ -88,7 +90,7 @@ class CreateUserDTO:
         email="",
         password="",
         confirm_password="",
-        user_type="Staff",
+        user_type="Supervisor",
     ):
         self.first_name = first_name
         self.last_name = last_name
