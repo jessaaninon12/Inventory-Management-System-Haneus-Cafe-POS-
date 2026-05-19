@@ -12,11 +12,53 @@ const HC_API = window.location.origin + '/api';
 // 1. PROFILE FLYOUT — toggle + populate from API
 //    Skip if dashboard.js already defined toggleProfileFlyout
 // ══════════════════════════════════════════════════════════════════
+/* ── Inject flyout transition CSS (shared across all pages) ── */
+(function _injectFlyoutCSS() {
+  if (document.getElementById('hc-flyout-css')) return;
+  const s = document.createElement('style');
+  s.id = 'hc-flyout-css';
+  s.textContent = `
+    #profileFlyout {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px) scale(0.96);
+      transition: opacity 0.25s cubic-bezier(0.4,0,0.2,1),
+                  visibility 0.25s cubic-bezier(0.4,0,0.2,1),
+                  transform 0.25s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: none;
+    }
+    #profileFlyout.flyout-open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    /* Flyout Profile & Logout button hovers */
+    #profileFlyout a {
+      transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+    #profileFlyout a:hover {
+      transform: translateY(-1px);
+      filter: brightness(0.95);
+    }
+  `;
+  document.head.appendChild(s);
+}());
+
 if (typeof window._dashboardProfileInit === 'undefined') {
   // Only define if not already defined by dashboard.js
   window.toggleProfileFlyout = function() {
     const flyout = document.getElementById('profileFlyout');
-    if (flyout) flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+    if (!flyout) return;
+    // Override inline display:none so CSS transitions can work
+    flyout.style.display = 'block';
+    if (flyout.classList.contains('flyout-open')) {
+      flyout.classList.remove('flyout-open');
+    } else {
+      // Force reflow for re-trigger
+      void flyout.offsetWidth;
+      flyout.classList.add('flyout-open');
+    }
   };
 
   // Close flyout on outside click
@@ -24,7 +66,7 @@ if (typeof window._dashboardProfileInit === 'undefined') {
     const wrapper = document.getElementById('profileFlyoutWrapper');
     const flyout = document.getElementById('profileFlyout');
     if (flyout && wrapper && !wrapper.contains(e.target)) {
-      flyout.style.display = 'none';
+      flyout.classList.remove('flyout-open');
     }
   });
 

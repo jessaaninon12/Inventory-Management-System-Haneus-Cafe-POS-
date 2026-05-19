@@ -2,6 +2,8 @@
    logout-modal.js  —  Shared logout confirmation modal
    Include this script in any page that has a Logout link.
    It overrides the global confirmLogout() with a styled modal.
+
+   v2 — Smooth open/close transitions
 ================================================================= */
 (function () {
 
@@ -18,12 +20,15 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      animation: lo-fade 0.22s ease;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                  visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes lo-fade {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+    .logout-overlay.lo-visible {
+      opacity: 1;
+      visibility: visible;
     }
 
     .logout-card {
@@ -35,12 +40,15 @@
       width: 90%;
       box-shadow: 0 24px 60px rgba(74,47,33,0.28), 0 4px 12px rgba(0,0,0,0.12);
       border: 1px solid #e1c8b2;
-      animation: lo-scale 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform: scale(0.85) translateY(20px);
+      opacity: 0;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                  opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    @keyframes lo-scale {
-      from { transform: scale(0.82); opacity: 0; }
-      to   { transform: scale(1);    opacity: 1; }
+    .logout-overlay.lo-visible .logout-card {
+      transform: scale(1) translateY(0);
+      opacity: 1;
     }
 
     .logout-icon-wrap {
@@ -54,6 +62,16 @@
       justify-content: center;
       margin: 0 auto 18px;
       color: #c47b42;
+      transition: transform 0.3s ease, background 0.3s ease;
+    }
+
+    .logout-overlay.lo-visible .logout-icon-wrap {
+      animation: lo-icon-pulse 0.6s ease 0.2s;
+    }
+
+    @keyframes lo-icon-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
     }
 
     .logout-icon-wrap svg {
@@ -91,9 +109,12 @@
       font-size: 0.9rem;
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
       font-family: 'Inter', system-ui, sans-serif;
       border: none;
+      transition: background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                  color 0.25s ease,
+                  transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+                  box-shadow 0.25s ease;
     }
 
     .btn-lo-cancel {
@@ -104,7 +125,12 @@
 
     .btn-lo-cancel:hover {
       background: #e1c8b2;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(225, 200, 178, 0.4);
+    }
+
+    .btn-lo-cancel:active {
+      transform: translateY(0) scale(0.97);
     }
 
     .btn-lo-confirm {
@@ -116,7 +142,11 @@
     .btn-lo-confirm:hover {
       background: #a35f2e;
       transform: translateY(-2px);
-      box-shadow: 0 8px 18px rgba(163,95,46,0.35);
+      box-shadow: 0 8px 20px rgba(163,95,46,0.4);
+    }
+
+    .btn-lo-confirm:active {
+      transform: translateY(0) scale(0.97);
     }
   `;
 
@@ -127,7 +157,6 @@
     const overlay = document.createElement('div');
     overlay.id    = 'logoutModal';
     overlay.className = 'logout-overlay';
-    overlay.style.display = 'none';
     overlay.innerHTML = `
       <div class="logout-card" id="logoutCard">
         <div class="logout-icon-wrap">
@@ -166,13 +195,15 @@
 
     /* Close on Escape */
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && overlay.style.display !== 'none') closeModal();
+      if (e.key === 'Escape' && overlay.classList.contains('lo-visible')) closeModal();
     });
   }
 
   function closeModal() {
     const overlay = document.getElementById('logoutModal');
-    if (overlay) overlay.style.display = 'none';
+    if (overlay) {
+      overlay.classList.remove('lo-visible');
+    }
   }
 
   /* ── Override global confirmLogout ───────────────────────────── */
@@ -180,10 +211,10 @@
     if (event) event.preventDefault();
     const overlay = document.getElementById('logoutModal');
     if (overlay) {
-      overlay.style.display = 'flex';
-      overlay.style.animation = 'none';
-      void overlay.offsetWidth; /* reflow */
-      overlay.style.animation = '';
+      // Force reflow to restart transition if re-opening
+      overlay.classList.remove('lo-visible');
+      void overlay.offsetWidth;
+      overlay.classList.add('lo-visible');
     }
   };
 

@@ -1,5 +1,5 @@
 /* ══════════════════════════════════════════════════════════════════
-   UNIFIED SIDEBAR STYLES
+   UNIFIED SIDEBAR STYLES  v4 — Smooth Transitions Edition
    Used across all pages (Dashboard, Products, Stock, Supplier, Sales, etc)
 
    Breakpoint strategy:
@@ -18,11 +18,15 @@
 }
 
 /* ── Anti-flash: hide sidebar nav until role-control.js finishes ── */
-/* JS sets each [data-role] to display:none or '', then makes nav visible */
+/* Nav starts invisible → JS filters [data-role] → adds .role-filtered → smooth fade-in */
 #main-sidebar nav {
+  opacity: 0;
   visibility: hidden;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 #main-sidebar nav.role-filtered {
+  opacity: 1;
   visibility: visible;
 }
 
@@ -40,10 +44,11 @@
   height: 100vh;
   height: 100dvh;
   z-index: 1001;
-  transition: width 0.28s cubic-bezier(0.4,0,0.2,1),
-              min-width 0.28s cubic-bezier(0.4,0,0.2,1),
-              max-width 0.28s cubic-bezier(0.4,0,0.2,1),
-              transform 0.28s cubic-bezier(0.4,0,0.2,1);
+  transition: width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              min-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              max-width 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -73,6 +78,7 @@
   font-weight: 700;
   color: var(--cream, #f5ede3);
   margin: 0;
+  transition: opacity 0.25s ease;
 }
 
 .sidebar-close-btn {
@@ -86,13 +92,22 @@
   border-radius: 0.375rem;
   cursor: pointer;
   color: rgba(245,237,227,0.9);
-  transition: background 0.15s;
+  transition: background 0.25s ease,
+              color 0.25s ease,
+              border-color 0.25s ease,
+              transform 0.2s ease;
   flex-shrink: 0;
 }
 
 .sidebar-close-btn:hover {
   background: rgba(255,255,255,0.22);
   color: white;
+  border-color: rgba(255,255,255,0.35);
+  transform: scale(1.08);
+}
+
+.sidebar-close-btn:active {
+  transform: scale(0.95);
 }
 
 .sidebar-close-btn svg {
@@ -109,9 +124,22 @@ nav {
   gap: 0;
 }
 
+/* ── Nav Sections — staggered fade-in ── */
 .sidebar-nav-section {
   margin-bottom: 1.5rem;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
+
+/* Stagger effect when nav becomes visible */
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(1) { transition-delay: 0.03s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(2) { transition-delay: 0.06s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(3) { transition-delay: 0.09s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(4) { transition-delay: 0.12s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(5) { transition-delay: 0.15s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(6) { transition-delay: 0.18s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(7) { transition-delay: 0.21s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(8) { transition-delay: 0.24s; }
+#main-sidebar nav.role-filtered .sidebar-nav-section:nth-child(9) { transition-delay: 0.27s; }
 
 .sidebar-section-title {
   font-size: 0.75rem;
@@ -123,8 +151,10 @@ nav {
   padding-left: 0.75rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid rgba(255, 246, 238, 0.2);
+  transition: color 0.25s ease, border-color 0.25s ease;
 }
 
+/* ── Sidebar Link — Premium Hover Effect ── */
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -133,16 +163,50 @@ nav {
   color: rgba(245, 237, 227, 0.85);
   text-decoration: none;
   border-radius: 0.5rem;
-  transition: all 0.15s ease;
   font-size: 0.95rem;
   cursor: pointer;
   border: none;
   background: none;
+  position: relative;
+  overflow: hidden;
+  transition: color 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.25s ease;
+}
+
+/* Shine sweep on hover */
+.sidebar-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 246, 238, 0.06),
+    transparent
+  );
+  transition: left 0.5s ease;
+  pointer-events: none;
+}
+
+.sidebar-link:hover::before {
+  left: 100%;
 }
 
 .sidebar-link:hover {
   background: #FFF6EE;
   color: #FEA54E;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(254, 165, 78, 0.12);
+}
+
+.sidebar-link:active {
+  transform: translateX(2px) scale(0.98);
 }
 
 .sidebar-link svg {
@@ -150,12 +214,19 @@ nav {
   height: 20px;
   flex-shrink: 0;
   stroke-width: 2.2px;
+  transition: transform 0.25s ease, color 0.25s ease;
 }
 
+.sidebar-link:hover svg {
+  transform: scale(1.1);
+}
+
+/* ── Active Link ── */
 .sidebar-active {
   background: #FFF6EE;
   color: #FEA54E;
   font-weight: 500;
+  box-shadow: inset 3px 0 0 #FEA54E;
 }
 
 .sidebar-active svg {
@@ -169,7 +240,7 @@ nav {
   height: 100vh;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: margin-left 0.28s cubic-bezier(0.4,0,0.2,1);
+  transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
   min-width: 0;
 }
 
@@ -191,7 +262,11 @@ nav {
   cursor: pointer;
   color: var(--mocha, #6e4f3e);
   flex-shrink: 0;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.25s ease,
+              color 0.25s ease,
+              border-color 0.25s ease,
+              transform 0.2s ease,
+              box-shadow 0.25s ease;
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -199,6 +274,12 @@ nav {
   background: var(--latte, #e1c8b2);
   color: var(--primary, #c47b42);
   border-color: var(--primary, #c47b42);
+  transform: scale(1.06);
+  box-shadow: 0 2px 8px rgba(196, 123, 66, 0.15);
+}
+
+.sidebar-toggle-btn:active {
+  transform: scale(0.95);
 }
 
 .sidebar-toggle-btn svg,
@@ -211,7 +292,6 @@ nav {
 
 /* ── Sidebar Overlay Backdrop ──────────────────────────────────── */
 .sidebar-overlay {
-  display: none;
   position: fixed;
   inset: 0;
   background: rgba(74,47,33,0.45);
@@ -219,11 +299,15 @@ nav {
   -webkit-backdrop-filter: blur(3px);
   z-index: 999;
   cursor: pointer;
-  transition: opacity 0.28s ease;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0.32s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-overlay.active {
-  display: block;
+  opacity: 1;
+  visibility: visible;
 }
 
 

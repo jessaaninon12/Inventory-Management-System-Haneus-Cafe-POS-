@@ -10,14 +10,21 @@ window._dashboardNotifInit = true;
 // ── Task 10: Profile flyout toggle + populate ────────────────────────
 function toggleProfileFlyout() {
   const flyout = document.getElementById('profileFlyout');
-  if (flyout) flyout.style.display = flyout.style.display === 'none' ? 'block' : 'none';
+  if (!flyout) return;
+  flyout.style.display = 'block';
+  if (flyout.classList.contains('flyout-open')) {
+    flyout.classList.remove('flyout-open');
+  } else {
+    void flyout.offsetWidth;
+    flyout.classList.add('flyout-open');
+  }
 }
 // Close flyout on outside click
 document.addEventListener('click', (e) => {
   const wrapper = document.getElementById('profileFlyoutWrapper');
   const flyout = document.getElementById('profileFlyout');
   if (flyout && wrapper && !wrapper.contains(e.target)) {
-    flyout.style.display = 'none';
+    flyout.classList.remove('flyout-open');
   }
 });
 

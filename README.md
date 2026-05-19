@@ -47,12 +47,16 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 ├── readysecurityanddeploymentready.md  # Security & deployment readiness audit
 ├── IMP AND ERROR.md                    # Implementation log & error resolutions
 ├── MLandAISuggestion.md                # ML & AI implementation suggestions
+├── ErrorLogs.md                        # Error tracking & resolution log
+├── FormulaLogs.md                      # Financial formula documentation
+├── ImplementationLogs.md               # Implementation progress log
+├── Task.md                             # Task tracking & checklist
 │
 ├── .github/
 │   └── workflows/
 │       └── django.yml                  # CI/CD workflow for Django
 │
-├── FRONTEND/                           # Static multi-page frontend
+├── FRONTEND/                           # Static multi-page frontend (17 pages)
 │   ├── login.html                      # Login page
 │   ├── register.html                   # Registration page
 │   ├── dashboard.html                  # Admin dashboard
@@ -68,21 +72,25 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 │   ├── user.html                       # User detail page
 │   ├── supplier.html                   # Supplier references page
 │   ├── reset-password.html             # Password reset via token link
+│   ├── activitylogs.html               # Activity logs page
+│   ├── reports.html                    # Reports & analytics page
 │   ├── css/
-│   │   ├── sidebar.css                 # Shared sidebar styles (all pages, 354 lines)
-│   │   ├── responsive.css              # Full responsive system (734 lines, 7 breakpoints)
-│   │   ├── responsive-cards.css        # Shared table-to-card layout (239 lines)
-│   │   ├── pos.css                     # POS terminal styles (1575 lines)
+│   │   ├── sidebar.css                 # Shared sidebar styles (all pages)
+│   │   ├── responsive.css              # Full responsive system (7 breakpoints)
+│   │   ├── responsive-cards.css        # Shared table-to-card layout
+│   │   ├── pos.css                     # POS terminal styles
 │   │   ├── dashboard.css               # Admin dashboard styles
 │   │   ├── staffdashboard.css          # Staff dashboard styles
-│   │   ├── managestock.css             # Manage stock styles (774 lines)
-│   │   ├── usermanagement.css          # User management styles (704 lines)
+│   │   ├── managestock.css             # Manage stock styles
+│   │   ├── usermanagement.css          # User management styles
 │   │   ├── payment-modals.css          # POS payment modal styles
+│   │   ├── activitylogs.css            # Activity logs styles
+│   │   ├── reports.css                 # Reports page styles
 │   │   └── ...                         # (Other page-specific CSS files)
 │   ├── js/
 │   │   ├── sidebar-toggle.js           # Unified sidebar toggle (all pages)
-│   │   ├── header-common.js            # Shared header: profile flyout, notifications, search (460 lines)
-│   │   ├── auto-refresh.js             # Lightweight AJAX auto-refresh module (60 lines)
+│   │   ├── header-common.js            # Shared header: profile flyout, notifications, search
+│   │   ├── auto-refresh.js             # Lightweight AJAX auto-refresh module
 │   │   ├── pos.js                      # POS terminal — cart, VAT 12%, receipt PNG, AbortController
 │   │   ├── dashboard.js                # Admin dashboard data + bar chart + View All modals
 │   │   ├── staffdashboard.js           # Staff dashboard — greetings, weekly analytics, payroll
@@ -90,6 +98,8 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 │   │   ├── managestock.js              # Stock adjustment + server-side pagination (30/page)
 │   │   ├── sales.js                    # Sales records + pagination + client-side filtering
 │   │   ├── usermanagement.js           # User management + pagination + AbortController
+│   │   ├── activitylogs.js             # Activity logs frontend
+│   │   ├── reports.js                  # Reports & analytics frontend
 │   │   ├── role-control.js             # Role-based page access guard
 │   │   ├── alert-modal.js              # Custom alert modal utility
 │   │   ├── logout-modal.js             # Logout confirmation modal
@@ -114,9 +124,9 @@ Inventory-Management-System-Haneus-Cafe-POS-/
     ├── api/                            # Django app: Auth + API Controllers
     │   ├── models.py                   # Custom User, Product, PasswordResetToken, AdminApprovalRequest
     │   ├── throttles.py                # Rate throttle classes (5 classes)
-    │   ├── controllers/                # Clean Architecture controllers (10 files)
+    │   ├── controllers/                # Clean Architecture controllers (14 files)
     │   │   ├── urls.py                 # All /api/ route definitions
-    │   │   ├── user_controller.py      # Auth + profile + user management + risk (667 lines)
+    │   │   ├── user_controller.py      # Auth + profile + user management + risk
     │   │   ├── product_controller.py   # Product CRUD controllers
     │   │   ├── order_controller.py     # Order lifecycle (create/cancel/complete)
     │   │   ├── inventory_controller.py # Inventory summary + stock adjust
@@ -124,40 +134,49 @@ Inventory-Management-System-Haneus-Cafe-POS-/
     │   │   ├── dashboard_controller.py # Dashboard stats + chart data
     │   │   ├── staff_dashboard_controller.py  # Staff dashboard + payroll
     │   │   ├── password_reset_controller.py   # Forgot/reset password (5 endpoints)
-    │   │   └── admin_approval_controller.py   # Admin registration approval
-    │   └── migrations/                 # Django ORM migrations (0001–0009)
+    │   │   ├── admin_approval_controller.py   # Admin registration approval
+    │   │   ├── activity_log_controller.py     # Activity log tracking
+    │   │   ├── analytics_controller.py        # Sales & business analytics
+    │   │   ├── reports_controller.py           # Report generation endpoints
+    │   │   └── sales_analytics_controller.py  # Sales analytics data
+    │   └── migrations/                 # Django ORM migrations (0001–0011)
     │
     ├── application/                    # Application layer — pure business logic
     │   ├── dtos/                       # Data Transfer Objects (8 DTOs)
-    │   ├── interfaces/                 # Abstract Repository Interfaces (8 interfaces)
-    │   └── services/                   # Business rules (10 services)
+    │   ├── interfaces/                 # Abstract Repository Interfaces (9 interfaces)
+    │   └── services/                   # Business rules (11 services)
     │       ├── user_service.py         # Register, login, profile, password
     │       ├── product_service.py      # Product CRUD + pagination
     │       ├── sale_service.py         # POS sale creation + totals computation
     │       ├── inventory_service.py    # Stock adjust + history
     │       ├── dashboard_service.py    # Aggregated KPIs + chart data
+    │       ├── analytics_service.py    # Sales & business analytics logic
     │       ├── password_reset_service.py  # Token/code generation, verification
     │       ├── email_service.py        # Async email dispatch (background threads)
     │       ├── reset_risk_service.py   # Risk assessment for password reset
-    │       └── admin_approval_service.py  # Approval lifecycle
+    │       ├── admin_approval_service.py  # Approval lifecycle
+    │       └── order_service.py        # Order create, cancel, complete lifecycle
     │
     ├── domain/                         # Domain layer — pure Python, zero framework deps
-    │   └── entities/                   # Business entities (7 entities)
+    │   └── entities/                   # Business entities (8 entities)
     │       ├── sale.py                 # Sale + SaleItem + compute_totals() — TAX_RATE = 0.12
     │       ├── product.py              # Product + adjust_stock() + stock_status
     │       ├── user.py                 # User entity + validation
     │       ├── order.py                # Order entity
     │       ├── inventory.py            # InventoryTransaction entity
+    │       ├── analytics.py            # Analytics entity + aggregation rules
     │       ├── admin_approval.py       # AdminApproval entity
     │       └── reset_attempt.py        # ResetAttempt + risk rules
     │
     └── infrastructure/                 # Infrastructure layer — Data access
         ├── data/
         │   └── models.py              # All Django ORM models (production tables)
-        ├── repositories/               # Concrete repository implementations (8 repos)
-        │   ├── dashboard_repository.py # Dashboard aggregations (22KB, 537 lines)
+        ├── repositories/               # Concrete repository implementations (10 repos)
+        │   ├── dashboard_repository.py # Dashboard aggregations (22KB)
+        │   ├── analytics_repository.py # Analytics data queries
+        │   ├── activity_log_repository.py # Activity log persistence
         │   └── ...                     # (Other repository files)
-        ├── migrations/                 # Migrations for infrastructure models (0001–0009)
+        ├── migrations/                 # Migrations for infrastructure models (0001–0010)
         └── management/commands/        # Custom manage.py utilities
 ```
 
@@ -166,7 +185,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 ## C. Tech Stack
 
 **Backend**
-- Python 3.9+
+- Python 3.9+ (tested up to 3.14)
 - Django 4.2
 - Django REST Framework 3.14+
 - drf-spectacular 0.27+ (OpenAPI 3.0 schema + Scalar UI)
@@ -193,7 +212,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 ## D. Backend Setup
 
 ### 1. Prerequisites
-- Python 3.9+
+- Python 3.9+ (tested up to 3.14)
 - One of: MySQL via XAMPP **|** SQL Server via SSMS 19 **|** PostgreSQL
 - `pip`
 
@@ -201,7 +220,7 @@ Inventory-Management-System-Haneus-Cafe-POS-/
 ```bash
 cd BACKEND
 python -m venv venv
-venv\Scripts\activate        # Windows
+venv\Scripts\activate       # Windows
 # source venv/bin/activate   # macOS / Linux
 
 pip install -r requirements.txt
@@ -271,12 +290,12 @@ python manage.py runserver 8000
 - Change due / short amount calculation
 
 ### Admin Dashboard (`dashboard.html`)
-- Summary KPI cards: Total Sales, Returns, Products, Profit, Expenses
-- Week-over-Week % change indicators
+- Summary KPI cards: Total Sales, Total Products, Profit, Expenses
+- Week-over-Week % change indicators (₱ currency)
 - Monthly sales bar chart (6 period options: 1D, 1W, 1M, 3M, 6M, 1Y)
-- Top 5 best-selling products with revenue bars
-- Low stock alerts with product images
-- Recent sales timeline
+- Top 5 best-selling products with revenue bars + View All modal
+- Low stock alerts with product images + View All modal
+- Recent sales timeline + View All modal
 
 ### Staff Dashboard (`staffdashboard.html`)
 - Weekly earnings with growth % indicator
@@ -305,6 +324,16 @@ python manage.py runserver 8000
 - Client-side pagination (30 per page)
 - Status filtering and search
 - Receipt modal preview
+
+### Activity Logs (`activitylogs.html`)
+- System-wide activity tracking and audit trail
+- Filterable log entries by user, action type, and date
+- Responsive card layout on mobile
+
+### Reports (`reports.html`)
+- Business analytics and report generation
+- Sales performance metrics and trends
+- Exportable data views
 
 ### User Management (`usermanagement.html`) — Admin Only
 - User listing with pagination
@@ -415,15 +444,17 @@ Internet/LAN → Cloudflare (optional) → Nginx (SSL + static + proxy)
 ## L. Development Status
 
 **Overall Status**: Functional and Finalized.
-**Last Updated:** 2026-04-16 | **AGENTS.md Version:** 6.0
+**Last Updated:** 2026-05-19 | **AGENTS.md Version:** 7.0
 
-The Haneus Cafe POS system has completed its stabilization phases in April 2026 with:
-- Full responsive UI across all 14 pages (7 breakpoints)
+The Haneus Cafe POS system has completed its stabilization phases with:
+- Full responsive UI across all 17 pages (7 breakpoints)
 - Comprehensive POS terminal with VAT, discount, and 4 payment methods
+- Activity Logs & Reports modules for audit trail and business analytics
 - Complete security audit and deployment readiness documentation
-- Deep system intelligence documentation (AGENTS.md — 1800+ lines)
+- Deep system intelligence documentation (AGENTS.md — 2000+ lines)
 - Formula mapping for all financial calculations with calculator examples
 - ML & AI readiness: 9 lightweight suggestions documented with algorithms and integration points
+- Clean Architecture: 14 controllers, 11 services, 8 entities, 10 repositories
 
 ---
 
@@ -467,3 +498,7 @@ The Haneus Cafe POS system has completed its stabilization phases in April 2026 
 | `responsive.md` | Root | 2026 Responsive UI/UX specification |
 | `IMP AND ERROR.md` | Root | Implementation log & error resolution history |
 | `MLandAISuggestion.md` | Root | ML & AI suggestions — 9 features, algorithms, integration points |
+| `ErrorLogs.md` | Root | Error tracking & resolution log |
+| `FormulaLogs.md` | Root | Financial formula documentation & examples |
+| `ImplementationLogs.md` | Root | Implementation progress log |
+| `Task.md` | Root | Task tracking & project checklist |
